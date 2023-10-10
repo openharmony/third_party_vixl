@@ -32,6 +32,10 @@ config("vixl_public_config") {
     defines = [ "VIXL_DEBUG" ]
   }
 
+  if (ark_standalone_build) {
+    cflags_cc = [ "-Wno-bitwise-instead-of-logical" ]
+  }
+
   include_dirs = [
     "$ark_third_party_root/vixl",
     "$ark_third_party_root/vixl/src",
