@@ -50,24 +50,27 @@ class CPURegList {
     VIXL_ASSERT(IsValid());
   }
 
-  CPURegList(CPURegister::RegisterType type, unsigned size, RegList list)
+  constexpr CPURegList(CPURegister::RegisterType type, unsigned size, RegList list)
       : list_(list), size_(size), type_(type) {
+#ifndef PANDA_BUILD
     VIXL_ASSERT(IsValid());
+#endif
   }
 
-  CPURegList(CPURegister::RegisterType type,
+  constexpr CPURegList(CPURegister::RegisterType type,
              unsigned size,
              unsigned first_reg,
              unsigned last_reg)
-      : size_(size), type_(type) {
+      : list_((UINT64_C(1) << (last_reg + 1)) - 1), size_(size), type_(type) {
     VIXL_ASSERT(
         ((type == CPURegister::kRegister) && (last_reg < kNumberOfRegisters)) ||
         ((type == CPURegister::kVRegister) &&
          (last_reg < kNumberOfVRegisters)));
     VIXL_ASSERT(last_reg >= first_reg);
-    list_ = (UINT64_C(1) << (last_reg + 1)) - 1;
     list_ &= ~((UINT64_C(1) << first_reg) - 1);
+#ifndef PANDA_BUILD
     VIXL_ASSERT(IsValid());
+#endif
   }
 
   // Construct an empty CPURegList with the specified size and type. If `size`
@@ -182,8 +185,10 @@ class CPURegList {
     return (type_ == other.type_) && ((list_ & other.list_) != 0);
   }
 
-  RegList GetList() const {
+  constexpr RegList GetList() const {
+#ifndef PANDA_BUILD
     VIXL_ASSERT(IsValid());
+#endif
     return list_;
   }
   VIXL_DEPRECATED("GetList", RegList list() const) { return GetList(); }
@@ -287,13 +292,12 @@ class CPURegList {
 
 
 // AAPCS64 callee-saved registers.
-extern const CPURegList kCalleeSaved;
-extern const CPURegList kCalleeSavedV;
-
+constexpr CPURegList kCalleeSaved = CPURegList(CPURegister::kRegister, kXRegSize, 19, 28);
+constexpr CPURegList kCalleeSavedV = CPURegList(CPURegister::kVRegister, kDRegSize, 8, 15);
 
 // AAPCS64 caller-saved registers. Note that this includes lr.
-extern const CPURegList kCallerSaved;
-extern const CPURegList kCallerSavedV;
+constexpr CPURegList kCallerSaved = CPURegList(CPURegister::kRegister, kXRegSize, 0, 18);
+constexpr CPURegList kCallerSavedV = CPURegList(CPURegister::kVRegister, kDRegSize, 0xffff00ff);
 
 class IntegerOperand;
 

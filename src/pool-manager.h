@@ -206,13 +206,17 @@ class LocationBase {
   // we need to keep track of the location in order to resolve the references
   // to the object. Reusing the location_ field for this is convenient.
   void SetLocation(internal::AssemblerBase* assembler, T location) {
+#ifndef PANDA_BUILD
     VIXL_ASSERT(!is_bound_);
+#endif
     location_ = location;
     ResolveReferences(assembler);
   }
 
   void MarkBound() {
+#ifndef PANDA_BUILD
     VIXL_ASSERT(!is_bound_);
+#endif
     is_bound_ = true;
   }
 

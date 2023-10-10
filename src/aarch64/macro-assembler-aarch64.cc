@@ -2489,7 +2489,9 @@ void MacroAssembler::LoadStoreCPURegListHelper(LoadStoreCPURegListAction op,
                                                const MemOperand& mem) {
   // We do not handle pre-indexing or post-indexing.
   VIXL_ASSERT(!(mem.IsPreIndex() || mem.IsPostIndex()));
+#ifndef PANDA_BUILD
   VIXL_ASSERT(!registers.Overlaps(tmp_list_));
+#endif
   VIXL_ASSERT(!registers.Overlaps(v_tmp_list_));
   VIXL_ASSERT(!registers.Overlaps(p_tmp_list_));
   VIXL_ASSERT(!registers.IncludesAliasOf(sp));

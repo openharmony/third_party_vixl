@@ -37,13 +37,21 @@ namespace internal {
 
 class AssemblerBase {
  public:
-  AssemblerBase() : allow_assembler_(false) {}
+  AssemblerBase() : allow_assembler_(true) {}
+#ifdef PANDA_BUILD
+  AssemblerBase(size_t capacity) = delete;
+#else
   explicit AssemblerBase(size_t capacity)
       : buffer_(capacity), allow_assembler_(false) {}
+#endif
   AssemblerBase(byte* buffer, size_t capacity)
-      : buffer_(buffer, capacity), allow_assembler_(false) {}
+      : buffer_(buffer, capacity), allow_assembler_(true) {}
 
   virtual ~AssemblerBase() {}
+
+  bool IsValid() const {
+    return buffer_.IsValid();
+  }
 
   // Finalize a code buffer of generated instructions. This function must be
   // called before executing or copying code from the buffer.

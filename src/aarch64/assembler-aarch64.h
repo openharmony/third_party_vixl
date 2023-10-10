@@ -852,6 +852,7 @@ class Assembler : public vixl::internal::AssemblerBase {
   void lsl(const Register& rd, const Register& rn, unsigned shift) {
     unsigned reg_size = rd.GetSizeInBits();
     VIXL_ASSERT(shift < reg_size);
+    // NOLINTNEXTLINE(clang-analyzer-core.DivideZero)
     ubfm(rd, rn, (reg_size - shift) % reg_size, reg_size - shift - 1);
   }
 

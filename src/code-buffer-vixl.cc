@@ -120,6 +120,13 @@ void CodeBuffer::SetWritable() {
 #endif
 }
 
+// For some reason OHOS toolchain doesn't have this function
+#ifdef PANDA_TARGET_MOBILE
+char* stpcpy (char *dst, const char *src) {
+    const size_t len = strlen (src);
+    return (char *) memcpy (dst, src, len + 1) + len;
+}
+#endif
 
 void CodeBuffer::EmitString(const char* string) {
   VIXL_ASSERT(HasSpaceFor(strlen(string) + 1));

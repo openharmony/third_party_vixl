@@ -541,60 +541,90 @@ ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
     GetBuffer()->EnsureSpaceFor(size);
   }
 
-  bool AliasesAvailableScratchRegister(Register reg) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] Register reg) {
+#ifndef PANDA_BUILD
     return GetScratchRegisterList()->Includes(reg);
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(RegisterOrAPSR_nzcv reg) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] RegisterOrAPSR_nzcv reg) {
+#ifndef PANDA_BUILD
     if (reg.IsAPSR_nzcv()) return false;
     return GetScratchRegisterList()->Includes(reg.AsRegister());
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(VRegister reg) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] VRegister reg) {
+#ifndef PANDA_BUILD
     return GetScratchVRegisterList()->IncludesAliasOf(reg);
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(const Operand& operand) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] const Operand& operand) {
+#ifndef PANDA_BUILD
     if (operand.IsImmediate()) return false;
     return AliasesAvailableScratchRegister(operand.GetBaseRegister()) ||
            (operand.IsRegisterShiftedRegister() &&
             AliasesAvailableScratchRegister(operand.GetShiftRegister()));
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(const NeonOperand& operand) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] const NeonOperand& operand) {
+#ifndef PANDA_BUILD
     if (operand.IsImmediate()) return false;
     return AliasesAvailableScratchRegister(operand.GetRegister());
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(SRegisterList list) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] SRegisterList list) {
+#ifndef PANDA_BUILD
     for (int n = 0; n < list.GetLength(); n++) {
       if (AliasesAvailableScratchRegister(list.GetSRegister(n))) return true;
     }
     return false;
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(DRegisterList list) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] DRegisterList list) {
+#ifndef PANDA_BUILD
     for (int n = 0; n < list.GetLength(); n++) {
       if (AliasesAvailableScratchRegister(list.GetDRegister(n))) return true;
     }
     return false;
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(NeonRegisterList list) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] NeonRegisterList list) {
+#ifndef PANDA_BUILD
     for (int n = 0; n < list.GetLength(); n++) {
       if (AliasesAvailableScratchRegister(list.GetDRegister(n))) return true;
     }
     return false;
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(RegisterList list) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] RegisterList list) {
+#ifndef PANDA_BUILD
     return GetScratchRegisterList()->Overlaps(list);
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(const MemOperand& operand) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] const MemOperand& operand) {
+#ifndef PANDA_BUILD
     return AliasesAvailableScratchRegister(operand.GetBaseRegister()) ||
            (operand.IsShiftedRegister() &&
             AliasesAvailableScratchRegister(operand.GetOffsetRegister()));
+#endif
+    return false;
   }
 
   // Adr with a literal already constructed. Add the literal to the pool if it

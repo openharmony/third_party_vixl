@@ -72,7 +72,8 @@ class Location : public LocationBase<int32_t> {
   typedef int32_t Offset;
 
   ~Location() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION {
-#ifdef VIXL_DEBUG
+    // Codegen may create empty labels
+#if defined(VIXL_DEBUG) && !defined(PANDA_BUILD)
     if (IsReferenced() && !IsBound()) {
       VIXL_ABORT_WITH_MSG("Location, label or literal used but not bound.\n");
     }

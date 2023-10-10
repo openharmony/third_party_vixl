@@ -38,8 +38,8 @@ extern "C" {
 #include "utils-vixl.h"
 #include "aarch32/constants-aarch32.h"
 
-#if defined(__arm__) && !defined(__SOFTFP__)
-#define HARDFLOAT __attribute__((noinline, pcs("aapcs-vfp")))
+#if !defined(__linux__) && defined(__arm__)
+#define HARDFLOAT gnu__attribute__((noinline, pcs("aapcs-vfp")))
 #else
 #define HARDFLOAT __attribute__((noinline))
 #endif
@@ -79,7 +79,7 @@ class CPURegister {
   uint32_t value_;
 
  public:
-  CPURegister(RegisterType type, uint32_t code, int size)
+  constexpr CPURegister(RegisterType type, uint32_t code, int size)
       : value_((type << kTypeShift) | (code << kCodeShift) |
                (size << kSizeShift)) {
 #ifdef VIXL_DEBUG
@@ -108,7 +108,7 @@ class CPURegister {
     }
 #endif
   }
-  RegisterType GetType() const {
+  constexpr RegisterType GetType() const {
     return static_cast<RegisterType>((value_ & kTypeMask) >> kTypeShift);
   }
   bool IsRegister() const { return GetType() == kRRegister; }
@@ -134,8 +134,8 @@ class CPURegister {
 
 class Register : public CPURegister {
  public:
-  Register() : CPURegister(kNoRegister, 0, kRegSizeInBits) {}
-  explicit Register(uint32_t code)
+  constexpr Register() : CPURegister(kNoRegister, 0, kRegSizeInBits) {}
+  explicit constexpr  Register(uint32_t code)
       : CPURegister(kRRegister, code % kNumberOfRegisters, kRegSizeInBits) {
     VIXL_ASSERT(GetCode() < kNumberOfRegisters);
   }
@@ -457,19 +457,19 @@ const QRegister NoQReg;
 
 class RegisterList {
  public:
-  RegisterList() : list_(0) {}
-  RegisterList(Register reg)  // NOLINT(runtime/explicit)
+  constexpr RegisterList() : list_(0) {}
+  constexpr RegisterList(Register reg)  // NOLINT(runtime/explicit)
       : list_(RegisterToList(reg)) {}
-  RegisterList(Register reg1, Register reg2)
+  constexpr RegisterList(Register reg1, Register reg2)
       : list_(RegisterToList(reg1) | RegisterToList(reg2)) {}
-  RegisterList(Register reg1, Register reg2, Register reg3)
+  constexpr RegisterList(Register reg1, Register reg2, Register reg3)
       : list_(RegisterToList(reg1) | RegisterToList(reg2) |
               RegisterToList(reg3)) {}
-  RegisterList(Register reg1, Register reg2, Register reg3, Register reg4)
+  constexpr RegisterList(Register reg1, Register reg2, Register reg3, Register reg4)
       : list_(RegisterToList(reg1) | RegisterToList(reg2) |
               RegisterToList(reg3) | RegisterToList(reg4)) {}
   explicit RegisterList(uint32_t list) : list_(list) {}
-  uint32_t GetList() const { return list_; }
+  constexpr uint32_t GetList() const { return list_; }
   void SetList(uint32_t list) { list_ = list; }
   bool Includes(const Register& reg) const {
     return (list_ & RegisterToList(reg)) != 0;
@@ -526,7 +526,7 @@ class RegisterList {
   }
 
  private:
-  static uint32_t RegisterToList(Register reg) {
+  static constexpr uint32_t RegisterToList(Register reg) {
     if (reg.GetType() == CPURegister::kNoRegister) {
       return 0;
     } else {
@@ -561,6 +561,7 @@ class VRegisterList {
               RegisterToList(reg3) | RegisterToList(reg4)) {}
   explicit VRegisterList(uint64_t list) : list_(list) {}
   uint64_t GetList() const { return list_; }
+  int GetCount() const { return CountSetBits(list_); }
   void SetList(uint64_t list) { list_ = list; }
   // Because differently-sized V registers overlap with one another, there is no
   // way to implement a single 'Includes' function in a way that is unsurprising

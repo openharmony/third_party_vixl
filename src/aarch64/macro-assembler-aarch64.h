@@ -1217,6 +1217,11 @@ MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
     SingleEmissionCheckScope guard(this);
     bl(label);
   }
+  void Bl(int64_t offset) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    bl(offset >> kInstructionSizeLog2);
+  }
   void Blr(const Register& xn) {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(!xn.IsZero());
