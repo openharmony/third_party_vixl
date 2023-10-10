@@ -282,6 +282,7 @@ class InvalSetIterator : public std::iterator<std::forward_iterator_tag,
     swap(a.using_vector_, b.using_vector_);
     swap(a.index_, b.index_);
     swap(a.inval_set_, b.inval_set_);
+    swap(a.iterator_, b.iterator_);
   }
 
   // Return true if the iterator is at the end of the set.
@@ -875,7 +876,8 @@ template <class S>
 InvalSetIterator<S>::InvalSetIterator(const InvalSetIterator<S>& other)
     : using_vector_(other.using_vector_),
       index_(other.index_),
-      inval_set_(other.inval_set_) {
+      inval_set_(other.inval_set_),
+      iterator_(other.iterator_) {
 #ifdef VIXL_DEBUG
   if (inval_set_ != NULL) inval_set_->Acquire();
 #endif
