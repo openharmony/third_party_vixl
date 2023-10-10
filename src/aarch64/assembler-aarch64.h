@@ -43,10 +43,19 @@ class LabelTestHelper;  // Forward declaration.
 
 class Label {
  public:
+#ifndef PANDA_BUILD
   Label() : location_(kLocationUnbound) {}
-  ~Label() {
+#else
+  Label() = delete;
+  Label(panda::ArenaAllocator* allocator) : links_(allocator), location_(kLocationUnbound) {}
+#endif
+  virtual ~Label() {
     // All links to a label must have been resolved before it is destructed.
+#ifndef PANDA_BUILD
     VIXL_ASSERT(!IsLinked());
+#else
+    // Codegen may create unlinked labels
+#endif
   }
 
   bool IsBound() const { return location_ >= 0; }
@@ -74,7 +83,12 @@ class Label {
  private:
   class LinksSet : public LinksSetBase {
    public:
+#ifndef PANDA_BUILD
     LinksSet() : LinksSetBase() {}
+#else
+    LinksSet() = delete;
+    LinksSet(panda::ArenaAllocator* allocator) : LinksSetBase(allocator) {}
+#endif
   };
 
   // Allows iterating over the links of a label. The behaviour is undefined if
@@ -91,7 +105,11 @@ class Label {
 
   void Bind(ptrdiff_t location) {
     // Labels can only be bound once.
+#ifndef PANDA_BUILD
     VIXL_ASSERT(!IsBound());
+#else
+    // Disabled for unit-tests (it bind non-bound locs)
+#endif
     location_ = location;
   }
 
@@ -156,7 +174,6 @@ class Label {
   friend class MacroAssembler;
   friend class VeneerPool;
 };
-
 
 class Assembler;
 class LiteralPool;
@@ -406,12 +423,19 @@ class Assembler : public vixl::internal::AssemblerBase {
   explicit Assembler(
       PositionIndependentCodeOption pic = PositionIndependentCode)
       : pic_(pic), cpu_features_(CPUFeatures::AArch64LegacyBaseline()) {}
+
+#ifdef PANDA_BUILD
+  explicit Assembler(
+      size_t capacity,
+      PositionIndependentCodeOption pic = PositionIndependentCode) = delete;
+#else
   explicit Assembler(
       size_t capacity,
       PositionIndependentCodeOption pic = PositionIndependentCode)
       : AssemblerBase(capacity),
         pic_(pic),
         cpu_features_(CPUFeatures::AArch64LegacyBaseline()) {}
+#endif
   Assembler(byte* buffer,
             size_t capacity,
             PositionIndependentCodeOption pic = PositionIndependentCode)

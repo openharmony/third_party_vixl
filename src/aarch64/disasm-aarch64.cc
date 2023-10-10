@@ -647,11 +647,19 @@ const Disassembler::FormToVisitorFnMap *Disassembler::GetFormToVisitorFnMap() {
   return &form_to_visitor;
 }  // NOLINT(readability/fn_size)
 
+#ifndef PANDA_BUILD
 Disassembler::Disassembler() {
-  buffer_size_ = 256;
+#else
+Disassembler::Disassembler(panda::ArenaAllocator* allocator) {
+#endif
+  buffer_size_ = static_cast<uint32_t>(kDefaultBufferSize);
+#ifndef PANDA_BUILD
   buffer_ = reinterpret_cast<char *>(malloc(buffer_size_));
-  buffer_pos_ = 0;
   own_buffer_ = true;
+#else
+  buffer_ = reinterpret_cast<char *>(allocator->Alloc(buffer_size_));
+#endif
+  buffer_pos_ = 0;
   code_address_offset_ = 0;
 }
 
@@ -659,14 +667,18 @@ Disassembler::Disassembler(char *text_buffer, int buffer_size) {
   buffer_size_ = buffer_size;
   buffer_ = text_buffer;
   buffer_pos_ = 0;
+#ifndef PANDA_BUILD
   own_buffer_ = false;
+#endif
   code_address_offset_ = 0;
 }
 
 Disassembler::~Disassembler() {
+#ifndef PANDA_BUILD
   if (own_buffer_) {
     free(buffer_);
   }
+#endif
 }
 
 char *Disassembler::GetOutput() { return buffer_; }
@@ -10594,7 +10606,11 @@ void Disassembler::AppendToOutput(const char *format, ...) {
 
 
 void PrintDisassembler::Disassemble(const Instruction *instr) {
+#ifndef PANDA_BUILD
   Decoder decoder;
+#else
+  Decoder decoder(allocator_);
+#endif
   if (cpu_features_auditor_ != NULL) {
     decoder.AppendVisitor(cpu_features_auditor_);
   }
@@ -10604,7 +10620,12 @@ void PrintDisassembler::Disassemble(const Instruction *instr) {
 
 void PrintDisassembler::DisassembleBuffer(const Instruction *start,
                                           const Instruction *end) {
+#ifndef PANDA_BUILD
   Decoder decoder;
+#else
+  Decoder decoder(allocator_);
+#endif
+
   if (cpu_features_auditor_ != NULL) {
     decoder.AppendVisitor(cpu_features_auditor_);
   }

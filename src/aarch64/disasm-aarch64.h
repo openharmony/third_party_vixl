@@ -45,10 +45,17 @@ namespace aarch64 {
 
 class Disassembler : public DecoderVisitor {
  public:
+#ifndef PANDA_BUILD
   Disassembler();
+#else
+  Disassembler() = delete;
+  Disassembler(panda::ArenaAllocator* allocator);
+#endif
   Disassembler(char* text_buffer, int buffer_size);
   virtual ~Disassembler();
   char* GetOutput();
+
+  static constexpr size_t GetDefaultBufferSize() { return kDefaultBufferSize; }
 
   // Declare all Visitor functions.
   virtual void Visit(Metadata* metadata,
@@ -113,6 +120,8 @@ class Disassembler : public DecoderVisitor {
   int64_t CodeRelativeAddress(const void* instr);
 
  private:
+  static constexpr size_t kDefaultBufferSize {256U};
+
 #define DECLARE(A) virtual void Visit##A(const Instruction* instr);
   VISITOR_LIST(DECLARE)
 #undef DECLARE
@@ -287,7 +296,9 @@ class Disassembler : public DecoderVisitor {
   char* buffer_;
   uint32_t buffer_pos_;
   uint32_t buffer_size_;
+#ifndef PANDA_BUILD
   bool own_buffer_;
+#endif
 
   int64_t code_address_offset_;
 };
@@ -295,12 +306,19 @@ class Disassembler : public DecoderVisitor {
 
 class PrintDisassembler : public Disassembler {
  public:
+#ifndef PANDA_BUILD
   explicit PrintDisassembler(FILE* stream)
       : cpu_features_auditor_(NULL),
+#else
+  explicit PrintDisassembler(FILE* stream) = delete;
+  explicit PrintDisassembler(panda::ArenaAllocator* allocator, FILE* stream)
+      : Disassembler(allocator), cpu_features_auditor_(NULL), allocator_(allocator),
+#endif
         cpu_features_prefix_("// Needs: "),
         cpu_features_suffix_(""),
         signed_addresses_(false),
         stream_(stream) {}
+
 
   // Convenience helpers for quick disassembly, without having to manually
   // create a decoder.
@@ -342,6 +360,9 @@ class PrintDisassembler : public Disassembler {
   virtual void ProcessOutput(const Instruction* instr) VIXL_OVERRIDE;
 
   CPUFeaturesAuditor* cpu_features_auditor_;
+#ifdef PANDA_BUILD
+  panda::ArenaAllocator* allocator_;
+#endif
   const char* cpu_features_prefix_;
   const char* cpu_features_suffix_;
   bool signed_addresses_;

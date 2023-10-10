@@ -46,32 +46,46 @@ void Pool::SetNextCheckpoint(ptrdiff_t checkpoint) {
 }
 
 
+#ifndef PANDA_BUILD
 LiteralPool::LiteralPool(MacroAssembler* masm)
     : Pool(masm),
       size_(0),
       first_use_(-1),
       recommended_checkpoint_(kNoCheckpointRequired) {}
-
+#else
+LiteralPool::LiteralPool(panda::ArenaAllocator* allocator, MacroAssembler* masm)
+    : Pool(masm),
+      entries_(allocator->Adapter()),
+      size_(0),
+      first_use_(-1),
+      recommended_checkpoint_(kNoCheckpointRequired),
+      deleted_on_destruction_(allocator->Adapter()),
+      allocator_(allocator) {}
+#endif
 
 LiteralPool::~LiteralPool() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION {
-  VIXL_ASSERT(IsEmpty());
   VIXL_ASSERT(!IsBlocked());
+#ifndef PANDA_BUILD
+  VIXL_ASSERT(IsEmpty());
   for (std::vector<RawLiteral*>::iterator it = deleted_on_destruction_.begin();
        it != deleted_on_destruction_.end();
        it++) {
     delete *it;
   }
+#endif
 }
 
 
 void LiteralPool::Reset() {
-  std::vector<RawLiteral*>::iterator it, end;
+#ifndef PANDA_BUILD
+  std::vector<RawLiteral *>::iterator it, end;
   for (it = entries_.begin(), end = entries_.end(); it != end; ++it) {
     RawLiteral* literal = *it;
     if (literal->deletion_policy_ == RawLiteral::kDeletedOnPlacementByPool) {
       delete literal;
     }
   }
+#endif
   entries_.clear();
   size_ = 0;
   first_use_ = -1;
@@ -120,7 +134,11 @@ void LiteralPool::Emit(EmitOption option) {
   size_t pool_size = GetSize();
   size_t emit_size = pool_size;
   if (option == kBranchRequired) emit_size += kInstructionSize;
+#ifndef PANDA_BUILD
   Label end_of_pool;
+#else
+  Label end_of_pool(allocator_);
+#endif
 
   VIXL_ASSERT(emit_size % kInstructionSize == 0);
   {
@@ -145,7 +163,11 @@ void LiteralPool::Emit(EmitOption option) {
     }
 
     // Now populate the literal pool.
-    std::vector<RawLiteral*>::iterator it, end;
+#ifndef PANDA_BUILD
+    std::vector<RawLiteral *>::iterator it, end;
+#else
+    panda::ArenaVector<RawLiteral*>::iterator it, end;
+#endif
     for (it = entries_.begin(), end = entries_.end(); it != end; ++it) {
       VIXL_ASSERT((*it)->IsUsed());
       masm_->place(*it);
@@ -193,11 +215,16 @@ void VeneerPool::Reset() {
 
 
 void VeneerPool::Release() {
-  if (--monitor_ == 0) {
+  --monitor_;
+#ifndef PANDA_BUILD
+  if (monitor_ == 0) {
     VIXL_ASSERT(IsEmpty() ||
                 masm_->GetCursorOffset() <
                     unresolved_branches_.GetFirstLimit());
   }
+#else
+  // Assert disabled, because we use own allocator
+#endif
 }
 
 
@@ -248,8 +275,12 @@ bool VeneerPool::ShouldEmitVeneer(int64_t first_unreacheable_pc,
 void VeneerPool::CheckEmitFor(size_t amount, EmitOption option) {
   if (IsEmpty()) return;
 
+#ifndef PANDA_BUILD
   VIXL_ASSERT(masm_->GetCursorOffset() + kPoolNonVeneerCodeSize <
               unresolved_branches_.GetFirstLimit());
+#else
+  // In codegen may be generated unused Labels - to allocate them in one chunk
+#endif
 
   if (IsBlocked()) return;
 
@@ -266,7 +297,11 @@ void VeneerPool::Emit(EmitOption option, size_t amount) {
   VIXL_ASSERT(!IsBlocked());
   VIXL_ASSERT(!IsEmpty());
 
+#ifndef PANDA_BUILD
   Label end;
+#else
+  Label end(allocator_);
+#endif
   if (option == kBranchRequired) {
     ExactAssemblyScopeWithoutPoolsCheck guard(masm_, kInstructionSize);
     masm_->b(&end);
@@ -277,9 +312,13 @@ void VeneerPool::Emit(EmitOption option, size_t amount) {
   // range.
   static const size_t kVeneerEmissionMargin = 1 * KBytes;
 
+#ifndef PANDA_BUILD
   for (BranchInfoSetIterator it(&unresolved_branches_); !it.Done();) {
+#else
+  for (BranchInfoSetIterator it(allocator_, &unresolved_branches_); !it.Done();) {
+#endif
     BranchInfo* branch_info = it.Current();
-    if (ShouldEmitVeneer(branch_info->first_unreacheable_pc_,
+    if (branch_info && ShouldEmitVeneer(branch_info->first_unreacheable_pc_,
                          amount + kVeneerEmissionMargin)) {
       CodeBufferCheckScope scope(masm_,
                                  kVeneerCodeSize,
@@ -312,29 +351,41 @@ void VeneerPool::Emit(EmitOption option, size_t amount) {
   masm_->bind(&end);
 }
 
-
+#ifndef PANDA_BUILD
 MacroAssembler::MacroAssembler(PositionIndependentCodeOption pic)
+#else
+MacroAssembler::MacroAssembler(panda::ArenaAllocator* allocator,
+          PositionIndependentCodeOption pic)
+#endif
     : Assembler(pic),
 #ifdef VIXL_DEBUG
       allow_macro_instructions_(true),
 #endif
       generate_simulator_code_(VIXL_AARCH64_GENERATE_SIMULATOR_CODE),
       sp_(sp),
-      tmp_list_(ip0, ip1),
-      v_tmp_list_(d31),
+      tmp_list_(ip0, ip1, x20),
+      v_tmp_list_(d30, d31),
       p_tmp_list_(CPURegList::Empty(CPURegister::kPRegister)),
       current_scratch_scope_(NULL),
+#ifndef PANDA_BUILD
       literal_pool_(this),
       veneer_pool_(this),
       recommended_checkpoint_(Pool::kNoCheckpointRequired),
       fp_nan_propagation_(NoFPMacroNaNPropagationSelected) {
+#else
+      literal_pool_(allocator, this),
+      veneer_pool_(allocator, this),
+      recommended_checkpoint_(Pool::kNoCheckpointRequired),
+      fp_nan_propagation_(NoFPMacroNaNPropagationSelected),
+      allocator_(allocator) {
+#endif
   checkpoint_ = GetNextCheckPoint();
 #ifndef VIXL_DEBUG
   USE(allow_macro_instructions_);
 #endif
 }
 
-
+#ifndef PANDA_BUILD
 MacroAssembler::MacroAssembler(size_t capacity,
                                PositionIndependentCodeOption pic)
     : Assembler(capacity, pic),
@@ -343,8 +394,8 @@ MacroAssembler::MacroAssembler(size_t capacity,
 #endif
       generate_simulator_code_(VIXL_AARCH64_GENERATE_SIMULATOR_CODE),
       sp_(sp),
-      tmp_list_(ip0, ip1),
-      v_tmp_list_(d31),
+      tmp_list_(ip0, ip1, x20),
+      v_tmp_list_(d30, d31),
       p_tmp_list_(CPURegList::Empty(CPURegister::kPRegister)),
       current_scratch_scope_(NULL),
       literal_pool_(this),
@@ -353,8 +404,9 @@ MacroAssembler::MacroAssembler(size_t capacity,
       fp_nan_propagation_(NoFPMacroNaNPropagationSelected) {
   checkpoint_ = GetNextCheckPoint();
 }
+#endif
 
-
+#ifndef PANDA_BUILD
 MacroAssembler::MacroAssembler(byte* buffer,
                                size_t capacity,
                                PositionIndependentCodeOption pic)
@@ -364,8 +416,8 @@ MacroAssembler::MacroAssembler(byte* buffer,
 #endif
       generate_simulator_code_(VIXL_AARCH64_GENERATE_SIMULATOR_CODE),
       sp_(sp),
-      tmp_list_(ip0, ip1),
-      v_tmp_list_(d31),
+      tmp_list_(ip0, ip1, x20),
+      v_tmp_list_(d30, d31),
       p_tmp_list_(CPURegList::Empty(CPURegister::kPRegister)),
       current_scratch_scope_(NULL),
       literal_pool_(this),
@@ -374,7 +426,26 @@ MacroAssembler::MacroAssembler(byte* buffer,
       fp_nan_propagation_(NoFPMacroNaNPropagationSelected) {
   checkpoint_ = GetNextCheckPoint();
 }
-
+#else
+MacroAssembler::MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
+                               size_t capacity,
+                               PositionIndependentCodeOption pic)
+    : Assembler(buffer, capacity, pic),
+#ifdef VIXL_DEBUG
+      allow_macro_instructions_(true),
+#endif
+      generate_simulator_code_(VIXL_AARCH64_GENERATE_SIMULATOR_CODE),
+      sp_(sp),
+      tmp_list_(ip0, ip1, x20),
+      v_tmp_list_(d30, d31),
+      p_tmp_list_(CPURegList::Empty(CPURegister::kPRegister)),
+      current_scratch_scope_(NULL),
+      literal_pool_(allocator, this),
+      veneer_pool_(allocator, this),
+      recommended_checkpoint_(Pool::kNoCheckpointRequired), allocator_(allocator) {
+  checkpoint_ = GetNextCheckPoint();
+}
+#endif
 
 MacroAssembler::~MacroAssembler() {}
 
@@ -563,7 +634,11 @@ void MacroAssembler::B(Label* label, Condition cond) {
   EmissionCheckScope guard(this, 2 * kInstructionSize);
 
   if (label->IsBound() && LabelIsOutOfRange(label, CondBranchType)) {
+#ifndef PANDA_BUILD
     Label done;
+#else
+    Label done(allocator_);
+#endif
     b(&done, InvertCondition(cond));
     b(label);
     bind(&done);
@@ -589,7 +664,11 @@ void MacroAssembler::Cbnz(const Register& rt, Label* label) {
   EmissionCheckScope guard(this, 2 * kInstructionSize);
 
   if (label->IsBound() && LabelIsOutOfRange(label, CondBranchType)) {
-    Label done;
+#ifndef PANDA_BUILD
+   Label done;
+#else
+   Label done(allocator_);
+#endif
     cbz(rt, &done);
     b(label);
     bind(&done);
@@ -615,7 +694,11 @@ void MacroAssembler::Cbz(const Register& rt, Label* label) {
   EmissionCheckScope guard(this, 2 * kInstructionSize);
 
   if (label->IsBound() && LabelIsOutOfRange(label, CondBranchType)) {
-    Label done;
+#ifndef PANDA_BUILD
+   Label done;
+#else
+   Label done(allocator_);
+#endif
     cbnz(rt, &done);
     b(label);
     bind(&done);
@@ -640,7 +723,11 @@ void MacroAssembler::Tbnz(const Register& rt, unsigned bit_pos, Label* label) {
   EmissionCheckScope guard(this, 2 * kInstructionSize);
 
   if (label->IsBound() && LabelIsOutOfRange(label, TestBranchType)) {
-    Label done;
+#ifndef PANDA_BUILD
+   Label done;
+#else
+   Label done(allocator_);
+#endif
     tbz(rt, bit_pos, &done);
     b(label);
     bind(&done);
@@ -665,7 +752,11 @@ void MacroAssembler::Tbz(const Register& rt, unsigned bit_pos, Label* label) {
   EmissionCheckScope guard(this, 2 * kInstructionSize);
 
   if (label->IsBound() && LabelIsOutOfRange(label, TestBranchType)) {
-    Label done;
+#ifndef PANDA_BUILD
+   Label done;
+#else
+   Label done(allocator_);
+#endif
     tbnz(rt, bit_pos, &done);
     b(label);
     bind(&done);
@@ -1495,7 +1586,11 @@ void MacroAssembler::Fmov(VRegister vd, double imm) {
         fmov(vd, xzr);
       } else {
         ldr(vd,
+#ifndef PANDA_BUILD
             new Literal<double>(imm,
+#else
+            allocator_->New<Literal<double>> (imm,
+#endif
                                 &literal_pool_,
                                 RawLiteral::kDeletedOnPlacementByPool));
       }
@@ -1532,7 +1627,11 @@ void MacroAssembler::Fmov(VRegister vd, float imm) {
         fmov(vd, wzr);
       } else {
         ldr(vd,
+#ifndef PANDA_BUILD
             new Literal<float>(imm,
+#else
+            allocator_->New<Literal<float>>(imm,
+#endif
                                &literal_pool_,
                                RawLiteral::kDeletedOnPlacementByPool));
       }
@@ -2579,7 +2678,11 @@ void MacroAssembler::PrintfNoPreserve(const char* format,
   // literal pool, but since Printf is usually used for debugging, it is
   // beneficial for it to be minimally dependent on other features.
   temps.Exclude(x0);
+#ifndef PANDA_BUILD
   Label format_address;
+#else
+  Label format_address(allocator_);
+#endif
   Adr(x0, &format_address);
 
   // Emit the format string directly in the instruction stream.
@@ -2593,7 +2696,11 @@ void MacroAssembler::PrintfNoPreserve(const char* format,
     EmissionCheckScope guard(this,
                              AlignUp(strlen(format) + 1, kInstructionSize) +
                                  2 * kInstructionSize);
+#ifndef PANDA_BUILD
     Label after_data;
+#else
+    Label after_data(allocator_);
+#endif
     B(&after_data);
     Bind(&format_address);
     EmitString(format);
@@ -2716,7 +2823,11 @@ void MacroAssembler::Trace(TraceParameters parameters, TraceCommand command) {
     // memory, so make sure we don't try to emit a literal pool.
     ExactAssemblyScope scope(this, kTraceLength);
 
+#ifndef PANDA_BUILD
     Label start;
+#else
+    Label start(allocator_);
+#endif
     bind(&start);
 
     // Refer to simulator-aarch64.h for a description of the marker and its
@@ -2743,7 +2854,11 @@ void MacroAssembler::Log(TraceParameters parameters) {
     // memory, so make sure we don't try to emit a literal pool.
     ExactAssemblyScope scope(this, kLogLength);
 
+#ifndef PANDA_BUILD
     Label start;
+#else
+    Label start(allocator_);
+#endif
     bind(&start);
 
     // Refer to simulator-aarch64.h for a description of the marker and its

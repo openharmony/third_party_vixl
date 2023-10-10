@@ -529,7 +529,9 @@ class Disassembler {
 
   ITBlock it_block_;
   DisassemblerStream* os_;
+#ifndef PANDA_BUILD
   bool owns_os_;
+#endif
   uint32_t code_address_;
   // True if the disassembler always output instructions with all the
   // registers (even if two registers are identical and only one could be
@@ -537,21 +539,32 @@ class Disassembler {
   bool use_short_hand_form_;
 
  public:
+#ifndef PANDA_BUILD
   explicit Disassembler(std::ostream& os,  // NOLINT(runtime/references)
                         uint32_t code_address = 0)
       : os_(new DisassemblerStream(os)),
         owns_os_(true),
+#else
+    explicit Disassembler(std::ostream& os, uint32_t code_address = 0) = delete;
+    explicit Disassembler(panda::ArenaAllocator* allocator, std::ostream& os,  // NOLINT(runtime/references)
+                          uint32_t code_address = 0)
+        : os_(allocator->New<DisassemblerStream>(os)),
+#endif
         code_address_(code_address),
         use_short_hand_form_(true) {}
   explicit Disassembler(DisassemblerStream* os, uint32_t code_address = 0)
       : os_(os),
+#ifndef PANDA_BUILD
         owns_os_(false),
+#endif
         code_address_(code_address),
         use_short_hand_form_(true) {}
   virtual ~Disassembler() {
+#ifndef PANDA_BUILD
     if (owns_os_) {
       delete os_;
     }
+#endif
   }
   DisassemblerStream& os() const { return *os_; }
   void SetIT(Condition first_condition, uint16_t it_mask) {
@@ -2682,9 +2695,18 @@ DataTypeValue Dt_size_17_Decode(uint32_t value);
 
 class PrintDisassembler : public Disassembler {
  public:
+#ifndef PANDA_BUILD
   explicit PrintDisassembler(std::ostream& os,  // NOLINT(runtime/references)
                              uint32_t code_address = 0)
       : Disassembler(os, code_address) {}
+#else
+  explicit PrintDisassembler(std::ostream& os,  // NOLINT(runtime/references)
+                           uint32_t code_address = 0) = delete;
+  PrintDisassembler(panda::ArenaAllocator* allocator, std::ostream& os,  // NOLINT(runtime/references)
+                          uint32_t code_address = 0)
+    : Disassembler(allocator, os, code_address) {}
+
+#endif
   explicit PrintDisassembler(DisassemblerStream* os, uint32_t code_address = 0)
       : Disassembler(os, code_address) {}
 

@@ -262,7 +262,11 @@ MemOperand MacroAssembler::MemOperandComputationHelper(
   if ((offset & extra_offset_mask) == offset) return MemOperand(base, offset);
 
   MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
   ITScope it_scope(this, &cond, guard);
+#else
+  ITScope it_scope(allocator_, this, &cond, guard);
+#endif
 
   uint32_t load_store_offset = offset & extra_offset_mask;
   uint32_t add_offset = offset & ~extra_offset_mask;
@@ -460,8 +464,14 @@ void MacroAssembler::Printf(const char* format,
     PushRegister(reg2);
     PushRegister(reg1);
     Push(RegisterList(r0, r1));
+#ifndef PANDA_BUILD
     StringLiteral* format_literal =
         new StringLiteral(format, RawLiteral::kDeletedOnPlacementByPool);
+#else
+    StringLiteral* format_literal = allocator_->New<StringLiteral>(
+        allocator_, format, RawLiteral::kDeletedOnPlacementByPool);
+#endif
+
     Adr(r0, format_literal);
     uint32_t args = (reg4.GetType() << 12) | (reg3.GetType() << 8) |
                     (reg2.GetType() << 4) | reg1.GetType();
@@ -585,8 +595,13 @@ void MacroAssembler::Printf(const char* format,
         address = reinterpret_cast<uintptr_t>(PrintfTrampolineRRRR);
         break;
     }
+#ifndef PANDA_BUILD
     StringLiteral* format_literal =
         new StringLiteral(format, RawLiteral::kDeletedOnPlacementByPool);
+#else
+    StringLiteral* format_literal = allocator_->New<StringLiteral>(
+        allocator_, format, RawLiteral::kDeletedOnPlacementByPool);
+#endif
     Adr(r0, format_literal);
     Mov(ip, Operand::From(address));
     Blx(ip);
@@ -1224,14 +1239,22 @@ void MacroAssembler::Delegate(InstructionType type,
   } else if (rn.IsLow()) {
     switch (type) {
       case kCbnz: {
+#ifndef PANDA_BUILD
         Label done;
+#else
+        Label done(allocator_);
+#endif
         cbz(rn, &done);
         b(location);
         Bind(&done);
         return;
       }
       case kCbz: {
+#ifndef PANDA_BUILD
         Label done;
+#else
+        Label done(allocator_);
+#endif
         cbnz(rn, &done);
         b(location);
         Bind(&done);

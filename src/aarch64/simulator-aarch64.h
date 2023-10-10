@@ -1029,9 +1029,19 @@ class SimExclusiveGlobalMonitor {
 
 class Simulator : public DecoderVisitor {
  public:
+#ifndef PANDA_BUILD
   explicit Simulator(Decoder* decoder,
                      FILE* stream = stdout,
                      SimStack::Allocated stack = SimStack().Allocate());
+#else
+  explicit Simulator(Decoder* decoder,
+                     FILE* stream = stdout,
+                     SimStack::Allocated stack = SimStack().Allocate()) = delete;
+  Simulator(panda::ArenaAllocator* allocator,
+            Decoder* decoder,
+            SimStack::Allocated stack,
+            FILE* stream = stdout);
+#endif
   ~Simulator();
 
   void ResetState();
@@ -4846,6 +4856,9 @@ class Simulator : public DecoderVisitor {
   void ExtractFromSimVRegister(VectorFormat vform,
                                SimPRegister& pd,  // NOLINT(runtime/references)
                                SimVRegister vreg);
+#ifdef PANDA_BUILD
+    panda::ArenaAllocator* allocator_;
+#endif
 
   bool coloured_trace_;
 
@@ -4857,7 +4870,11 @@ class Simulator : public DecoderVisitor {
   void PrintExclusiveAccessWarning();
 
   CPUFeaturesAuditor cpu_features_auditor_;
+#ifndef PANDA_BUILD
   std::vector<CPUFeatures> saved_cpu_features_;
+#else
+  panda::ArenaVector<CPUFeatures>saved_cpu_features_;
+#endif
 
   // State for *rand48 functions, used to simulate randomness with repeatable
   // behaviour (so that tests are deterministic). This is used to simulate RNDR

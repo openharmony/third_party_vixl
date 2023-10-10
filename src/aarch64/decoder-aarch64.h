@@ -2947,7 +2947,29 @@ class CompiledDecodeNode;
 // handles the instruction.
 class Decoder {
  public:
+#ifndef PANDA_BUILD
   Decoder() { ConstructDecodeGraph(); }
+#else
+  Decoder(panda::ArenaAllocator* allocator) :
+      allocator_(allocator),
+      visitors_(allocator->Adapter()),
+      decode_nodes_(allocator->Adapter()) {
+    ConstructDecodeGraph();
+  }
+#endif
+
+  Decoder(const Decoder&) = delete;
+  Decoder(Decoder&&) = delete;
+  Decoder& operator=(const Decoder&) = delete;
+  Decoder& operator=(Decoder&&) = delete;
+
+  ~Decoder() = default;
+
+#ifdef PANDA_BUILD
+  auto GetAllocator() {
+    return allocator_;
+  }
+#endif
 
   // Top-level wrappers around the actual decoding function.
   void Decode(const Instruction* instr);
@@ -3000,11 +3022,30 @@ class Decoder {
   // of visitors stored by the decoder.
   void RemoveVisitor(DecoderVisitor* visitor);
 
+  class ScopedVisitors {
+   public:
+    ScopedVisitors(Decoder& decoder, std::initializer_list<DecoderVisitor*> visitors)
+      : decoder_ {decoder} {
+        decoder_.visitors_.assign(visitors);
+    }
+
+    ~ScopedVisitors() {
+      decoder_.visitors_.clear();
+    }
+
+   private:
+    Decoder& decoder_;
+  };
+
 #define DECLARE(A) void Visit_##A(const Instruction* instr);
   INSTRUCTION_VISITOR_LIST(DECLARE)
 #undef DECLARE
 
+#ifndef PANDA_BUILD
   std::list<DecoderVisitor*>* visitors() { return &visitors_; }
+#else
+  panda::ArenaList<DecoderVisitor*>* visitors() { return &visitors_; }
+#endif
 
   // Get a DecodeNode by name from the Decoder's map.
   DecodeNode* GetDecodeNode(std::string name);
@@ -3017,8 +3058,17 @@ class Decoder {
   // Add an initialised DecodeNode to the decode_node_ map.
   void AddDecodeNode(const DecodeNode& node);
 
+#ifndef PANDA_BUILD
   // Visitors are registered in a list.
   std::list<DecoderVisitor*> visitors_;
+  // Map of node names to DecodeNodes.
+  std::map<std::string, DecodeNode> decode_nodes_;
+#else
+  panda::ArenaAllocator* allocator_ {nullptr};
+  panda::ArenaList<DecoderVisitor*> visitors_;
+  // Map of node names to DecodeNodes.
+  panda::ArenaMap<std::string, DecodeNode> decode_nodes_;
+#endif
 
   // Compile the dynamically generated decode graph based on the static
   // information in kDecodeMapping and kVisitorNodes.
@@ -3027,9 +3077,6 @@ class Decoder {
   // Root node for the compiled decoder graph, stored here to avoid a map lookup
   // for every instruction decoded.
   CompiledDecodeNode* compiled_decoder_root_;
-
-  // Map of node names to DecodeNodes.
-  std::map<std::string, DecodeNode> decode_nodes_;
 };
 
 const int kMaxDecodeSampledBits = 24;
@@ -3072,12 +3119,20 @@ class CompiledDecodeNode {
  public:
   // Constructor for decode node, containing a decode table and pointer to a
   // function that extracts the bits to be sampled.
+#ifndef PANDA_BUILD
   CompiledDecodeNode(BitExtractFn bit_extract_fn, size_t decode_table_size)
+#else
+  CompiledDecodeNode(BitExtractFn bit_extract_fn, size_t decode_table_size, panda::ArenaAllocator* allocator)
+#endif
       : bit_extract_fn_(bit_extract_fn),
         visitor_fn_(NULL),
         decode_table_size_(decode_table_size),
         decoder_(NULL) {
+#ifndef PANDA_BUILD
     decode_table_ = new CompiledDecodeNode*[decode_table_size_];
+#else
+    decode_table_ = allocator->New<CompiledDecodeNode*[]>(decode_table_size_);
+#endif
     memset(decode_table_, 0, decode_table_size_ * sizeof(decode_table_[0]));
   }
 
@@ -3094,7 +3149,9 @@ class CompiledDecodeNode {
     // Free the decode table, if this is a compiled, non-leaf node.
     if (decode_table_ != NULL) {
       VIXL_ASSERT(!IsLeafNode());
+#ifndef PANDA_BUILD
       delete[] decode_table_;
+#endif
     }
   }
 
@@ -3157,7 +3214,7 @@ class DecodeNode {
         compiled_node_(NULL) {}
 
   // Constructor for DecodeNodes that map bit patterns to other DecodeNodes.
-  explicit DecodeNode(const DecodeMapping& map, Decoder* decoder = NULL)
+  explicit DecodeNode(const DecodeMapping& map, Decoder* decoder)
       : name_(map.name),
         visitor_fn_(NULL),
         decoder_(decoder),
@@ -3173,10 +3230,12 @@ class DecodeNode {
   }
 
   ~DecodeNode() {
+#ifndef PANDA_BUILD
     // Delete the compiled version of this node, if one was created.
     if (compiled_node_ != NULL) {
       delete compiled_node_;
     }
+#endif
   }
 
   // Set the bits sampled from the instruction by this node.
@@ -3202,13 +3261,23 @@ class DecodeNode {
   void CreateCompiledNode(BitExtractFn bit_extract_fn, size_t table_size) {
     VIXL_ASSERT(bit_extract_fn != NULL);
     VIXL_ASSERT(table_size > 0);
+#ifndef PANDA_BUILD
     compiled_node_ = new CompiledDecodeNode(bit_extract_fn, table_size);
+#else
+    auto allocator{decoder_->GetAllocator()};
+    compiled_node_ = allocator->New<CompiledDecodeNode>(bit_extract_fn, table_size, allocator);
+#endif
   }
 
   // Create a CompiledDecodeNode wrapping a visitor function. No decoding is
   // required for this node; the visitor function is called instead.
   void CreateVisitorNode() {
+#ifndef PANDA_BUILD
     compiled_node_ = new CompiledDecodeNode(visitor_fn_, decoder_);
+#else
+    auto allocator{decoder_->GetAllocator()};
+    compiled_node_ = allocator->New<CompiledDecodeNode>(visitor_fn_, decoder_);
+#endif
   }
 
   // Find and compile the DecodeNode named "name", and set it as the node for

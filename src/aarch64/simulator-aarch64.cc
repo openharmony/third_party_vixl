@@ -410,10 +410,19 @@ const Simulator::FormToVisitorFnMap* Simulator::GetFormToVisitorFnMap() {
   return &form_to_visitor;
 }
 
+#ifndef PANDA_BUILD
 Simulator::Simulator(Decoder* decoder, FILE* stream, SimStack::Allocated stack)
     : memory_(std::move(stack)),
       last_instr_(NULL),
       cpu_features_auditor_(decoder, CPUFeatures::All()) {
+#else
+Simulator::Simulator(panda::ArenaAllocator* allocator, Decoder* decoder, SimStack::Allocated stack, FILE* stream)
+    : memory_(std::move(stack)),
+      last_instr_(NULL),
+      allocator_(allocator),
+      cpu_features_auditor_(decoder, CPUFeatures::All()),
+      saved_cpu_features_(allocator->Adapter()) {
+#endif
   // Ensure that shift operations act as the simulator expects.
   VIXL_ASSERT((static_cast<int32_t>(-1) >> 1) == -1);
   VIXL_ASSERT((static_cast<uint32_t>(-1) >> 1) == 0x7fffffff);
@@ -427,7 +436,11 @@ Simulator::Simulator(Decoder* decoder, FILE* stream, SimStack::Allocated stack)
 
   stream_ = stream;
 
+#ifndef PANDA_BUILD
   print_disasm_ = new PrintDisassembler(stream_);
+#else
+  print_disasm_ = allocator->New<PrintDisassembler>(allocator, stream_);
+#endif
   // The Simulator and Disassembler share the same available list, held by the
   // auditor. The Disassembler only annotates instructions with features that
   // are _not_ available, so registering the auditor should have no effect
@@ -558,7 +571,9 @@ void Simulator::SetVectorLengthInBits(unsigned vector_length) {
 Simulator::~Simulator() {
   // The decoder may outlive the simulator.
   decoder_->RemoveVisitor(print_disasm_);
+#ifndef PANDA_BUILD
   delete print_disasm_;
+#endif
   close(placeholder_pipe_fd_[0]);
   close(placeholder_pipe_fd_[1]);
 }
@@ -13892,8 +13907,11 @@ void Simulator::DoPrintf(const Instruction* instr) {
   const char* format_base = ReadRegister<const char*>(0);
   VIXL_ASSERT(format_base != NULL);
   size_t length = strlen(format_base) + 1;
+#ifndef PANDA_BUILD
   char* const format = new char[length + arg_count];
-
+#else
+  char* const format = reinterpret_cast<char*>(allocator_->Alloc((length + arg_count)* sizeof(char)));
+#endif
   // A list of chunks, each with exactly one format placeholder.
   const char* chunks[kPrintfMaxArgCount];
 
@@ -13974,8 +13992,9 @@ void Simulator::DoPrintf(const Instruction* instr) {
 
   // Set LR as if we'd just called a native printf function.
   WriteLr(ReadPc());
-
+#ifndef PANDA_BUILD
   delete[] format;
+#endif
 }
 
 

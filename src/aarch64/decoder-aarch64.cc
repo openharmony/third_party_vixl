@@ -36,7 +36,12 @@ namespace vixl {
 namespace aarch64 {
 
 void Decoder::Decode(const Instruction* instr) {
-  std::list<DecoderVisitor*>::iterator it;
+#ifndef PANDA_BUILD
+    std::list<DecoderVisitor*>::iterator it;
+#else
+    panda::ArenaList<DecoderVisitor*>::iterator it;
+#endif
+
   for (it = visitors_.begin(); it != visitors_.end(); it++) {
     VIXL_ASSERT((*it)->IsConstVisitor());
   }
@@ -87,7 +92,11 @@ void Decoder::PrependVisitor(DecoderVisitor* new_visitor) {
 
 void Decoder::InsertVisitorBefore(DecoderVisitor* new_visitor,
                                   DecoderVisitor* registered_visitor) {
+#ifndef PANDA_BUILD
   std::list<DecoderVisitor*>::iterator it;
+#else
+  panda::ArenaList<DecoderVisitor*>::iterator it;
+#endif
   for (it = visitors_.begin(); it != visitors_.end(); it++) {
     if (*it == registered_visitor) {
       visitors_.insert(it, new_visitor);
@@ -103,7 +112,11 @@ void Decoder::InsertVisitorBefore(DecoderVisitor* new_visitor,
 
 void Decoder::InsertVisitorAfter(DecoderVisitor* new_visitor,
                                  DecoderVisitor* registered_visitor) {
+#ifndef PANDA_BUILD
   std::list<DecoderVisitor*>::iterator it;
+#else
+  panda::ArenaList<DecoderVisitor*>::iterator it;
+#endif
   for (it = visitors_.begin(); it != visitors_.end(); it++) {
     if (*it == registered_visitor) {
       it++;
@@ -122,6 +135,7 @@ void Decoder::RemoveVisitor(DecoderVisitor* visitor) {
   visitors_.remove(visitor);
 }
 
+#ifndef PANDA_BUILD
 #define DEFINE_VISITOR_CALLERS(A)                               \
   void Decoder::Visit_##A(const Instruction* instr) {           \
     std::list<DecoderVisitor*>::iterator it;                    \
@@ -130,6 +144,17 @@ void Decoder::RemoveVisitor(DecoderVisitor* visitor) {
       (*it)->Visit(&m, instr);                                  \
     }                                                           \
   }
+#else
+#define DEFINE_VISITOR_CALLERS(A)                               \
+  void Decoder::Visit_##A(const Instruction* instr) {           \
+    panda::ArenaList<DecoderVisitor*>::iterator it;             \
+    Metadata m = {{"form", #A}};                                \
+    for (it = visitors_.begin(); it != visitors_.end(); it++) { \
+      (*it)->Visit(&m, instr);                                  \
+    }                                                           \
+  }
+#endif
+
 INSTRUCTION_VISITOR_LIST(DEFINE_VISITOR_CALLERS)
 #undef DEFINE_VISITOR_CALLERS
 

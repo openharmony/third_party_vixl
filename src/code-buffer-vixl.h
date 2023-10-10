@@ -36,7 +36,7 @@ namespace vixl {
 
 class CodeBuffer {
  public:
-  static const size_t kDefaultCapacity = 4 * KBytes;
+  static const size_t kDefaultCapacity = 4 * MBytes;
 
   explicit CodeBuffer(size_t capacity = kDefaultCapacity);
   CodeBuffer(byte* buffer, size_t capacity);
@@ -44,12 +44,27 @@ class CodeBuffer {
 
   void Reset();
 
+#ifdef VIXL_CODE_BUFFER_MMAP
   // Make the buffer executable or writable. These states are mutually
   // exclusive.
   // Note that these require page-aligned memory blocks, which we can only
   // guarantee with VIXL_CODE_BUFFER_MMAP.
   void SetExecutable();
   void SetWritable();
+
+  void SetMmapMaxBytes(size_t size) {
+    mmap_max_ = size;
+  }
+#else
+  // These require page-aligned memory blocks, which we can only guarantee with
+  // mmap.
+  VIXL_NO_RETURN_IN_DEBUG_MODE void SetExecutable() { VIXL_UNIMPLEMENTED(); }
+  VIXL_NO_RETURN_IN_DEBUG_MODE void SetWritable() { VIXL_UNIMPLEMENTED(); }
+#endif
+
+  bool IsValid() const {
+    return (buffer_ != MAP_FAILED);
+  }
 
   ptrdiff_t GetOffsetFrom(ptrdiff_t offset) const {
     ptrdiff_t cursor_offset = cursor_ - buffer_;
@@ -146,7 +161,6 @@ class CodeBuffer {
   }
 
   bool IsManaged() const { return managed_; }
-
   void Grow(size_t new_capacity);
 
   bool IsDirty() const { return dirty_; }
@@ -181,6 +195,9 @@ class CodeBuffer {
   bool dirty_;
   // Capacity in bytes of the backing store.
   size_t capacity_;
+#ifdef VIXL_CODE_BUFFER_MMAP
+  size_t mmap_max_{0};
+#endif
 };
 
 }  // namespace vixl

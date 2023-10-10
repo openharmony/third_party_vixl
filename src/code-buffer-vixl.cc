@@ -33,7 +33,6 @@ extern "C" {
 
 namespace vixl {
 
-
 CodeBuffer::CodeBuffer(size_t capacity)
     : buffer_(NULL),
       managed_(true),
@@ -58,9 +57,10 @@ CodeBuffer::CodeBuffer(size_t capacity)
   VIXL_CHECK(buffer_ != NULL);
   // Aarch64 instructions must be word aligned, we assert the default allocator
   // always returns word align memory.
-  VIXL_ASSERT(IsWordAligned(buffer_));
-
-  cursor_ = buffer_;
+  if (buffer_ != MAP_FAILED) {
+      VIXL_ASSERT(IsWordAligned(buffer_));
+      cursor_ = buffer_;
+  }
 }
 
 
@@ -75,12 +75,21 @@ CodeBuffer::CodeBuffer(byte* buffer, size_t capacity)
 
 
 CodeBuffer::~CodeBuffer() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION {
-  VIXL_ASSERT(!IsDirty());
+  // VIXL_ASSERT(!IsDirty()); // Use own allocator - not applied
   if (managed_) {
 #ifdef VIXL_CODE_BUFFER_MALLOC
     free(buffer_);
 #elif defined(VIXL_CODE_BUFFER_MMAP)
-    munmap(buffer_, capacity_);
+    if (buffer_ != MAP_FAILED) {
+        [[maybe_unused]] int res = munmap(buffer_, capacity_);
+        // Success unmap position
+        VIXL_ASSERT(res == 0);
+        if ((mmap_max_ != 0) && (capacity_ > mmap_max_)) {
+          // Force crash - allocated too much
+          printf(" Allocated too much memory.\n");
+          VIXL_UNREACHABLE();
+        }
+    }
 #else
 #error Unknown code buffer allocator.
 #endif
@@ -167,6 +176,8 @@ void CodeBuffer::Grow(size_t new_capacity) {
   VIXL_ASSERT(managed_);
   VIXL_ASSERT(new_capacity > capacity_);
   ptrdiff_t cursor_offset = GetCursorOffset();
+    VIXL_ASSERT(false);
+    // Do not support grow with our allocators
 #ifdef VIXL_CODE_BUFFER_MALLOC
   buffer_ = static_cast<byte*>(realloc(buffer_, new_capacity));
   VIXL_CHECK(buffer_ != NULL);
@@ -174,10 +185,14 @@ void CodeBuffer::Grow(size_t new_capacity) {
   buffer_ = static_cast<byte*>(
       mremap(buffer_, capacity_, new_capacity, MREMAP_MAYMOVE));
   VIXL_CHECK(buffer_ != MAP_FAILED);
+  if ((mmap_max_ != 0) && (new_capacity > mmap_max_)) {
+    // Force crash - allocated too much
+    printf(" Allocated too much memory.\n");
+    VIXL_UNREACHABLE();
+  }
 #else
 #error Unknown code buffer allocator.
 #endif
-
   cursor_ = buffer_ + cursor_offset;
   capacity_ = new_capacity;
 }

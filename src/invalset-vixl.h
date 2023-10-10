@@ -34,6 +34,10 @@
 
 #include "globals-vixl.h"
 
+#ifdef PANDA_BUILD
+#include "utils/arena_containers.h"
+#endif
+
 namespace vixl {
 
 // We define a custom data structure template and its iterator as `std`
@@ -90,7 +94,13 @@ class InvalSetIterator;  // Forward declaration.
 template <TEMPLATE_INVALSET_P_DECL>
 class InvalSet {
  public:
+#ifndef PANDA_BUILD
   InvalSet();
+#else
+  InvalSet() = delete;
+  InvalSet(panda::ArenaAllocator* alocator);
+  InvalSet(InvalSet&&) {VIXL_ASSERT(false);}
+#endif
   ~InvalSet() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION;
 
   static const size_t kNPreallocatedElements = N_PREALLOCATED_ELEMENTS;
@@ -213,7 +223,12 @@ class InvalSet {
   // Elements are only invalidated when using the vector. The preallocated
   // storage always only contains valid elements.
   ElementType preallocated_[kNPreallocatedElements];
+#ifdef PANDA_BUILD
+  panda::ArenaAllocator* allocator_;
+  panda::ArenaVector<ElementType>* vector_;
+#else
   std::vector<ElementType>* vector_;
+#endif
 
   // Iterators acquire and release this monitor. While a set is acquired,
   // certain operations are illegal to ensure that the iterator will
@@ -303,7 +318,11 @@ class InvalSetIterator : public std::iterator<std::forward_iterator_tag,
   // Used when looking at the preallocated elements, or in debug mode when using
   // the vector to track how many times the iterator has advanced.
   size_t index_;
+#ifdef PANDA_BUILD
+  typename panda::ArenaVector<ElementType>::iterator iterator_;
+#else
   typename std::vector<ElementType>::iterator iterator_;
+#endif
   S* inval_set_;
 
   // TODO: These helpers are deprecated and will be removed in future versions
@@ -312,7 +331,7 @@ class InvalSetIterator : public std::iterator<std::forward_iterator_tag,
   void Advance();
 };
 
-
+#ifndef PANDA_BUILD
 template <TEMPLATE_INVALSET_P_DECL>
 InvalSet<TEMPLATE_INVALSET_P_DEF>::InvalSet()
     : valid_cached_min_(false), sorted_(true), size_(0), vector_(NULL) {
@@ -320,13 +339,23 @@ InvalSet<TEMPLATE_INVALSET_P_DEF>::InvalSet()
   monitor_ = 0;
 #endif
 }
-
+#else
+template <TEMPLATE_INVALSET_P_DECL>
+InvalSet<TEMPLATE_INVALSET_P_DEF>::InvalSet(panda::ArenaAllocator* allocator)
+    : valid_cached_min_(false), sorted_(true), size_(0), allocator_(allocator), vector_(NULL) {
+#ifdef VIXL_DEBUG
+  monitor_ = 0;
+#endif
+}
+#endif
 
 template <TEMPLATE_INVALSET_P_DECL>
 InvalSet<TEMPLATE_INVALSET_P_DEF>::~InvalSet()
     VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION {
   VIXL_ASSERT(monitor_ == 0);
+#ifndef PANDA_BUILD
   delete vector_;
+#endif
 }
 
 
@@ -359,8 +388,13 @@ void InvalSet<TEMPLATE_INVALSET_P_DEF>::insert(const ElementType& element) {
       preallocated_[size_] = element;
     } else {
       // Transition to using the vector.
+#ifndef PANDA_BUILD
       vector_ =
           new std::vector<ElementType>(preallocated_, preallocated_ + size_);
+#else
+      vector_ = allocator_->New<panda::ArenaVector<ElementType>>(
+            preallocated_, preallocated_ + size_, allocator_->Adapter());
+#endif
       vector_->push_back(element);
     }
   }
@@ -620,7 +654,11 @@ const ElementType InvalSet<TEMPLATE_INVALSET_P_DEF>::CleanBack() {
   VIXL_ASSERT(monitor() == 0);
   if (IsUsingVector()) {
     // Delete the invalid trailing elements.
+#ifndef PANDA_BUILD
     typename std::vector<ElementType>::reverse_iterator it = vector_->rbegin();
+#else
+    typename panda::ArenaVector<ElementType>::reverse_iterator it = vector_->rbegin();
+#endif
     while (!IsValid(*it)) {
       it++;
     }
@@ -737,8 +775,13 @@ InvalSetIterator<S>::InvalSetIterator(S* inval_set)
     inval_set->Acquire();
 #endif
     if (using_vector_) {
+#ifndef PANDA_BUILD
       iterator_ = typename std::vector<ElementType>::iterator(
           inval_set_->vector_->begin());
+#else
+      iterator_ = typename panda::ArenaVector<ElementType>::iterator(
+            inval_set_->vector_->begin());
+#endif
     }
     MoveToValidElement();
   }
@@ -870,7 +913,11 @@ bool InvalSetIterator<S>::operator==(const InvalSetIterator<S>& rhs) const {
     equal = equal && (index_ == rhs.index_);
 #ifdef DEBUG
     // If not using_vector_, iterator_ should be default-initialised.
+#ifndef PANDA_BUILD
     typename std::vector<ElementType>::iterator default_iterator;
+#else
+    typename panda::ArenaVector<ElementType>::iterator default_iterator;
+#endif
     VIXL_ASSERT(iterator_ == default_iterator);
     VIXL_ASSERT(rhs.iterator_ == default_iterator);
 #endif

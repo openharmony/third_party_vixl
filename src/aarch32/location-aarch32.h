@@ -57,9 +57,17 @@ class Location : public LocationBase<int32_t> {
   // Unbound location that can be used with the assembler bind() method and
   // with the assembler methods for generating instructions, but will never
   // be handled by the pool manager.
+#ifndef PANDA_BUILD
   Location()
       : LocationBase<int32_t>(kRawLocation, 1 /* placeholder size*/),
         referenced_(false) {}
+#else
+  Location() = delete;
+  Location(panda::ArenaAllocator* allocator)
+    : LocationBase<int32_t>(kRawLocation, 1 /* dummy size*/),
+      referenced_(false),
+      forward_(allocator) {}
+#endif
 
   typedef int32_t Offset;
 
@@ -161,8 +169,12 @@ class Location : public LocationBase<int32_t> {
 
   class ForwardRefList : public ForwardRefListBase {
    public:
+#ifndef PANDA_BUILD
     ForwardRefList() : ForwardRefListBase() {}
-
+#else
+    ForwardRefList() = delete;
+    ForwardRefList(panda::ArenaAllocator* allocator) : ForwardRefListBase(allocator) {}
+#endif
     using ForwardRefListBase::Back;
     using ForwardRefListBase::Front;
   };
@@ -226,13 +238,24 @@ class Location : public LocationBase<int32_t> {
   // Contains the references to the unbound label
   ForwardRefList forward_;
 
+#ifndef PANDA_BUILD
   // To be used only by derived classes.
   Location(uint32_t type, int size, int alignment)
       : LocationBase<int32_t>(type, size, alignment), referenced_(false) {}
+#else
+  Location(panda::ArenaAllocator* allocator, uint32_t type, int size, int alignment)
+      : LocationBase<int32_t>(type, size, alignment), referenced_(false), forward_(allocator){}
+#endif
 
+#ifndef PANDA_BUILD
   // To be used only by derived classes.
   explicit Location(Offset location)
       : LocationBase<int32_t>(location), referenced_(false) {}
+#else
+  explicit Location(Offset location) = delete;
+  Location(panda::ArenaAllocator* allocator, Offset location)
+    : LocationBase<int32_t>(location), referenced_(false), forward_(allocator) {}
+#endif
 
   virtual int GetMaxAlignment() const VIXL_OVERRIDE;
   virtual int GetMinLocation() const VIXL_OVERRIDE;
@@ -258,8 +281,15 @@ class Label : public Location {
   static const int kVeneerAlignment = 1;
 
  public:
+#ifndef PANDA_BUILD
   Label() : Location(kVeneerType, kVeneerSize, kVeneerAlignment) {}
   explicit Label(Offset location) : Location(location) {}
+#else
+  Label() = delete;
+  Label(panda::ArenaAllocator* allocator) : Location(allocator, kVeneerType, kVeneerSize, kVeneerAlignment) {}
+  explicit Label(Offset location) = delete;
+  explicit Label(panda::ArenaAllocator* allocator, Offset location) : Location(allocator, location) {}
+#endif
 
  private:
   virtual bool ShouldBeDeletedOnPlacementByPoolManager() const VIXL_OVERRIDE {
@@ -297,6 +327,7 @@ class RawLiteral : public Location {
     kManuallyDeleted
   };
 
+#ifndef PANDA_BUILD
   RawLiteral(const void* addr,
              int size,
              PlacementPolicy placement_policy = kPlacedWhenUsed,
@@ -318,6 +349,36 @@ class RawLiteral : public Location {
         addr_(addr),
         manually_placed_(false),
         deletion_policy_(deletion_policy) {}
+#else
+RawLiteral(const void* addr,
+           int size,
+           PlacementPolicy placement_policy = kPlacedWhenUsed,
+           DeletionPolicy deletion_policy = kManuallyDeleted) = delete;
+RawLiteral(panda::ArenaAllocator* allocator, const void* addr,
+           int size,
+           PlacementPolicy placement_policy = kPlacedWhenUsed,
+           DeletionPolicy deletion_policy = kManuallyDeleted)
+    : Location(allocator, kLiteralType,
+               size,
+               (size < kLiteralAlignment) ? size : kLiteralAlignment),
+      addr_(addr),
+      manually_placed_(placement_policy == kManuallyPlaced),
+      deletion_policy_(deletion_policy) {
+  // We can't have manually placed literals that are not manually deleted.
+  VIXL_ASSERT(!IsManuallyPlaced() ||
+              (GetDeletionPolicy() == kManuallyDeleted));
+}
+RawLiteral(const void* addr, int size, DeletionPolicy deletion_policy) = delete;
+
+RawLiteral(panda::ArenaAllocator* allocator, const void* addr, int size, DeletionPolicy deletion_policy)
+    : Location(allocator, kLiteralType,
+               size,
+               (size < kLiteralAlignment) ? size : kLiteralAlignment),
+      addr_(addr),
+      manually_placed_(false),
+      deletion_policy_(deletion_policy) {}
+
+#endif
   const void* GetDataAddress() const { return addr_; }
   int GetSize() const { return GetPoolObjectSizeInBytes(); }
 
@@ -351,6 +412,7 @@ class RawLiteral : public Location {
 template <typename T>
 class Literal : public RawLiteral {
  public:
+#ifndef PANDA_BUILD
   explicit Literal(const T& value,
                    PlacementPolicy placement_policy = kPlacedWhenUsed,
                    DeletionPolicy deletion_policy = kManuallyDeleted)
@@ -358,6 +420,20 @@ class Literal : public RawLiteral {
         value_(value) {}
   explicit Literal(const T& value, DeletionPolicy deletion_policy)
       : RawLiteral(&value_, sizeof(T), deletion_policy), value_(value) {}
+#else
+explicit Literal(const T& ,
+                 PlacementPolicy placement_policy = kPlacedWhenUsed,
+                 DeletionPolicy deletion_policy = kManuallyDeleted) = delete;
+explicit Literal(const T& value, DeletionPolicy deletion_policy) = delete;
+explicit Literal(panda::ArenaAllocator* allocator, const T& value,
+                 PlacementPolicy placement_policy = kPlacedWhenUsed,
+                 DeletionPolicy deletion_policy = kManuallyDeleted)
+    : RawLiteral(allocator, &value_, sizeof(T), placement_policy, deletion_policy),
+      value_(value) {}
+explicit Literal(panda::ArenaAllocator* allocator, const T& value, DeletionPolicy deletion_policy)
+    : RawLiteral(allocator, &value_, sizeof(T), deletion_policy), value_(value) {}
+
+#endif
   void UpdateValue(const T& value, CodeBuffer* buffer) {
     value_ = value;
     if (IsBound()) {
@@ -371,6 +447,7 @@ class Literal : public RawLiteral {
 
 class StringLiteral : public RawLiteral {
  public:
+#ifndef PANDA_BUILD
   explicit StringLiteral(const char* str,
                          PlacementPolicy placement_policy = kPlacedWhenUsed,
                          DeletionPolicy deletion_policy = kManuallyDeleted)
@@ -384,6 +461,25 @@ class StringLiteral : public RawLiteral {
       : RawLiteral(str, static_cast<int>(strlen(str) + 1), deletion_policy) {
     VIXL_ASSERT((strlen(str) + 1) <= kMaxObjectSize);
   }
+#else
+explicit StringLiteral(const char* str,
+                       PlacementPolicy placement_policy = kPlacedWhenUsed,
+                       DeletionPolicy deletion_policy = kManuallyDeleted) = delete;
+StringLiteral(panda::ArenaAllocator* allocator, const char* str,
+                       PlacementPolicy placement_policy = kPlacedWhenUsed,
+                       DeletionPolicy deletion_policy = kManuallyDeleted)
+    : RawLiteral(allocator, str,
+                 static_cast<int>(strlen(str) + 1),
+                 placement_policy,
+                 deletion_policy) {
+  VIXL_ASSERT((strlen(str) + 1) <= kMaxObjectSize);
+}
+explicit StringLiteral(const char* str, DeletionPolicy deletion_policy) = delete;
+explicit StringLiteral(panda::ArenaAllocator* allocator, const char* str, DeletionPolicy deletion_policy)
+    : RawLiteral(allocator, str, static_cast<int>(strlen(str) + 1), deletion_policy) {
+  VIXL_ASSERT((strlen(str) + 1) <= kMaxObjectSize);
+}
+#endif
 };
 
 }  // namespace aarch32

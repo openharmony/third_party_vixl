@@ -38,6 +38,9 @@
 #include "macro-assembler-interface.h"
 #include "utils-vixl.h"
 
+#ifdef PANDA_BUILD
+#include "utils/arena_containers.h"
+#endif
 namespace vixl {
 
 class TestPoolManager;
@@ -389,8 +392,15 @@ class ForwardReference {
 template <typename T>
 class PoolManager {
  public:
+#ifdef PANDA_BUILD
+  PoolManager(panda::ArenaAllocator* allocator, int header_size, int alignment, int buffer_alignment)
+      : allocator_(allocator), objects_(allocator->Adapter()),
+      delete_on_destruction_(allocator->Adapter()),
+        header_size_(header_size),
+#else
   PoolManager(int header_size, int alignment, int buffer_alignment)
       : header_size_(header_size),
+#endif
         alignment_(alignment),
         buffer_alignment_(buffer_alignment),
         checkpoint_(std::numeric_limits<T>::max()),
@@ -445,9 +455,15 @@ class PoolManager {
   bool IsBlocked() const { return monitor_ != 0; }
 
  private:
+#ifndef PANDA_BUILD
   typedef typename std::vector<PoolObject<T> >::iterator objects_iter;
   typedef
       typename std::vector<PoolObject<T> >::const_iterator const_objects_iter;
+#else
+  typedef typename panda::ArenaVector<PoolObject<T> >::iterator objects_iter;
+  typedef
+    typename panda::ArenaVector<PoolObject<T> >::const_iterator const_objects_iter;
+#endif
 
   PoolObject<T>* GetObjectIfTracked(LocationBase<T>* label) {
     return const_cast<PoolObject<T>*>(
@@ -509,10 +525,18 @@ class PoolManager {
   // is sorted every time we add, delete or update a PoolObject.
   // TODO: Consider a more efficient data structure here, to allow us to delete
   // elements as we emit them.
+#ifndef PANDA_BUILD
   std::vector<PoolObject<T> > objects_;
 
   // Objects to be deleted on pool destruction.
   std::vector<LocationBase<T>*> delete_on_destruction_;
+#else
+  panda::ArenaAllocator* allocator_ = nullptr;
+  panda::ArenaVector<PoolObject<T> > objects_;
+
+// Objects to be deleted on pool destruction.
+  panda::ArenaVector<LocationBase<T>*> delete_on_destruction_;
+#endif
 
   // The header_size_ and alignment_ values are hardcoded for each instance of
   // PoolManager. The PoolManager does not know how to emit the header, and

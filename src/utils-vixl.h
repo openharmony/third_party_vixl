@@ -35,6 +35,10 @@
 #include "compiler-intrinsics-vixl.h"
 #include "globals-vixl.h"
 
+#ifdef PANDA_BUILD
+#include "utils/arena_containers.h"
+#endif
+
 namespace vixl {
 
 // Macros for compile-time format checking.
@@ -771,7 +775,12 @@ class BitField {
   }
 
  public:
+#ifndef PANDA_BUILD
   explicit BitField(unsigned size) : bitfield_(size, 0) {}
+#else
+  explicit BitField(unsigned size) = delete;
+  explicit BitField(panda::ArenaAllocator* allocator, unsigned size) : bitfield_(size, 0, allocator->Adapter()) {}
+#endif
 
   void Set(int i) {
     VIXL_ASSERT((i >= 0) && (static_cast<size_t>(i) < bitfield_.size()));
@@ -805,7 +814,11 @@ class BitField {
   }
 
  private:
+#ifndef PANDA_BUILD
   std::vector<bool> bitfield_;
+#else
+  panda::ArenaVector<bool> bitfield_;
+#endif
 };
 
 namespace internal {
