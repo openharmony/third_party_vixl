@@ -28,6 +28,10 @@ import("//build/config/ohos/rules.gni")
 import("//build/ohos.gni")
 
 config("vixl_public_config") {
+  if (is_debug) {
+    defines = [ "VIXL_DEBUG" ]
+  }
+
   include_dirs = [
     "$ark_third_party_root/vixl",
     "$ark_third_party_root/vixl/src",
@@ -84,7 +88,6 @@ ohos_static_library("libvixl") {
     cflags_cc = []
   }
 
-  cflags_cc += [ "-DVIXL_DEBUG" ]
   if (is_mac) {
     cflags_cc += [
       "-DVIXL_CODE_BUFFER_MALLOC",
@@ -100,8 +103,9 @@ ohos_static_library("libvixl") {
   configs = [
     "$ark_root:ark_config",
     "$ark_root/libpandabase:arkbase_public_config",
-    ":vixl_public_config",
   ]
+
+  public_configs = [ ":vixl_public_config" ]
 
   deps = [ "$ark_root/libpandabase:libarkbase" ]
 
@@ -150,7 +154,6 @@ ohos_static_library("libvixl_frontend_static") {
     cflags_cc = []
   }
 
-  cflags_cc += [ "-DVIXL_DEBUG" ]
   if (is_mac) {
     cflags_cc += [
       "-DVIXL_CODE_BUFFER_MALLOC",
@@ -166,8 +169,9 @@ ohos_static_library("libvixl_frontend_static") {
   configs = [
     "$ark_root:ark_config",
     "$ark_root/libpandabase:arkbase_public_config",
-    ":vixl_public_config",
   ]
+
+  public_configs = [ ":vixl_public_config" ]
 
   deps = [ "$ark_root/libpandabase:libarkbase_frontend_static" ]
 
