@@ -2711,8 +2711,10 @@ class PrintDisassembler : public Disassembler {
       : Disassembler(os, code_address) {}
 
   virtual void PrintCodeAddress(uint32_t code_address) {
-    os() << "0x" << std::hex << std::setw(8) << std::setfill('0')
-         << code_address << "\t";
+    if (code_address != 0) {
+        os() << "0x" << std::hex << std::setw(8) << std::setfill('0')
+             << code_address << "\t";
+    }
   }
 
   virtual void PrintOpcode16(uint32_t opcode) {

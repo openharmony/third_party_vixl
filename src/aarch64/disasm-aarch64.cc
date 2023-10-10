@@ -9724,7 +9724,11 @@ int Disassembler::SubstituteImmediateField(const Instruction *instr,
     }
     case 'A': {  // IAddSub.
       int64_t imm = instr->GetImmAddSub() << (12 * instr->GetImmAddSubShift());
+#ifndef PANDA_BUILD
       AppendToOutput("#0x%" PRIx64 " (%" PRId64 ")", imm, imm);
+#else
+      AppendToOutput("#0x%" PRIx64 " // (%" PRId64 ")", imm, imm);
+#endif
       return 7;
     }
     case 'F': {  // IFP, IFPNeon, IFPSve or IFPFBits.
@@ -9750,7 +9754,11 @@ int Disassembler::SubstituteImmediateField(const Instruction *instr,
           imm8 = instr->GetImmFP();
           break;
       }
+#ifndef PANDA_BUILD
       AppendToOutput("#0x%" PRIx32 " (%.4f)",
+#else
+      AppendToOutput("#0x%" PRIx32 " // (%.4f)",
+#endif
                      imm8,
                      Instruction::Imm8ToFP32(imm8));
       return len;
