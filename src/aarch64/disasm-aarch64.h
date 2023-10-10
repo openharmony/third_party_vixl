@@ -126,9 +126,10 @@ class Disassembler : public DecoderVisitor {
   VISITOR_LIST(DECLARE)
 #undef DECLARE
 
-  using FormToVisitorFnMap = std::unordered_map<
-      std::string,
-      std::function<void(Disassembler*, const Instruction*)>>;
+  using FormToVisitorFnMap = FormToVisitorFnMapT<Disassembler>;
+
+  static const FormToVisitorFnMap FORM_TO_VISITOR;
+
   static const FormToVisitorFnMap* GetFormToVisitorFnMap();
 
   std::string mnemonic_;

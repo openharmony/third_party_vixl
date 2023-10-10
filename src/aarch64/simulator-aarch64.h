@@ -4772,9 +4772,10 @@ class Simulator : public DecoderVisitor {
   static const char* preg_names[];
 
  private:
-  using FormToVisitorFnMap =
-      std::unordered_map<std::string,
-                         std::function<void(Simulator*, const Instruction*)>>;
+  using FormToVisitorFnMap = FormToVisitorFnMapT<Simulator>;
+
+  static const FormToVisitorFnMap FORM_TO_VISITOR;
+
   static const FormToVisitorFnMap* GetFormToVisitorFnMap();
 
   uint32_t form_hash_;

@@ -36,10 +36,52 @@
 #include "globals-vixl.h"
 
 #ifdef PANDA_BUILD
+#include "mem/arena_allocator_stl_adapter.h"
+#include "mem/arena_allocator.h"
 #include "utils/arena_containers.h"
+#else
+#include <list>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 #endif
 
 namespace vixl {
+#ifdef PANDA_BUILD
+using PandaAllocator = panda::ArenaAllocator;
+
+template <typename T>
+using List = panda::ArenaList<T>;
+
+template <typename K, typename V>
+using Map = panda::ArenaMap<K, V>;
+
+using String = panda::ArenaString;
+
+template <typename T>
+using Vector = panda::ArenaVector<T>;
+#else
+template <typename T>
+using List = std::list<T>;
+
+template <typename K, typename V>
+using Map = std::map<K, V>;
+
+using String = std::string;
+
+template <typename T>
+using Vector = std::vector<T>;
+#endif
+
+template <typename T>
+inline auto GetContainerAllocator(const T& obj) {
+#ifdef PANDA_BUILD
+  return obj.GetAllocator()->Adapter();
+#else
+  return std::allocator<void>();
+#endif
+}
 
 // Macros for compile-time format checking.
 #if GCC_VERSION_OR_NEWER(4, 4, 0)
