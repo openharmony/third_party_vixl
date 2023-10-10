@@ -109,7 +109,7 @@ set_property(TARGET vixl PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET vixl PROPERTY EXCLUDE_FROM_ALL TRUE)
 
 target_include_directories(vixl
-    INTERFACE src/
+    SYSTEM INTERFACE src/
 )
 
 panda_add_sanitizers(TARGET vixl SANITIZERS ${PANDA_SANITIZERS_LIST})
