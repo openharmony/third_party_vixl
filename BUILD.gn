@@ -24,7 +24,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import("//ark/runtime_core/ark_config.gni")
-import("//build/config/ohos/rules.gni")
 import("//build/ohos.gni")
 
 config("vixl_public_config") {
