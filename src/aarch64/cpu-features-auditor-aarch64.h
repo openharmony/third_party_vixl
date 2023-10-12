@@ -122,9 +122,10 @@ class CPUFeaturesAuditor : public DecoderVisitor {
 
   Decoder* decoder_;
 
-  using FormToVisitorFnMap = std::unordered_map<
-      std::string,
-      std::function<void(CPUFeaturesAuditor*, const Instruction*)>>;
+  using FormToVisitorFnMap = FormToVisitorFnMapT<CPUFeaturesAuditor>;
+
+  static const FormToVisitorFnMap FORM_TO_VISITOR;
+
   static const FormToVisitorFnMap* GetFormToVisitorFnMap();
 };
 

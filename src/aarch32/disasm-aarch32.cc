@@ -67230,10 +67230,14 @@ const uint16_t* PrintDisassembler::DecodeT32At(
 void PrintDisassembler::DecodeT32(uint32_t instruction) {
   PrintCodeAddress(GetCodeAddress());
   if (T32Size(instruction) == 2) {
+#ifndef PANDA_BUILD
     PrintOpcode16(instruction >> 16);
+#endif
     Disassembler::DecodeT32(instruction);
   } else {
+#ifndef PANDA_BUILD
     PrintOpcode32(instruction);
+#endif
     Disassembler::DecodeT32(instruction);
   }
   os() << "\n";
@@ -67242,7 +67246,9 @@ void PrintDisassembler::DecodeT32(uint32_t instruction) {
 
 void PrintDisassembler::DecodeA32(uint32_t instruction) {
   PrintCodeAddress(GetCodeAddress());
+#ifndef PANDA_BUILD
   PrintOpcode32(instruction);
+#endif
   Disassembler::DecodeA32(instruction);
   os() << "\n";
 }

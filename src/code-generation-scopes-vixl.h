@@ -235,7 +235,7 @@ class EmissionCheckScope : public CodeBufferCheckScope {
     Open(masm, size, size_policy, pool_policy);
   }
 
-  MacroAssemblerInterface* masm_;
+  MacroAssemblerInterface* masm_{nullptr};
   PoolPolicy pool_policy_;
 };
 

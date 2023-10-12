@@ -4565,6 +4565,9 @@ T Simulator::FPMulAdd(T a, T op1, T op2) {
   return result;
 }
 
+template float Simulator::FPMulAdd(float a, float op1, float op2);
+
+template double Simulator::FPMulAdd(double a, double op1, double op2);
 
 template <typename T>
 T Simulator::FPDiv(T op1, T op2) {

@@ -112,37 +112,28 @@ CPURegList CPURegList::Intersection(const CPURegList& list_1,
 }
 
 
-CPURegList CPURegList::GetCalleeSaved(unsigned size) {
-  return CPURegList(CPURegister::kRegister, size, 19, 29);
+CPURegList CPURegList::GetCalleeSaved([[maybe_unused]] unsigned size) {
+  VIXL_ASSERT(size == static_cast<unsigned>(kCalleeSaved.GetRegisterSizeInBits()));
+  return kCalleeSaved;
 }
 
 
-CPURegList CPURegList::GetCalleeSavedV(unsigned size) {
-  return CPURegList(CPURegister::kVRegister, size, 8, 15);
+CPURegList CPURegList::GetCalleeSavedV([[maybe_unused]] unsigned size) {
+  VIXL_ASSERT(size == static_cast<unsigned>(kCalleeSavedV.GetRegisterSizeInBits()));
+  return kCalleeSavedV;
 }
 
 
-CPURegList CPURegList::GetCallerSaved(unsigned size) {
-  // Registers x0-x18 and lr (x30) are caller-saved.
-  CPURegList list = CPURegList(CPURegister::kRegister, size, 0, 18);
-  // Do not use lr directly to avoid initialisation order fiasco bugs for users.
-  list.Combine(Register(30, kXRegSize));
-  return list;
+CPURegList CPURegList::GetCallerSaved([[maybe_unused]] unsigned size) {
+  VIXL_ASSERT(size == static_cast<unsigned>(kCallerSaved.GetRegisterSizeInBits()));
+  return kCallerSaved;
 }
 
 
-CPURegList CPURegList::GetCallerSavedV(unsigned size) {
-  // Registers d0-d7 and d16-d31 are caller-saved.
-  CPURegList list = CPURegList(CPURegister::kVRegister, size, 0, 7);
-  list.Combine(CPURegList(CPURegister::kVRegister, size, 16, 31));
-  return list;
+CPURegList CPURegList::GetCallerSavedV([[maybe_unused]] unsigned size) {
+  VIXL_ASSERT(size == static_cast<unsigned>(kCallerSavedV.GetRegisterSizeInBits()));
+  return kCallerSavedV;
 }
-
-
-const CPURegList kCalleeSaved = CPURegList::GetCalleeSaved();
-const CPURegList kCalleeSavedV = CPURegList::GetCalleeSavedV();
-const CPURegList kCallerSaved = CPURegList::GetCallerSaved();
-const CPURegList kCallerSavedV = CPURegList::GetCallerSavedV();
 
 // Operand.
 Operand::Operand(int64_t immediate)
@@ -238,7 +229,8 @@ MemOperand::MemOperand()
       offset_(0),
       addrmode_(Offset),
       shift_(NO_SHIFT),
-      extend_(NO_EXTEND) {}
+      extend_(NO_EXTEND),
+      shift_amount_(0) {}
 
 
 MemOperand::MemOperand(Register base, int64_t offset, AddrMode addrmode)

@@ -126,7 +126,7 @@ class CPURegister {
   // TODO: This is temporary. Ultimately, we should move the
   // Simulator::*RegNameForCode helpers out of the simulator, and provide an
   // independent way to obtain the name of a register.
-  std::string GetArchitecturalName() const;
+  inline std::string GetArchitecturalName() const;
 
   // Return the highest valid register code for this type, to allow generic
   // loops to be written. This excludes kSPRegInternalCode, since it is not
@@ -212,13 +212,48 @@ class CPURegister {
 
   // TODO: These are stricter forms of the helpers above. We should make the
   // basic helpers strict, and remove these.
-  bool IsValidRegister() const;
-  bool IsValidVRegister() const;
-  bool IsValidFPRegister() const;
-  bool IsValidZRegister() const;
-  bool IsValidPRegister() const;
+bool IsValidRegister() const {
+  return ((code_ < kNumberOfRegisters) || (code_ == kSPRegInternalCode)) &&
+         (bank_ == kRRegisterBank) &&
+         ((size_ == kEncodedWRegSize) || (size_ == kEncodedXRegSize)) &&
+         (qualifiers_ == kNoQualifiers) && (lane_size_ == size_);
+}
 
-  bool IsValid() const;
+bool IsValidVRegister() const {
+  VIXL_STATIC_ASSERT(kEncodedBRegSize < kEncodedQRegSize);
+  return (code_ < kNumberOfVRegisters) && (bank_ == kVRegisterBank) &&
+         ((size_ >= kEncodedBRegSize) && (size_ <= kEncodedQRegSize)) &&
+         (qualifiers_ == kNoQualifiers) &&
+         (lane_size_ != kEncodedUnknownSize) && (lane_size_ <= size_);
+}
+
+bool IsValidFPRegister() const {
+  return IsValidVRegister() && IsFPRegister();
+}
+
+bool IsValidZRegister() const {
+  VIXL_STATIC_ASSERT(kEncodedBRegSize < kEncodedQRegSize);
+  // Z registers are valid with or without a lane size, so we don't need to
+  // check lane_size_.
+  return (code_ < kNumberOfZRegisters) && (bank_ == kVRegisterBank) &&
+         (size_ == kEncodedUnknownSize) && (qualifiers_ == kNoQualifiers);
+}
+
+bool IsValidPRegister() const {
+  VIXL_STATIC_ASSERT(kEncodedBRegSize < kEncodedQRegSize);
+  // P registers are valid with or without a lane size, so we don't need to
+  // check lane_size_.
+  return (code_ < kNumberOfPRegisters) && (bank_ == kPRegisterBank) &&
+         (size_ == kEncodedUnknownSize) &&
+         ((qualifiers_ == kNoQualifiers) || (qualifiers_ == kMerging) ||
+          (qualifiers_ == kZeroing));
+}
+
+  bool IsValid() const {
+    return IsValidRegister() || IsValidVRegister() || IsValidZRegister() ||
+           IsValidPRegister();
+  }
+
   bool IsValidOrNone() const { return IsNone() || IsValid(); }
 
   bool IsVector() const { return HasLaneSize() && (size_ != lane_size_); }
@@ -280,18 +315,18 @@ class CPURegister {
   // code like `cond ? reg.W() : reg.X()`, which would have indeterminate type.
 
   // Core registers, like "w0".
-  Register W() const;
-  Register X() const;
+  inline Register W() const;
+  inline Register X() const;
   // FP/NEON registers, like "b0".
-  VRegister B() const;
-  VRegister H() const;
-  VRegister S() const;
-  VRegister D() const;
-  VRegister Q() const;
-  VRegister V() const;
+  inline VRegister B() const;
+  inline VRegister H() const;
+  inline VRegister S() const;
+  inline VRegister D() const;
+  inline VRegister Q() const;
+  inline VRegister V() const;
   // SVE registers, like "z0".
-  ZRegister Z() const;
-  PRegister P() const;
+  inline ZRegister Z() const;
+  inline PRegister P() const;
 
   // Utilities for kRegister types.
 
@@ -484,7 +519,7 @@ class CPURegister {
     return DecodeSizeInBytes(encoded_size) * kBitsPerByte;
   }
 
-  static unsigned GetMaxCodeFor(CPURegister::RegisterBank bank);
+  inline static unsigned GetMaxCodeFor(CPURegister::RegisterBank bank);
 
   enum Qualifiers : uint8_t {
     kNoQualifiers = 0,
@@ -565,16 +600,19 @@ class VRegister : public CPURegister {
     VIXL_ASSERT(IsValid());
   }
 
-  VRegister V8B() const;
-  VRegister V16B() const;
-  VRegister V2H() const;
-  VRegister V4H() const;
-  VRegister V8H() const;
-  VRegister V2S() const;
-  VRegister V4S() const;
-  VRegister V1D() const;
-  VRegister V2D() const;
-  VRegister S4B() const;
+  inline VRegister V8B() const;
+  inline VRegister V16B() const;
+  inline VRegister V2H() const;
+  inline VRegister V4H() const;
+  inline VRegister V8H() const;
+  inline VRegister V2S() const;
+  inline VRegister V4S() const;
+  inline VRegister V1D() const;
+  inline VRegister V2D() const;
+
+  // Semantic type coersion for sdot and udot.
+  // TODO: Use the qualifiers_ field to distinguish this from ::S().
+  inline VRegister S4B() const;
 
   bool IsValid() const { return IsValidVRegister(); }
 
@@ -821,6 +859,52 @@ AARCH64_REGISTER_CODE_LIST(VIXL_DEFINE_REGISTERS)
 AARCH64_P_REGISTER_CODE_LIST(VIXL_DEFINE_P_REGISTERS)
 #undef VIXL_DEFINE_P_REGISTERS
 
+// Most coersions simply invoke the necessary constructor.
+#define VIXL_CPUREG_COERCION_LIST(U) \
+  U(Register, W, R)                  \
+  U(Register, X, R)                  \
+  U(VRegister, B, V)                 \
+  U(VRegister, H, V)                 \
+  U(VRegister, S, V)                 \
+  U(VRegister, D, V)                 \
+  U(VRegister, Q, V)                 \
+  U(VRegister, V, V)                 \
+  U(ZRegister, Z, V)                 \
+  U(PRegister, P, P)
+#define VIXL_DEFINE_CPUREG_COERCION(RET_TYPE, CTOR_TYPE, BANK) \
+  RET_TYPE CPURegister::CTOR_TYPE() const {                    \
+    VIXL_ASSERT(GetBank() == k##BANK##RegisterBank);           \
+    return CTOR_TYPE##Register(GetCode());                     \
+  }
+VIXL_CPUREG_COERCION_LIST(VIXL_DEFINE_CPUREG_COERCION)
+#undef VIXL_CPUREG_COERCION_LIST
+#undef VIXL_DEFINE_CPUREG_COERCION
+
+// NEON lane-format coersions always return VRegisters.
+#define VIXL_CPUREG_NEON_COERCION_LIST(V) \
+  V(8, B)                                 \
+  V(16, B)                                \
+  V(2, H)                                 \
+  V(4, H)                                 \
+  V(8, H)                                 \
+  V(2, S)                                 \
+  V(4, S)                                 \
+  V(1, D)                                 \
+  V(2, D)
+#define VIXL_DEFINE_CPUREG_NEON_COERCION(LANES, LANE_TYPE)             \
+  VRegister VRegister::V##LANES##LANE_TYPE() const {                   \
+    VIXL_ASSERT(IsVRegister());                                        \
+    return VRegister(GetCode(), LANES * k##LANE_TYPE##RegSize, LANES); \
+  }
+VIXL_CPUREG_NEON_COERCION_LIST(VIXL_DEFINE_CPUREG_NEON_COERCION)
+#undef VIXL_CPUREG_NEON_COERCION_LIST
+#undef VIXL_DEFINE_CPUREG_NEON_COERCION
+
+VRegister VRegister::S4B() const {
+  VIXL_ASSERT(IsVRegister());
+  return SRegister(GetCode());
+}
+
 // VIXL represents 'sp' with a unique code, to tell it apart from 'xzr'.
 const Register wsp = WRegister(kSPRegInternalCode);
 const Register sp = XRegister(kSPRegInternalCode);
@@ -832,8 +916,57 @@ const Register lr = x30;
 const Register xzr = x31;
 const Register wzr = w31;
 
+std::string CPURegister::GetArchitecturalName() const {
+  std::ostringstream name;
+  if (IsZRegister()) {
+    name << 'z' << GetCode();
+    if (HasLaneSize()) {
+      name << '.' << GetLaneSizeSymbol();
+    }
+  } else if (IsPRegister()) {
+    name << 'p' << GetCode();
+    if (HasLaneSize()) {
+      name << '.' << GetLaneSizeSymbol();
+    }
+    switch (qualifiers_) {
+      case kNoQualifiers:
+        break;
+      case kMerging:
+        name << "/m";
+        break;
+      case kZeroing:
+        name << "/z";
+        break;
+    }
+  } else {
+    VIXL_UNIMPLEMENTED();
+  }
+  return name.str();
+}
+
+unsigned CPURegister::GetMaxCodeFor(CPURegister::RegisterBank bank) {
+  switch (bank) {
+    case kNoRegisterBank:
+      return 0;
+    case kRRegisterBank:
+      return Register::GetMaxCode();
+    case kVRegisterBank:
+#ifdef VIXL_HAS_CONSTEXPR
+      VIXL_STATIC_ASSERT(VRegister::GetMaxCode() == ZRegister::GetMaxCode());
+#else
+      VIXL_ASSERT(VRegister::GetMaxCode() == ZRegister::GetMaxCode());
+#endif
+      return VRegister::GetMaxCode();
+    case kPRegisterBank:
+      return PRegister::GetMaxCode();
+  }
+  VIXL_UNREACHABLE();
+  return 0;
+}
+
 // AreAliased returns true if any of the named registers overlap. Arguments
 // set to NoReg are ignored. The system stack pointer may be specified.
+inline
 bool AreAliased(const CPURegister& reg1,
                 const CPURegister& reg2,
                 const CPURegister& reg3 = NoReg,
@@ -841,12 +974,55 @@ bool AreAliased(const CPURegister& reg1,
                 const CPURegister& reg5 = NoReg,
                 const CPURegister& reg6 = NoReg,
                 const CPURegister& reg7 = NoReg,
-                const CPURegister& reg8 = NoReg);
+                const CPURegister& reg8 = NoReg) {
+  int number_of_valid_regs = 0;
+  int number_of_valid_vregs = 0;
+  int number_of_valid_pregs = 0;
+
+  RegList unique_regs = 0;
+  RegList unique_vregs = 0;
+  RegList unique_pregs = 0;
+
+  const CPURegister regs[] = {reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8};
+
+  for (size_t i = 0; i < ArrayLength(regs); i++) {
+    switch (regs[i].GetBank()) {
+      case CPURegister::kRRegisterBank:
+        number_of_valid_regs++;
+        unique_regs |= regs[i].GetBit();
+        break;
+      case CPURegister::kVRegisterBank:
+        number_of_valid_vregs++;
+        unique_vregs |= regs[i].GetBit();
+        break;
+      case CPURegister::kPRegisterBank:
+        number_of_valid_pregs++;
+        unique_pregs |= regs[i].GetBit();
+        break;
+      case CPURegister::kNoRegisterBank:
+        VIXL_ASSERT(regs[i].IsNone());
+        break;
+    }
+  }
+
+  int number_of_unique_regs = CountSetBits(unique_regs);
+  int number_of_unique_vregs = CountSetBits(unique_vregs);
+  int number_of_unique_pregs = CountSetBits(unique_pregs);
+
+  VIXL_ASSERT(number_of_valid_regs >= number_of_unique_regs);
+  VIXL_ASSERT(number_of_valid_vregs >= number_of_unique_vregs);
+  VIXL_ASSERT(number_of_valid_pregs >= number_of_unique_pregs);
+
+  return (number_of_valid_regs != number_of_unique_regs) ||
+         (number_of_valid_vregs != number_of_unique_vregs) ||
+         (number_of_valid_pregs != number_of_unique_pregs);
+}
 
 // AreSameSizeAndType returns true if all of the specified registers have the
 // same size, and are of the same type. The system stack pointer may be
 // specified. Arguments set to NoReg are ignored, as are any subsequent
 // arguments. At least one argument (reg1) must be valid (not NoCPUReg).
+inline
 bool AreSameSizeAndType(const CPURegister& reg1,
                         const CPURegister& reg2,
                         const CPURegister& reg3 = NoCPUReg,
@@ -854,11 +1030,23 @@ bool AreSameSizeAndType(const CPURegister& reg1,
                         const CPURegister& reg5 = NoCPUReg,
                         const CPURegister& reg6 = NoCPUReg,
                         const CPURegister& reg7 = NoCPUReg,
-                        const CPURegister& reg8 = NoCPUReg);
+                        const CPURegister& reg8 = NoCPUReg) {
+  VIXL_ASSERT(reg1.IsValid());
+  bool match = true;
+  match &= !reg2.IsValid() || reg2.IsSameSizeAndType(reg1);
+  match &= !reg3.IsValid() || reg3.IsSameSizeAndType(reg1);
+  match &= !reg4.IsValid() || reg4.IsSameSizeAndType(reg1);
+  match &= !reg5.IsValid() || reg5.IsSameSizeAndType(reg1);
+  match &= !reg6.IsValid() || reg6.IsSameSizeAndType(reg1);
+  match &= !reg7.IsValid() || reg7.IsSameSizeAndType(reg1);
+  match &= !reg8.IsValid() || reg8.IsSameSizeAndType(reg1);
+  return match;
+}
 
 // AreEven returns true if all of the specified registers have even register
 // indices. Arguments set to NoReg are ignored, as are any subsequent
 // arguments. At least one argument (reg1) must be valid (not NoCPUReg).
+inline
 bool AreEven(const CPURegister& reg1,
              const CPURegister& reg2,
              const CPURegister& reg3 = NoReg,
@@ -866,34 +1054,91 @@ bool AreEven(const CPURegister& reg1,
              const CPURegister& reg5 = NoReg,
              const CPURegister& reg6 = NoReg,
              const CPURegister& reg7 = NoReg,
-             const CPURegister& reg8 = NoReg);
+             const CPURegister& reg8 = NoReg) {
+  VIXL_ASSERT(reg1.IsValid());
+  bool even = (reg1.GetCode() % 2) == 0;
+  even &= !reg2.IsValid() || ((reg2.GetCode() % 2) == 0);
+  even &= !reg3.IsValid() || ((reg3.GetCode() % 2) == 0);
+  even &= !reg4.IsValid() || ((reg4.GetCode() % 2) == 0);
+  even &= !reg5.IsValid() || ((reg5.GetCode() % 2) == 0);
+  even &= !reg6.IsValid() || ((reg6.GetCode() % 2) == 0);
+  even &= !reg7.IsValid() || ((reg7.GetCode() % 2) == 0);
+  even &= !reg8.IsValid() || ((reg8.GetCode() % 2) == 0);
+  return even;
+}
 
 // AreConsecutive returns true if all of the specified registers are
 // consecutive in the register file. Arguments set to NoReg are ignored, as are
 // any subsequent arguments. At least one argument (reg1) must be valid
 // (not NoCPUReg).
+inline
 bool AreConsecutive(const CPURegister& reg1,
                     const CPURegister& reg2,
                     const CPURegister& reg3 = NoCPUReg,
-                    const CPURegister& reg4 = NoCPUReg);
+                    const CPURegister& reg4 = NoCPUReg) {
+  VIXL_ASSERT(reg1.IsValid());
+
+  if (!reg2.IsValid()) {
+    return true;
+  } else if (reg2.GetCode() !=
+             ((reg1.GetCode() + 1) % (reg1.GetMaxCode() + 1))) {
+    return false;
+  }
+
+  if (!reg3.IsValid()) {
+    return true;
+  } else if (reg3.GetCode() !=
+             ((reg2.GetCode() + 1) % (reg1.GetMaxCode() + 1))) {
+    return false;
+  }
+
+  if (!reg4.IsValid()) {
+    return true;
+  } else if (reg4.GetCode() !=
+             ((reg3.GetCode() + 1) % (reg1.GetMaxCode() + 1))) {
+    return false;
+  }
+
+  return true;
+}
 
 // AreSameFormat returns true if all of the specified registers have the same
 // vector format. Arguments set to NoReg are ignored, as are any subsequent
 // arguments. At least one argument (reg1) must be valid (not NoVReg).
+inline
 bool AreSameFormat(const CPURegister& reg1,
                    const CPURegister& reg2,
                    const CPURegister& reg3 = NoCPUReg,
-                   const CPURegister& reg4 = NoCPUReg);
+                   const CPURegister& reg4 = NoCPUReg) {
+  VIXL_ASSERT(reg1.IsValid());
+  bool match = true;
+  match &= !reg2.IsValid() || reg2.IsSameFormat(reg1);
+  match &= !reg3.IsValid() || reg3.IsSameFormat(reg1);
+  match &= !reg4.IsValid() || reg4.IsSameFormat(reg1);
+  return match;
+}
 
 // AreSameLaneSize returns true if all of the specified registers have the same
 // element lane size, B, H, S or D. It doesn't compare the type of registers.
 // Arguments set to NoReg are ignored, as are any subsequent arguments.
 // At least one argument (reg1) must be valid (not NoVReg).
 // TODO: Remove this, and replace its uses with AreSameFormat.
+inline
 bool AreSameLaneSize(const CPURegister& reg1,
                      const CPURegister& reg2,
                      const CPURegister& reg3 = NoCPUReg,
-                     const CPURegister& reg4 = NoCPUReg);
+                     const CPURegister& reg4 = NoCPUReg) {
+  VIXL_ASSERT(reg1.IsValid());
+  bool match = true;
+  match &=
+      !reg2.IsValid() || (reg2.GetLaneSizeInBits() == reg1.GetLaneSizeInBits());
+  match &=
+      !reg3.IsValid() || (reg3.GetLaneSizeInBits() == reg1.GetLaneSizeInBits());
+  match &=
+      !reg4.IsValid() || (reg4.GetLaneSizeInBits() == reg1.GetLaneSizeInBits());
+  return match;
+}
+
 }
 }  // namespace vixl::aarch64
 

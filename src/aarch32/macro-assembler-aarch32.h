@@ -82,7 +82,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       VIXL_ASSERT(GetBuffer()->Is32bitAligned());
     }
     VIXL_ASSERT(pool_end_ == NULL);
+#ifndef PANDA_BUILD
     pool_end_ = new Label();
+#else
+    pool_end_ = allocator_->New<Label>(allocator_);
+#endif
     ExactAssemblyScopeWithoutPoolsCheck guard(this,
                                               kMaxInstructionSizeInBytes,
                                               ExactAssemblyScope::kMaximumSize);
@@ -93,7 +97,9 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     GetBuffer()->Align();
     if (pool_end_ != NULL) {
       Bind(pool_end_);
+#ifndef PANDA_BUILD
       delete pool_end_;
+#endif
       pool_end_ = NULL;
     }
   }
@@ -180,11 +186,21 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
 
   class ITScope {
    public:
+#ifndef PANDA_BUILD
     ITScope(MacroAssembler* masm,
             Condition* cond,
             const MacroEmissionCheckScope& scope,
             bool can_use_it = false)
         : masm_(masm), cond_(*cond), can_use_it_(can_use_it) {
+#else
+ITScope(MacroAssembler* , Condition* , const MacroEmissionCheckScope& ,
+        bool can_use_it = false) = delete;
+ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
+        Condition* cond,
+        const MacroEmissionCheckScope& scope,
+        bool can_use_it = false)
+    : masm_(masm), cond_(*cond), label_(allocator), can_use_it_(can_use_it) {
+#endif
       // The 'scope' argument is used to remind us to only use this scope inside
       // a MacroEmissionCheckScope. This way, we do not need to check whether
       // we need to emit the pools or grow the code buffer when emitting the
@@ -258,15 +274,28 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
   // TODO: If we change the MacroAssembler to disallow setting a different ISA,
   // we can change the alignment of the pool in the pool manager constructor to
   // be 2 bytes for T32.
+#ifdef PANDA_BUILD
+  explicit MacroAssembler(panda::ArenaAllocator* allocator, InstructionSet isa = kDefaultISA)
+#else
   explicit MacroAssembler(InstructionSet isa = kDefaultISA)
+#endif
       : Assembler(isa),
         available_(r12),
         current_scratch_scope_(NULL),
+#ifndef PANDA_BUILD
         pool_manager_(4 /*header_size*/,
                       4 /*alignment*/,
                       4 /*buffer_alignment*/),
         generate_simulator_code_(VIXL_AARCH32_GENERATE_SIMULATOR_CODE),
         pool_end_(NULL) {
+#else
+        pool_manager_(allocator,
+                      4 /*header_size*/,
+                      4 /*alignment*/,
+                      4 /*buffer_alignment*/),
+        generate_simulator_code_(VIXL_AARCH32_GENERATE_SIMULATOR_CODE),
+        pool_end_(NULL), allocator_(allocator) {
+#endif
 #ifdef VIXL_DEBUG
     SetAllowMacroInstructions(  // NOLINT(clang-analyzer-optin.cplusplus.VirtualCall)
         true);
@@ -274,6 +303,10 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     USE(allow_macro_instructions_);
 #endif
   }
+
+#ifdef PANDA_BUILD
+  explicit MacroAssembler(size_t size, InstructionSet isa = kDefaultISA) = delete;
+#else
   explicit MacroAssembler(size_t size, InstructionSet isa = kDefaultISA)
       : Assembler(size, isa),
         available_(r12),
@@ -288,6 +321,9 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         true);
 #endif
   }
+#endif
+
+#ifndef PANDA_BUILD
   MacroAssembler(byte* buffer, size_t size, InstructionSet isa = kDefaultISA)
       : Assembler(buffer, size, isa),
         available_(r12),
@@ -297,6 +333,18 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
                       4 /*buffer_alignment*/),
         generate_simulator_code_(VIXL_AARCH32_GENERATE_SIMULATOR_CODE),
         pool_end_(NULL) {
+#else
+  MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer, size_t size, InstructionSet isa = kDefaultISA)
+      : Assembler(buffer, size, isa),
+        available_(r12),
+        current_scratch_scope_(NULL),
+        pool_manager_(allocator,
+                      4 /*header_size*/,
+                      4 /*alignment*/,
+                      4 /*buffer_alignment*/),
+        generate_simulator_code_(VIXL_AARCH32_GENERATE_SIMULATOR_CODE),
+        pool_end_(NULL), allocator_(allocator) {
+#endif
 #ifdef VIXL_DEBUG
     SetAllowMacroInstructions(  // NOLINT(clang-analyzer-optin.cplusplus.VirtualCall)
         true);
@@ -490,64 +538,93 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
 
   void EnsureEmitFor(uint32_t size) {
     EnsureEmitPoolsFor(size);
-    VIXL_ASSERT(GetBuffer()->HasSpaceFor(size) || GetBuffer()->IsManaged());
     GetBuffer()->EnsureSpaceFor(size);
   }
 
-  bool AliasesAvailableScratchRegister(Register reg) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] Register reg) {
+#ifndef PANDA_BUILD
     return GetScratchRegisterList()->Includes(reg);
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(RegisterOrAPSR_nzcv reg) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] RegisterOrAPSR_nzcv reg) {
+#ifndef PANDA_BUILD
     if (reg.IsAPSR_nzcv()) return false;
     return GetScratchRegisterList()->Includes(reg.AsRegister());
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(VRegister reg) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] VRegister reg) {
+#ifndef PANDA_BUILD
     return GetScratchVRegisterList()->IncludesAliasOf(reg);
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(const Operand& operand) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] const Operand& operand) {
+#ifndef PANDA_BUILD
     if (operand.IsImmediate()) return false;
     return AliasesAvailableScratchRegister(operand.GetBaseRegister()) ||
            (operand.IsRegisterShiftedRegister() &&
             AliasesAvailableScratchRegister(operand.GetShiftRegister()));
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(const NeonOperand& operand) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] const NeonOperand& operand) {
+#ifndef PANDA_BUILD
     if (operand.IsImmediate()) return false;
     return AliasesAvailableScratchRegister(operand.GetRegister());
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(SRegisterList list) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] SRegisterList list) {
+#ifndef PANDA_BUILD
     for (int n = 0; n < list.GetLength(); n++) {
       if (AliasesAvailableScratchRegister(list.GetSRegister(n))) return true;
     }
     return false;
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(DRegisterList list) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] DRegisterList list) {
+#ifndef PANDA_BUILD
     for (int n = 0; n < list.GetLength(); n++) {
       if (AliasesAvailableScratchRegister(list.GetDRegister(n))) return true;
     }
     return false;
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(NeonRegisterList list) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] NeonRegisterList list) {
+#ifndef PANDA_BUILD
     for (int n = 0; n < list.GetLength(); n++) {
       if (AliasesAvailableScratchRegister(list.GetDRegister(n))) return true;
     }
     return false;
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(RegisterList list) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] RegisterList list) {
+#ifndef PANDA_BUILD
     return GetScratchRegisterList()->Overlaps(list);
+#endif
+    return false;
   }
 
-  bool AliasesAvailableScratchRegister(const MemOperand& operand) {
+  bool AliasesAvailableScratchRegister([[maybe_unused]] const MemOperand& operand) {
+#ifndef PANDA_BUILD
     return AliasesAvailableScratchRegister(operand.GetBaseRegister()) ||
            (operand.IsShiftedRegister() &&
             AliasesAvailableScratchRegister(operand.GetOffsetRegister()));
+#endif
+    return false;
   }
 
   // Adr with a literal already constructed. Add the literal to the pool if it
@@ -567,7 +644,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     adr(cond, Best, rd, literal);
     RegisterLiteralReference(literal);
   }
@@ -590,7 +671,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldr(cond, rt, literal);
     RegisterLiteralReference(literal);
   }
@@ -611,7 +696,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrb(cond, rt, literal);
     RegisterLiteralReference(literal);
   }
@@ -633,7 +722,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrd(cond, rt, rt2, literal);
     RegisterLiteralReference(literal);
   }
@@ -656,7 +749,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrh(cond, rt, literal);
     RegisterLiteralReference(literal);
   }
@@ -677,7 +774,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrsb(cond, rt, literal);
     RegisterLiteralReference(literal);
   }
@@ -698,7 +799,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrsh(cond, rt, literal);
     RegisterLiteralReference(literal);
   }
@@ -719,7 +824,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldr(cond, dt, rd, literal);
     RegisterLiteralReference(literal);
   }
@@ -748,7 +857,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldr(cond, dt, rd, literal);
     RegisterLiteralReference(literal);
   }
@@ -767,8 +880,13 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(!AliasesAvailableScratchRegister(rt));
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
+#ifndef PANDA_BUILD
     RawLiteral* literal =
         new Literal<uint32_t>(v, RawLiteral::kDeletedOnPlacementByPool);
+#else
+    RawLiteral* literal = allocator_->New<Literal<uint32_t>>(
+        allocator_, v, RawLiteral::kDeletedOnPlacementByPool);
+#endif
     Ldr(cond, rt, literal);
   }
   template <typename T>
@@ -782,8 +900,13 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(!AliasesAvailableScratchRegister(rt2));
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
+#ifndef PANDA_BUILD
     RawLiteral* literal =
         new Literal<uint64_t>(v, RawLiteral::kDeletedOnPlacementByPool);
+#else
+    RawLiteral* literal = allocator_->New<Literal<uint64_t>>(
+        allocator_, v, RawLiteral::kDeletedOnPlacementByPool);
+#endif
     Ldrd(cond, rt, rt2, literal);
   }
   template <typename T>
@@ -795,8 +918,13 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(!AliasesAvailableScratchRegister(rd));
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
+#ifndef PANDA_BUILD
     RawLiteral* literal =
         new Literal<float>(v, RawLiteral::kDeletedOnPlacementByPool);
+#else
+    RawLiteral* literal = allocator_->New<Literal<float>>(
+        allocator_, v, RawLiteral::kDeletedOnPlacementByPool);
+#endif
     Vldr(cond, rd, literal);
   }
   void Vldr(SRegister rd, float v) { Vldr(al, rd, v); }
@@ -805,8 +933,13 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(!AliasesAvailableScratchRegister(rd));
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
+#ifndef PANDA_BUILD
     RawLiteral* literal =
         new Literal<double>(v, RawLiteral::kDeletedOnPlacementByPool);
+#else
+    RawLiteral* literal = allocator_->New<Literal<double>>(
+        allocator_, v, RawLiteral::kDeletedOnPlacementByPool);
+#endif
     Vldr(cond, rd, literal);
   }
   void Vldr(DRegister rd, double v) { Vldr(al, rd, v); }
@@ -1000,7 +1133,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // ADC<c>{<q>} {<Rdn>,} <Rdn>, <Rm> ; T1
         operand.IsPlainRegister() && rn.IsLow() && rd.Is(rn) &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     adc(cond, rd, rn, operand);
   }
   void Adc(Register rd, Register rn, const Operand& operand) {
@@ -1044,7 +1181,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     adcs(cond, rd, rn, operand);
   }
   void Adcs(Register rd, Register rn, const Operand& operand) {
@@ -1084,7 +1225,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // ADD{<c>}{<q>} {<Rdm>,} SP, <Rdm> ; T1
         (operand.IsPlainRegister() && !rd.IsPC() && rn.IsSP() &&
          operand.GetBaseRegister().Is(rd));
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     add(cond, rd, rn, operand);
   }
   void Add(Register rd, Register rn, const Operand& operand) {
@@ -1142,7 +1287,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     adds(cond, rd, rn, operand);
   }
   void Adds(Register rd, Register rn, const Operand& operand) {
@@ -1174,7 +1323,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // AND<c>{<q>} {<Rdn>,} <Rdn>, <Rm> ; T1
         operand.IsPlainRegister() && rd.Is(rn) && rn.IsLow() &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     and_(cond, rd, rn, operand);
   }
   void And(Register rd, Register rn, const Operand& operand) {
@@ -1222,7 +1375,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ands(cond, rd, rn, operand);
   }
   void Ands(Register rd, Register rn, const Operand& operand) {
@@ -1243,7 +1400,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // ASR<c>{<q>} {<Rdm>,} <Rdm>, <Rs> ; T1
         (operand.IsPlainRegister() && rd.Is(rm) && rd.IsLow() &&
          operand.GetBaseRegister().IsLow());
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     asr(cond, rd, rm, operand);
   }
   void Asr(Register rd, Register rm, const Operand& operand) {
@@ -1289,7 +1450,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     asrs(cond, rd, rm, operand);
   }
   void Asrs(Register rd, Register rm, const Operand& operand) {
@@ -1326,7 +1491,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     bfc(cond, rd, lsb, width);
   }
   void Bfc(Register rd, uint32_t lsb, uint32_t width) {
@@ -1340,7 +1509,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     bfi(cond, rd, rn, lsb, width);
   }
   void Bfi(Register rd, Register rn, uint32_t lsb, uint32_t width) {
@@ -1368,7 +1541,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // BIC<c>{<q>} {<Rdn>,} <Rdn>, <Rm> ; T1
         operand.IsPlainRegister() && rd.Is(rn) && rn.IsLow() &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     bic(cond, rd, rn, operand);
   }
   void Bic(Register rd, Register rn, const Operand& operand) {
@@ -1412,7 +1589,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     bics(cond, rd, rn, operand);
   }
   void Bics(Register rd, Register rn, const Operand& operand) {
@@ -1423,7 +1604,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     bkpt(cond, imm);
   }
   void Bkpt(uint32_t imm) { Bkpt(al, imm); }
@@ -1442,7 +1627,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     bl(cond, label);
     RegisterForwardReference(label);
   }
@@ -1462,7 +1651,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
       pool_policy = MacroEmissionCheckScope::kIgnorePools;
     }
     MacroEmissionCheckScope guard(this, pool_policy);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     blx(cond, label);
     RegisterForwardReference(label);
   }
@@ -1476,7 +1669,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     bool can_use_it =
         // BLX{<c>}{<q>} <Rm> ; T1
         !rm.IsPC();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     blx(cond, rm);
   }
   void Blx(Register rm) { Blx(al, rm); }
@@ -1489,7 +1686,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     bool can_use_it =
         // BX{<c>}{<q>} <Rm> ; T1
         !rm.IsPC();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     bx(cond, rm);
   }
   void Bx(Register rm) { Bx(al, rm); }
@@ -1499,7 +1700,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     bxj(cond, rm);
   }
   void Bxj(Register rm) { Bxj(al, rm); }
@@ -1546,7 +1751,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     clrex(cond);
   }
   void Clrex() { Clrex(al); }
@@ -1557,7 +1766,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     clz(cond, rd, rm);
   }
   void Clz(Register rd, Register rm) { Clz(al, rd, rm); }
@@ -1572,7 +1785,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // CMN{<c>}{<q>} <Rn>, <Rm> ; T1
         operand.IsPlainRegister() && rn.IsLow() &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     cmn(cond, rn, operand);
   }
   void Cmn(Register rn, const Operand& operand) { Cmn(al, rn, operand); }
@@ -1590,7 +1807,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // CMP{<c>}{<q>} <Rn>, <Rm> ; T1 T2
         (operand.IsPlainRegister() && !rn.IsPC() &&
          !operand.GetBaseRegister().IsPC());
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     cmp(cond, rn, operand);
   }
   void Cmp(Register rn, const Operand& operand) { Cmp(al, rn, operand); }
@@ -1602,7 +1823,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     crc32b(cond, rd, rn, rm);
   }
   void Crc32b(Register rd, Register rn, Register rm) { Crc32b(al, rd, rn, rm); }
@@ -1614,7 +1839,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     crc32cb(cond, rd, rn, rm);
   }
   void Crc32cb(Register rd, Register rn, Register rm) {
@@ -1628,7 +1857,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     crc32ch(cond, rd, rn, rm);
   }
   void Crc32ch(Register rd, Register rn, Register rm) {
@@ -1642,7 +1875,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     crc32cw(cond, rd, rn, rm);
   }
   void Crc32cw(Register rd, Register rn, Register rm) {
@@ -1656,7 +1893,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     crc32h(cond, rd, rn, rm);
   }
   void Crc32h(Register rd, Register rn, Register rm) { Crc32h(al, rd, rn, rm); }
@@ -1668,7 +1909,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     crc32w(cond, rd, rn, rm);
   }
   void Crc32w(Register rd, Register rn, Register rm) { Crc32w(al, rd, rn, rm); }
@@ -1677,7 +1922,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     dmb(cond, option);
   }
   void Dmb(MemoryBarrier option) { Dmb(al, option); }
@@ -1686,7 +1935,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     dsb(cond, option);
   }
   void Dsb(MemoryBarrier option) { Dsb(al, option); }
@@ -1712,7 +1965,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // EOR<c>{<q>} {<Rdn>,} <Rdn>, <Rm> ; T1
         operand.IsPlainRegister() && rd.Is(rn) && rn.IsLow() &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     eor(cond, rd, rn, operand);
   }
   void Eor(Register rd, Register rn, const Operand& operand) {
@@ -1756,7 +2013,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     eors(cond, rd, rn, operand);
   }
   void Eors(Register rd, Register rn, const Operand& operand) {
@@ -1772,7 +2033,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     fldmdbx(cond, rn, write_back, dreglist);
   }
   void Fldmdbx(Register rn, WriteBack write_back, DRegisterList dreglist) {
@@ -1788,7 +2053,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     fldmiax(cond, rn, write_back, dreglist);
   }
   void Fldmiax(Register rn, WriteBack write_back, DRegisterList dreglist) {
@@ -1804,7 +2073,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     fstmdbx(cond, rn, write_back, dreglist);
   }
   void Fstmdbx(Register rn, WriteBack write_back, DRegisterList dreglist) {
@@ -1820,7 +2093,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     fstmiax(cond, rn, write_back, dreglist);
   }
   void Fstmiax(Register rn, WriteBack write_back, DRegisterList dreglist) {
@@ -1831,7 +2108,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     hlt(cond, imm);
   }
   void Hlt(uint32_t imm) { Hlt(al, imm); }
@@ -1840,7 +2121,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     hvc(cond, imm);
   }
   void Hvc(uint32_t imm) { Hvc(al, imm); }
@@ -1849,7 +2134,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     isb(cond, option);
   }
   void Isb(MemoryBarrier option) { Isb(al, option); }
@@ -1860,7 +2149,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     lda(cond, rt, operand);
   }
   void Lda(Register rt, const MemOperand& operand) { Lda(al, rt, operand); }
@@ -1871,7 +2164,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldab(cond, rt, operand);
   }
   void Ldab(Register rt, const MemOperand& operand) { Ldab(al, rt, operand); }
@@ -1882,7 +2179,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldaex(cond, rt, operand);
   }
   void Ldaex(Register rt, const MemOperand& operand) { Ldaex(al, rt, operand); }
@@ -1893,7 +2194,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldaexb(cond, rt, operand);
   }
   void Ldaexb(Register rt, const MemOperand& operand) {
@@ -1910,7 +2215,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldaexd(cond, rt, rt2, operand);
   }
   void Ldaexd(Register rt, Register rt2, const MemOperand& operand) {
@@ -1923,7 +2232,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldaexh(cond, rt, operand);
   }
   void Ldaexh(Register rt, const MemOperand& operand) {
@@ -1936,7 +2249,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldah(cond, rt, operand);
   }
   void Ldah(Register rt, const MemOperand& operand) { Ldah(al, rt, operand); }
@@ -1950,7 +2267,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldm(cond, rn, write_back, registers);
   }
   void Ldm(Register rn, WriteBack write_back, RegisterList registers) {
@@ -1966,7 +2287,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldmda(cond, rn, write_back, registers);
   }
   void Ldmda(Register rn, WriteBack write_back, RegisterList registers) {
@@ -1982,7 +2307,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldmdb(cond, rn, write_back, registers);
   }
   void Ldmdb(Register rn, WriteBack write_back, RegisterList registers) {
@@ -1998,7 +2327,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldmea(cond, rn, write_back, registers);
   }
   void Ldmea(Register rn, WriteBack write_back, RegisterList registers) {
@@ -2014,7 +2347,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldmed(cond, rn, write_back, registers);
   }
   void Ldmed(Register rn, WriteBack write_back, RegisterList registers) {
@@ -2030,7 +2367,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldmfa(cond, rn, write_back, registers);
   }
   void Ldmfa(Register rn, WriteBack write_back, RegisterList registers) {
@@ -2046,7 +2387,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldmfd(cond, rn, write_back, registers);
   }
   void Ldmfd(Register rn, WriteBack write_back, RegisterList registers) {
@@ -2062,7 +2407,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldmib(cond, rn, write_back, registers);
   }
   void Ldmib(Register rn, WriteBack write_back, RegisterList registers) {
@@ -2091,7 +2440,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
          operand.GetBaseRegister().IsLow() &&
          operand.GetOffsetRegister().IsLow() && operand.GetSign().IsPlus() &&
          (operand.GetAddrMode() == Offset));
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     ldr(cond, rt, operand);
   }
   void Ldr(Register rt, const MemOperand& operand) { Ldr(al, rt, operand); }
@@ -2114,7 +2467,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
          operand.GetBaseRegister().IsLow() &&
          operand.GetOffsetRegister().IsLow() && operand.GetSign().IsPlus() &&
          (operand.GetAddrMode() == Offset));
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     ldrb(cond, rt, operand);
   }
   void Ldrb(Register rt, const MemOperand& operand) { Ldrb(al, rt, operand); }
@@ -2130,7 +2487,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrd(cond, rt, rt2, operand);
   }
   void Ldrd(Register rt, Register rt2, const MemOperand& operand) {
@@ -2144,7 +2505,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrex(cond, rt, operand);
   }
   void Ldrex(Register rt, const MemOperand& operand) { Ldrex(al, rt, operand); }
@@ -2155,7 +2520,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrexb(cond, rt, operand);
   }
   void Ldrexb(Register rt, const MemOperand& operand) {
@@ -2172,7 +2541,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrexd(cond, rt, rt2, operand);
   }
   void Ldrexd(Register rt, Register rt2, const MemOperand& operand) {
@@ -2185,7 +2558,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ldrexh(cond, rt, operand);
   }
   void Ldrexh(Register rt, const MemOperand& operand) {
@@ -2209,7 +2586,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
          operand.GetBaseRegister().IsLow() &&
          operand.GetOffsetRegister().IsLow() && operand.GetSign().IsPlus() &&
          (operand.GetAddrMode() == Offset));
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     ldrh(cond, rt, operand);
   }
   void Ldrh(Register rt, const MemOperand& operand) { Ldrh(al, rt, operand); }
@@ -2227,7 +2608,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         operand.GetBaseRegister().IsLow() &&
         operand.GetOffsetRegister().IsLow() && operand.GetSign().IsPlus() &&
         (operand.GetAddrMode() == Offset);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     ldrsb(cond, rt, operand);
   }
   void Ldrsb(Register rt, const MemOperand& operand) { Ldrsb(al, rt, operand); }
@@ -2245,7 +2630,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         operand.GetBaseRegister().IsLow() &&
         operand.GetOffsetRegister().IsLow() && operand.GetSign().IsPlus() &&
         (operand.GetAddrMode() == Offset);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     ldrsh(cond, rt, operand);
   }
   void Ldrsh(Register rt, const MemOperand& operand) { Ldrsh(al, rt, operand); }
@@ -2265,7 +2654,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // LSL<c>{<q>} {<Rdm>,} <Rdm>, <Rs> ; T1
         (operand.IsPlainRegister() && rd.Is(rm) && rd.IsLow() &&
          operand.GetBaseRegister().IsLow());
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     lsl(cond, rd, rm, operand);
   }
   void Lsl(Register rd, Register rm, const Operand& operand) {
@@ -2311,7 +2704,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     lsls(cond, rd, rm, operand);
   }
   void Lsls(Register rd, Register rm, const Operand& operand) {
@@ -2332,7 +2729,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // LSR<c>{<q>} {<Rdm>,} <Rdm>, <Rs> ; T1
         (operand.IsPlainRegister() && rd.Is(rm) && rd.IsLow() &&
          operand.GetBaseRegister().IsLow());
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     lsr(cond, rd, rm, operand);
   }
   void Lsr(Register rd, Register rm, const Operand& operand) {
@@ -2378,7 +2779,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     lsrs(cond, rd, rm, operand);
   }
   void Lsrs(Register rd, Register rm, const Operand& operand) {
@@ -2393,7 +2798,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     mla(cond, rd, rn, rm, ra);
   }
   void Mla(Register rd, Register rn, Register rm, Register ra) {
@@ -2431,7 +2840,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     mlas(cond, rd, rn, rm, ra);
   }
   void Mlas(Register rd, Register rn, Register rm, Register ra) {
@@ -2446,7 +2859,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     mls(cond, rd, rn, rm, ra);
   }
   void Mls(Register rd, Register rn, Register rm, Register ra) {
@@ -2483,7 +2900,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
          (operand.GetShift().Is(LSL) || operand.GetShift().Is(LSR) ||
           operand.GetShift().Is(ASR) || operand.GetShift().Is(ROR)) &&
          operand.GetShiftRegister().IsLow());
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     mov(cond, rd, operand);
   }
   void Mov(Register rd, const Operand& operand) { Mov(al, rd, operand); }
@@ -2536,7 +2957,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     movs(cond, rd, operand);
   }
   void Movs(Register rd, const Operand& operand) { Movs(al, rd, operand); }
@@ -2547,7 +2972,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     movt(cond, rd, operand);
   }
   void Movt(Register rd, const Operand& operand) { Movt(al, rd, operand); }
@@ -2557,7 +2986,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     mrs(cond, rd, spec_reg);
   }
   void Mrs(Register rd, SpecialRegister spec_reg) { Mrs(al, rd, spec_reg); }
@@ -2569,7 +3002,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     msr(cond, spec_reg, operand);
   }
   void Msr(MaskedSpecialRegister spec_reg, const Operand& operand) {
@@ -2586,7 +3023,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     bool can_use_it =
         // MUL<c>{<q>} <Rdm>, <Rn>{, <Rdm>} ; T1
         rd.Is(rm) && rn.IsLow() && rm.IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     mul(cond, rd, rn, rm);
   }
   void Mul(Register rd, Register rn, Register rm) { Mul(al, rd, rn, rm); }
@@ -2624,7 +3065,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     muls(cond, rd, rn, rm);
   }
   void Muls(Register rd, Register rn, Register rm) { Muls(al, rd, rn, rm); }
@@ -2639,7 +3084,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // MVN<c>{<q>} <Rd>, <Rm> ; T1
         operand.IsPlainRegister() && rd.IsLow() &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     mvn(cond, rd, operand);
   }
   void Mvn(Register rd, const Operand& operand) { Mvn(al, rd, operand); }
@@ -2676,7 +3125,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     mvns(cond, rd, operand);
   }
   void Mvns(Register rd, const Operand& operand) { Mvns(al, rd, operand); }
@@ -2685,7 +3138,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     nop(cond);
   }
   void Nop() { Nop(al); }
@@ -2707,7 +3164,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         return;
       }
     }
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     orn(cond, rd, rn, operand);
   }
   void Orn(Register rd, Register rn, const Operand& operand) {
@@ -2744,7 +3205,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     orns(cond, rd, rn, operand);
   }
   void Orns(Register rd, Register rn, const Operand& operand) {
@@ -2776,7 +3241,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // ORR<c>{<q>} {<Rdn>,} <Rdn>, <Rm> ; T1
         operand.IsPlainRegister() && rd.Is(rn) && rn.IsLow() &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     orr(cond, rd, rn, operand);
   }
   void Orr(Register rd, Register rn, const Operand& operand) {
@@ -2824,7 +3293,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     orrs(cond, rd, rn, operand);
   }
   void Orrs(Register rd, Register rn, const Operand& operand) {
@@ -2838,7 +3311,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     pkhbt(cond, rd, rn, operand);
   }
   void Pkhbt(Register rd, Register rn, const Operand& operand) {
@@ -2852,7 +3329,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     pkhtb(cond, rd, rn, operand);
   }
   void Pkhtb(Register rd, Register rn, const Operand& operand) {
@@ -2865,7 +3346,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     pld(cond, operand);
   }
   void Pld(const MemOperand& operand) { Pld(al, operand); }
@@ -2875,7 +3360,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     pldw(cond, operand);
   }
   void Pldw(const MemOperand& operand) { Pldw(al, operand); }
@@ -2885,7 +3374,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     pli(cond, operand);
   }
   void Pli(const MemOperand& operand) { Pli(al, operand); }
@@ -2896,7 +3389,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     if (registers.IsSingleRegister() &&
         (!IsUsingT32() || !registers.IsR0toR7orPC())) {
       pop(cond, registers.GetFirstAvailableRegister());
@@ -2911,7 +3408,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     pop(cond, rt);
   }
   void Pop(Register rt) { Pop(al, rt); }
@@ -2921,7 +3422,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     if (registers.IsSingleRegister() && !registers.Includes(sp) &&
         (!IsUsingT32() || !registers.IsR0toR7orLR())) {
       push(cond, registers.GetFirstAvailableRegister());
@@ -2936,7 +3441,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     if (IsUsingA32() && rt.IsSP()) {
       // Only the A32 multiple-register form can push sp.
       push(cond, RegisterList(rt));
@@ -2953,7 +3462,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qadd(cond, rd, rm, rn);
   }
   void Qadd(Register rd, Register rm, Register rn) { Qadd(al, rd, rm, rn); }
@@ -2965,7 +3478,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qadd16(cond, rd, rn, rm);
   }
   void Qadd16(Register rd, Register rn, Register rm) { Qadd16(al, rd, rn, rm); }
@@ -2977,7 +3494,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qadd8(cond, rd, rn, rm);
   }
   void Qadd8(Register rd, Register rn, Register rm) { Qadd8(al, rd, rn, rm); }
@@ -2989,7 +3510,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qasx(cond, rd, rn, rm);
   }
   void Qasx(Register rd, Register rn, Register rm) { Qasx(al, rd, rn, rm); }
@@ -3001,7 +3526,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qdadd(cond, rd, rm, rn);
   }
   void Qdadd(Register rd, Register rm, Register rn) { Qdadd(al, rd, rm, rn); }
@@ -3013,7 +3542,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qdsub(cond, rd, rm, rn);
   }
   void Qdsub(Register rd, Register rm, Register rn) { Qdsub(al, rd, rm, rn); }
@@ -3025,7 +3558,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qsax(cond, rd, rn, rm);
   }
   void Qsax(Register rd, Register rn, Register rm) { Qsax(al, rd, rn, rm); }
@@ -3037,7 +3574,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qsub(cond, rd, rm, rn);
   }
   void Qsub(Register rd, Register rm, Register rn) { Qsub(al, rd, rm, rn); }
@@ -3049,7 +3590,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qsub16(cond, rd, rn, rm);
   }
   void Qsub16(Register rd, Register rn, Register rm) { Qsub16(al, rd, rn, rm); }
@@ -3061,7 +3606,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     qsub8(cond, rd, rn, rm);
   }
   void Qsub8(Register rd, Register rn, Register rm) { Qsub8(al, rd, rn, rm); }
@@ -3072,7 +3621,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     rbit(cond, rd, rm);
   }
   void Rbit(Register rd, Register rm) { Rbit(al, rd, rm); }
@@ -3083,7 +3636,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     rev(cond, rd, rm);
   }
   void Rev(Register rd, Register rm) { Rev(al, rd, rm); }
@@ -3094,7 +3651,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     rev16(cond, rd, rm);
   }
   void Rev16(Register rd, Register rm) { Rev16(al, rd, rm); }
@@ -3105,7 +3666,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     revsh(cond, rd, rm);
   }
   void Revsh(Register rd, Register rm) { Revsh(al, rd, rm); }
@@ -3121,7 +3686,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // ROR<c>{<q>} {<Rdm>,} <Rdm>, <Rs> ; T1
         operand.IsPlainRegister() && rd.Is(rm) && rd.IsLow() &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     ror(cond, rd, rm, operand);
   }
   void Ror(Register rd, Register rm, const Operand& operand) {
@@ -3165,7 +3734,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     rors(cond, rd, rm, operand);
   }
   void Rors(Register rd, Register rm, const Operand& operand) {
@@ -3178,7 +3751,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     rrx(cond, rd, rm);
   }
   void Rrx(Register rd, Register rm) { Rrx(al, rd, rm); }
@@ -3205,7 +3782,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     rrxs(cond, rd, rm);
   }
   void Rrxs(Register rd, Register rm) { Rrxs(al, rd, rm); }
@@ -3221,7 +3802,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // RSB<c>{<q>} {<Rd>, }<Rn>, #0 ; T1
         operand.IsImmediate() && rd.IsLow() && rn.IsLow() &&
         (operand.GetImmediate() == 0);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     rsb(cond, rd, rn, operand);
   }
   void Rsb(Register rd, Register rn, const Operand& operand) {
@@ -3265,7 +3850,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     rsbs(cond, rd, rn, operand);
   }
   void Rsbs(Register rd, Register rn, const Operand& operand) {
@@ -3279,7 +3868,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     rsc(cond, rd, rn, operand);
   }
   void Rsc(Register rd, Register rn, const Operand& operand) {
@@ -3316,7 +3909,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     rscs(cond, rd, rn, operand);
   }
   void Rscs(Register rd, Register rn, const Operand& operand) {
@@ -3330,7 +3927,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sadd16(cond, rd, rn, rm);
   }
   void Sadd16(Register rd, Register rn, Register rm) { Sadd16(al, rd, rn, rm); }
@@ -3342,7 +3943,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sadd8(cond, rd, rn, rm);
   }
   void Sadd8(Register rd, Register rn, Register rm) { Sadd8(al, rd, rn, rm); }
@@ -3354,7 +3959,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sasx(cond, rd, rn, rm);
   }
   void Sasx(Register rd, Register rn, Register rm) { Sasx(al, rd, rn, rm); }
@@ -3370,7 +3979,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // SBC<c>{<q>} {<Rdn>,} <Rdn>, <Rm> ; T1
         operand.IsPlainRegister() && rn.IsLow() && rd.Is(rn) &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     sbc(cond, rd, rn, operand);
   }
   void Sbc(Register rd, Register rn, const Operand& operand) {
@@ -3414,7 +4027,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sbcs(cond, rd, rn, operand);
   }
   void Sbcs(Register rd, Register rn, const Operand& operand) {
@@ -3428,7 +4045,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sbfx(cond, rd, rn, lsb, width);
   }
   void Sbfx(Register rd, Register rn, uint32_t lsb, uint32_t width) {
@@ -3442,7 +4063,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sdiv(cond, rd, rn, rm);
   }
   void Sdiv(Register rd, Register rn, Register rm) { Sdiv(al, rd, rn, rm); }
@@ -3454,7 +4079,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sel(cond, rd, rn, rm);
   }
   void Sel(Register rd, Register rn, Register rm) { Sel(al, rd, rn, rm); }
@@ -3466,7 +4095,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     shadd16(cond, rd, rn, rm);
   }
   void Shadd16(Register rd, Register rn, Register rm) {
@@ -3480,7 +4113,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     shadd8(cond, rd, rn, rm);
   }
   void Shadd8(Register rd, Register rn, Register rm) { Shadd8(al, rd, rn, rm); }
@@ -3492,7 +4129,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     shasx(cond, rd, rn, rm);
   }
   void Shasx(Register rd, Register rn, Register rm) { Shasx(al, rd, rn, rm); }
@@ -3504,7 +4145,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     shsax(cond, rd, rn, rm);
   }
   void Shsax(Register rd, Register rn, Register rm) { Shsax(al, rd, rn, rm); }
@@ -3516,7 +4161,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     shsub16(cond, rd, rn, rm);
   }
   void Shsub16(Register rd, Register rn, Register rm) {
@@ -3530,7 +4179,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     shsub8(cond, rd, rn, rm);
   }
   void Shsub8(Register rd, Register rn, Register rm) { Shsub8(al, rd, rn, rm); }
@@ -3544,7 +4197,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlabb(cond, rd, rn, rm, ra);
   }
   void Smlabb(Register rd, Register rn, Register rm, Register ra) {
@@ -3560,7 +4217,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlabt(cond, rd, rn, rm, ra);
   }
   void Smlabt(Register rd, Register rn, Register rm, Register ra) {
@@ -3576,7 +4237,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlad(cond, rd, rn, rm, ra);
   }
   void Smlad(Register rd, Register rn, Register rm, Register ra) {
@@ -3592,7 +4257,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smladx(cond, rd, rn, rm, ra);
   }
   void Smladx(Register rd, Register rn, Register rm, Register ra) {
@@ -3608,7 +4277,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlal(cond, rdlo, rdhi, rn, rm);
   }
   void Smlal(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3624,7 +4297,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlalbb(cond, rdlo, rdhi, rn, rm);
   }
   void Smlalbb(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3640,7 +4317,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlalbt(cond, rdlo, rdhi, rn, rm);
   }
   void Smlalbt(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3656,7 +4337,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlald(cond, rdlo, rdhi, rn, rm);
   }
   void Smlald(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3672,7 +4357,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlaldx(cond, rdlo, rdhi, rn, rm);
   }
   void Smlaldx(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3688,7 +4377,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlals(cond, rdlo, rdhi, rn, rm);
   }
   void Smlals(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3704,7 +4397,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlaltb(cond, rdlo, rdhi, rn, rm);
   }
   void Smlaltb(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3720,7 +4417,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlaltt(cond, rdlo, rdhi, rn, rm);
   }
   void Smlaltt(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3736,7 +4437,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlatb(cond, rd, rn, rm, ra);
   }
   void Smlatb(Register rd, Register rn, Register rm, Register ra) {
@@ -3752,7 +4457,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlatt(cond, rd, rn, rm, ra);
   }
   void Smlatt(Register rd, Register rn, Register rm, Register ra) {
@@ -3768,7 +4477,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlawb(cond, rd, rn, rm, ra);
   }
   void Smlawb(Register rd, Register rn, Register rm, Register ra) {
@@ -3784,7 +4497,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlawt(cond, rd, rn, rm, ra);
   }
   void Smlawt(Register rd, Register rn, Register rm, Register ra) {
@@ -3800,7 +4517,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlsd(cond, rd, rn, rm, ra);
   }
   void Smlsd(Register rd, Register rn, Register rm, Register ra) {
@@ -3816,7 +4537,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlsdx(cond, rd, rn, rm, ra);
   }
   void Smlsdx(Register rd, Register rn, Register rm, Register ra) {
@@ -3832,7 +4557,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlsld(cond, rdlo, rdhi, rn, rm);
   }
   void Smlsld(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3848,7 +4577,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smlsldx(cond, rdlo, rdhi, rn, rm);
   }
   void Smlsldx(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -3864,7 +4597,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smmla(cond, rd, rn, rm, ra);
   }
   void Smmla(Register rd, Register rn, Register rm, Register ra) {
@@ -3880,7 +4617,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smmlar(cond, rd, rn, rm, ra);
   }
   void Smmlar(Register rd, Register rn, Register rm, Register ra) {
@@ -3896,7 +4637,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smmls(cond, rd, rn, rm, ra);
   }
   void Smmls(Register rd, Register rn, Register rm, Register ra) {
@@ -3912,7 +4657,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smmlsr(cond, rd, rn, rm, ra);
   }
   void Smmlsr(Register rd, Register rn, Register rm, Register ra) {
@@ -3926,7 +4675,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smmul(cond, rd, rn, rm);
   }
   void Smmul(Register rd, Register rn, Register rm) { Smmul(al, rd, rn, rm); }
@@ -3938,7 +4691,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smmulr(cond, rd, rn, rm);
   }
   void Smmulr(Register rd, Register rn, Register rm) { Smmulr(al, rd, rn, rm); }
@@ -3950,7 +4707,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smuad(cond, rd, rn, rm);
   }
   void Smuad(Register rd, Register rn, Register rm) { Smuad(al, rd, rn, rm); }
@@ -3962,7 +4723,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smuadx(cond, rd, rn, rm);
   }
   void Smuadx(Register rd, Register rn, Register rm) { Smuadx(al, rd, rn, rm); }
@@ -3974,7 +4739,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smulbb(cond, rd, rn, rm);
   }
   void Smulbb(Register rd, Register rn, Register rm) { Smulbb(al, rd, rn, rm); }
@@ -3986,7 +4755,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smulbt(cond, rd, rn, rm);
   }
   void Smulbt(Register rd, Register rn, Register rm) { Smulbt(al, rd, rn, rm); }
@@ -4000,7 +4773,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smull(cond, rdlo, rdhi, rn, rm);
   }
   void Smull(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -4041,7 +4818,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smulls(cond, rdlo, rdhi, rn, rm);
   }
   void Smulls(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -4055,7 +4836,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smultb(cond, rd, rn, rm);
   }
   void Smultb(Register rd, Register rn, Register rm) { Smultb(al, rd, rn, rm); }
@@ -4067,7 +4852,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smultt(cond, rd, rn, rm);
   }
   void Smultt(Register rd, Register rn, Register rm) { Smultt(al, rd, rn, rm); }
@@ -4079,7 +4868,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smulwb(cond, rd, rn, rm);
   }
   void Smulwb(Register rd, Register rn, Register rm) { Smulwb(al, rd, rn, rm); }
@@ -4091,7 +4884,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smulwt(cond, rd, rn, rm);
   }
   void Smulwt(Register rd, Register rn, Register rm) { Smulwt(al, rd, rn, rm); }
@@ -4103,7 +4900,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smusd(cond, rd, rn, rm);
   }
   void Smusd(Register rd, Register rn, Register rm) { Smusd(al, rd, rn, rm); }
@@ -4115,7 +4916,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     smusdx(cond, rd, rn, rm);
   }
   void Smusdx(Register rd, Register rn, Register rm) { Smusdx(al, rd, rn, rm); }
@@ -4126,7 +4931,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ssat(cond, rd, imm, operand);
   }
   void Ssat(Register rd, uint32_t imm, const Operand& operand) {
@@ -4139,7 +4948,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ssat16(cond, rd, imm, rn);
   }
   void Ssat16(Register rd, uint32_t imm, Register rn) {
@@ -4153,7 +4966,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ssax(cond, rd, rn, rm);
   }
   void Ssax(Register rd, Register rn, Register rm) { Ssax(al, rd, rn, rm); }
@@ -4165,7 +4982,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ssub16(cond, rd, rn, rm);
   }
   void Ssub16(Register rd, Register rn, Register rm) { Ssub16(al, rd, rn, rm); }
@@ -4177,7 +4998,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ssub8(cond, rd, rn, rm);
   }
   void Ssub8(Register rd, Register rn, Register rm) { Ssub8(al, rd, rn, rm); }
@@ -4188,7 +5013,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stl(cond, rt, operand);
   }
   void Stl(Register rt, const MemOperand& operand) { Stl(al, rt, operand); }
@@ -4199,7 +5028,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stlb(cond, rt, operand);
   }
   void Stlb(Register rt, const MemOperand& operand) { Stlb(al, rt, operand); }
@@ -4214,7 +5047,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stlex(cond, rd, rt, operand);
   }
   void Stlex(Register rd, Register rt, const MemOperand& operand) {
@@ -4231,7 +5068,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stlexb(cond, rd, rt, operand);
   }
   void Stlexb(Register rd, Register rt, const MemOperand& operand) {
@@ -4250,7 +5091,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stlexd(cond, rd, rt, rt2, operand);
   }
   void Stlexd(Register rd,
@@ -4270,7 +5115,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stlexh(cond, rd, rt, operand);
   }
   void Stlexh(Register rd, Register rt, const MemOperand& operand) {
@@ -4283,7 +5132,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stlh(cond, rt, operand);
   }
   void Stlh(Register rt, const MemOperand& operand) { Stlh(al, rt, operand); }
@@ -4297,7 +5150,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stm(cond, rn, write_back, registers);
   }
   void Stm(Register rn, WriteBack write_back, RegisterList registers) {
@@ -4313,7 +5170,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stmda(cond, rn, write_back, registers);
   }
   void Stmda(Register rn, WriteBack write_back, RegisterList registers) {
@@ -4329,7 +5190,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stmdb(cond, rn, write_back, registers);
   }
   void Stmdb(Register rn, WriteBack write_back, RegisterList registers) {
@@ -4345,7 +5210,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stmea(cond, rn, write_back, registers);
   }
   void Stmea(Register rn, WriteBack write_back, RegisterList registers) {
@@ -4361,7 +5230,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stmed(cond, rn, write_back, registers);
   }
   void Stmed(Register rn, WriteBack write_back, RegisterList registers) {
@@ -4377,7 +5250,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stmfa(cond, rn, write_back, registers);
   }
   void Stmfa(Register rn, WriteBack write_back, RegisterList registers) {
@@ -4393,7 +5270,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stmfd(cond, rn, write_back, registers);
   }
   void Stmfd(Register rn, WriteBack write_back, RegisterList registers) {
@@ -4409,7 +5290,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     stmib(cond, rn, write_back, registers);
   }
   void Stmib(Register rn, WriteBack write_back, RegisterList registers) {
@@ -4438,7 +5323,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
          operand.GetBaseRegister().IsLow() &&
          operand.GetOffsetRegister().IsLow() && operand.GetSign().IsPlus() &&
          (operand.GetAddrMode() == Offset));
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     str(cond, rt, operand);
   }
   void Str(Register rt, const MemOperand& operand) { Str(al, rt, operand); }
@@ -4460,7 +5349,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
          operand.GetBaseRegister().IsLow() &&
          operand.GetOffsetRegister().IsLow() && operand.GetSign().IsPlus() &&
          (operand.GetAddrMode() == Offset));
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     strb(cond, rt, operand);
   }
   void Strb(Register rt, const MemOperand& operand) { Strb(al, rt, operand); }
@@ -4475,7 +5368,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     strd(cond, rt, rt2, operand);
   }
   void Strd(Register rt, Register rt2, const MemOperand& operand) {
@@ -4492,7 +5389,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     strex(cond, rd, rt, operand);
   }
   void Strex(Register rd, Register rt, const MemOperand& operand) {
@@ -4509,7 +5410,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     strexb(cond, rd, rt, operand);
   }
   void Strexb(Register rd, Register rt, const MemOperand& operand) {
@@ -4528,7 +5433,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     strexd(cond, rd, rt, rt2, operand);
   }
   void Strexd(Register rd,
@@ -4548,7 +5457,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     strexh(cond, rd, rt, operand);
   }
   void Strexh(Register rd, Register rt, const MemOperand& operand) {
@@ -4572,7 +5485,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
          operand.GetBaseRegister().IsLow() &&
          operand.GetOffsetRegister().IsLow() && operand.GetSign().IsPlus() &&
          (operand.GetAddrMode() == Offset));
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     strh(cond, rt, operand);
   }
   void Strh(Register rt, const MemOperand& operand) { Strh(al, rt, operand); }
@@ -4600,7 +5517,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // SUB<c>{<q>} <Rd>, <Rn>, <Rm>
         (operand.IsPlainRegister() && rd.IsLow() && rn.IsLow() &&
          operand.GetBaseRegister().IsLow());
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     sub(cond, rd, rn, operand);
   }
   void Sub(Register rd, Register rn, const Operand& operand) {
@@ -4658,7 +5579,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     subs(cond, rd, rn, operand);
   }
   void Subs(Register rd, Register rn, const Operand& operand) {
@@ -4669,7 +5594,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     svc(cond, imm);
   }
   void Svc(uint32_t imm) { Svc(al, imm); }
@@ -4681,7 +5610,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sxtab(cond, rd, rn, operand);
   }
   void Sxtab(Register rd, Register rn, const Operand& operand) {
@@ -4698,7 +5631,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sxtab16(cond, rd, rn, operand);
   }
   void Sxtab16(Register rd, Register rn, const Operand& operand) {
@@ -4712,7 +5649,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sxtah(cond, rd, rn, operand);
   }
   void Sxtah(Register rd, Register rn, const Operand& operand) {
@@ -4725,7 +5666,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sxtb(cond, rd, operand);
   }
   void Sxtb(Register rd, const Operand& operand) { Sxtb(al, rd, operand); }
@@ -4736,7 +5681,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sxtb16(cond, rd, operand);
   }
   void Sxtb16(Register rd, const Operand& operand) { Sxtb16(al, rd, operand); }
@@ -4747,7 +5696,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     sxth(cond, rd, operand);
   }
   void Sxth(Register rd, const Operand& operand) { Sxth(al, rd, operand); }
@@ -4758,7 +5711,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     teq(cond, rn, operand);
   }
   void Teq(Register rn, const Operand& operand) { Teq(al, rn, operand); }
@@ -4773,7 +5730,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
         // TST{<c>}{<q>} <Rn>, <Rm> ; T1
         operand.IsPlainRegister() && rn.IsLow() &&
         operand.GetBaseRegister().IsLow();
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard, can_use_it);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard, can_use_it);
+#endif
     tst(cond, rn, operand);
   }
   void Tst(Register rn, const Operand& operand) { Tst(al, rn, operand); }
@@ -4785,7 +5746,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uadd16(cond, rd, rn, rm);
   }
   void Uadd16(Register rd, Register rn, Register rm) { Uadd16(al, rd, rn, rm); }
@@ -4797,7 +5762,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uadd8(cond, rd, rn, rm);
   }
   void Uadd8(Register rd, Register rn, Register rm) { Uadd8(al, rd, rn, rm); }
@@ -4809,7 +5778,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uasx(cond, rd, rn, rm);
   }
   void Uasx(Register rd, Register rn, Register rm) { Uasx(al, rd, rn, rm); }
@@ -4821,7 +5794,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     ubfx(cond, rd, rn, lsb, width);
   }
   void Ubfx(Register rd, Register rn, uint32_t lsb, uint32_t width) {
@@ -4832,7 +5809,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     udf(cond, imm);
   }
   void Udf(uint32_t imm) { Udf(al, imm); }
@@ -4844,7 +5825,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     udiv(cond, rd, rn, rm);
   }
   void Udiv(Register rd, Register rn, Register rm) { Udiv(al, rd, rn, rm); }
@@ -4856,7 +5841,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uhadd16(cond, rd, rn, rm);
   }
   void Uhadd16(Register rd, Register rn, Register rm) {
@@ -4870,7 +5859,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uhadd8(cond, rd, rn, rm);
   }
   void Uhadd8(Register rd, Register rn, Register rm) { Uhadd8(al, rd, rn, rm); }
@@ -4882,7 +5875,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uhasx(cond, rd, rn, rm);
   }
   void Uhasx(Register rd, Register rn, Register rm) { Uhasx(al, rd, rn, rm); }
@@ -4894,7 +5891,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uhsax(cond, rd, rn, rm);
   }
   void Uhsax(Register rd, Register rn, Register rm) { Uhsax(al, rd, rn, rm); }
@@ -4906,7 +5907,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uhsub16(cond, rd, rn, rm);
   }
   void Uhsub16(Register rd, Register rn, Register rm) {
@@ -4920,7 +5925,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uhsub8(cond, rd, rn, rm);
   }
   void Uhsub8(Register rd, Register rn, Register rm) { Uhsub8(al, rd, rn, rm); }
@@ -4934,7 +5943,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     umaal(cond, rdlo, rdhi, rn, rm);
   }
   void Umaal(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -4950,7 +5963,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     umlal(cond, rdlo, rdhi, rn, rm);
   }
   void Umlal(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -4991,7 +6008,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     umlals(cond, rdlo, rdhi, rn, rm);
   }
   void Umlals(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -5007,7 +6028,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     umull(cond, rdlo, rdhi, rn, rm);
   }
   void Umull(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -5048,7 +6073,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     umulls(cond, rdlo, rdhi, rn, rm);
   }
   void Umulls(Register rdlo, Register rdhi, Register rn, Register rm) {
@@ -5062,7 +6091,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uqadd16(cond, rd, rn, rm);
   }
   void Uqadd16(Register rd, Register rn, Register rm) {
@@ -5076,7 +6109,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uqadd8(cond, rd, rn, rm);
   }
   void Uqadd8(Register rd, Register rn, Register rm) { Uqadd8(al, rd, rn, rm); }
@@ -5088,7 +6125,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uqasx(cond, rd, rn, rm);
   }
   void Uqasx(Register rd, Register rn, Register rm) { Uqasx(al, rd, rn, rm); }
@@ -5100,7 +6141,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uqsax(cond, rd, rn, rm);
   }
   void Uqsax(Register rd, Register rn, Register rm) { Uqsax(al, rd, rn, rm); }
@@ -5112,7 +6157,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uqsub16(cond, rd, rn, rm);
   }
   void Uqsub16(Register rd, Register rn, Register rm) {
@@ -5126,7 +6175,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uqsub8(cond, rd, rn, rm);
   }
   void Uqsub8(Register rd, Register rn, Register rm) { Uqsub8(al, rd, rn, rm); }
@@ -5138,7 +6191,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     usad8(cond, rd, rn, rm);
   }
   void Usad8(Register rd, Register rn, Register rm) { Usad8(al, rd, rn, rm); }
@@ -5152,7 +6209,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     usada8(cond, rd, rn, rm, ra);
   }
   void Usada8(Register rd, Register rn, Register rm, Register ra) {
@@ -5165,7 +6226,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     usat(cond, rd, imm, operand);
   }
   void Usat(Register rd, uint32_t imm, const Operand& operand) {
@@ -5178,7 +6243,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     usat16(cond, rd, imm, rn);
   }
   void Usat16(Register rd, uint32_t imm, Register rn) {
@@ -5192,7 +6261,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     usax(cond, rd, rn, rm);
   }
   void Usax(Register rd, Register rn, Register rm) { Usax(al, rd, rn, rm); }
@@ -5204,7 +6277,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     usub16(cond, rd, rn, rm);
   }
   void Usub16(Register rd, Register rn, Register rm) { Usub16(al, rd, rn, rm); }
@@ -5216,7 +6293,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     usub8(cond, rd, rn, rm);
   }
   void Usub8(Register rd, Register rn, Register rm) { Usub8(al, rd, rn, rm); }
@@ -5228,7 +6309,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uxtab(cond, rd, rn, operand);
   }
   void Uxtab(Register rd, Register rn, const Operand& operand) {
@@ -5245,7 +6330,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uxtab16(cond, rd, rn, operand);
   }
   void Uxtab16(Register rd, Register rn, const Operand& operand) {
@@ -5259,7 +6348,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uxtah(cond, rd, rn, operand);
   }
   void Uxtah(Register rd, Register rn, const Operand& operand) {
@@ -5272,7 +6365,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uxtb(cond, rd, operand);
   }
   void Uxtb(Register rd, const Operand& operand) { Uxtb(al, rd, operand); }
@@ -5283,7 +6380,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uxtb16(cond, rd, operand);
   }
   void Uxtb16(Register rd, const Operand& operand) { Uxtb16(al, rd, operand); }
@@ -5294,7 +6395,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     uxth(cond, rd, operand);
   }
   void Uxth(Register rd, const Operand& operand) { Uxth(al, rd, operand); }
@@ -5307,7 +6412,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vaba(cond, dt, rd, rn, rm);
   }
   void Vaba(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5322,7 +6431,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vaba(cond, dt, rd, rn, rm);
   }
   void Vaba(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5337,7 +6450,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vabal(cond, dt, rd, rn, rm);
   }
   void Vabal(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -5352,7 +6469,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vabd(cond, dt, rd, rn, rm);
   }
   void Vabd(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5367,7 +6488,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vabd(cond, dt, rd, rn, rm);
   }
   void Vabd(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5382,7 +6507,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vabdl(cond, dt, rd, rn, rm);
   }
   void Vabdl(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -5395,7 +6524,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vabs(cond, dt, rd, rm);
   }
   void Vabs(DataType dt, DRegister rd, DRegister rm) { Vabs(al, dt, rd, rm); }
@@ -5406,7 +6539,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vabs(cond, dt, rd, rm);
   }
   void Vabs(DataType dt, QRegister rd, QRegister rm) { Vabs(al, dt, rd, rm); }
@@ -5417,7 +6554,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vabs(cond, dt, rd, rm);
   }
   void Vabs(DataType dt, SRegister rd, SRegister rm) { Vabs(al, dt, rd, rm); }
@@ -5430,7 +6571,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vacge(cond, dt, rd, rn, rm);
   }
   void Vacge(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5445,7 +6590,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vacge(cond, dt, rd, rn, rm);
   }
   void Vacge(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5460,7 +6609,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vacgt(cond, dt, rd, rn, rm);
   }
   void Vacgt(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5475,7 +6628,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vacgt(cond, dt, rd, rn, rm);
   }
   void Vacgt(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5490,7 +6647,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vacle(cond, dt, rd, rn, rm);
   }
   void Vacle(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5505,7 +6666,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vacle(cond, dt, rd, rn, rm);
   }
   void Vacle(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5520,7 +6685,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vaclt(cond, dt, rd, rn, rm);
   }
   void Vaclt(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5535,7 +6704,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vaclt(cond, dt, rd, rn, rm);
   }
   void Vaclt(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5550,7 +6723,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vadd(cond, dt, rd, rn, rm);
   }
   void Vadd(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5565,7 +6742,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vadd(cond, dt, rd, rn, rm);
   }
   void Vadd(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5580,7 +6761,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vadd(cond, dt, rd, rn, rm);
   }
   void Vadd(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -5595,7 +6780,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vaddhn(cond, dt, rd, rn, rm);
   }
   void Vaddhn(DataType dt, DRegister rd, QRegister rn, QRegister rm) {
@@ -5610,7 +6799,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vaddl(cond, dt, rd, rn, rm);
   }
   void Vaddl(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -5625,7 +6818,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vaddw(cond, dt, rd, rn, rm);
   }
   void Vaddw(DataType dt, QRegister rd, QRegister rn, DRegister rm) {
@@ -5643,7 +6840,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vand(cond, dt, rd, rn, operand);
   }
   void Vand(DataType dt, DRegister rd, DRegister rn, const DOperand& operand) {
@@ -5661,7 +6862,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vand(cond, dt, rd, rn, operand);
   }
   void Vand(DataType dt, QRegister rd, QRegister rn, const QOperand& operand) {
@@ -5679,7 +6884,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vbic(cond, dt, rd, rn, operand);
   }
   void Vbic(DataType dt, DRegister rd, DRegister rn, const DOperand& operand) {
@@ -5697,7 +6906,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vbic(cond, dt, rd, rn, operand);
   }
   void Vbic(DataType dt, QRegister rd, QRegister rn, const QOperand& operand) {
@@ -5712,7 +6925,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vbif(cond, dt, rd, rn, rm);
   }
   void Vbif(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5733,7 +6950,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vbif(cond, dt, rd, rn, rm);
   }
   void Vbif(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5754,7 +6975,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vbit(cond, dt, rd, rn, rm);
   }
   void Vbit(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5775,7 +7000,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vbit(cond, dt, rd, rn, rm);
   }
   void Vbit(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5796,7 +7025,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vbsl(cond, dt, rd, rn, rm);
   }
   void Vbsl(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5817,7 +7050,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vbsl(cond, dt, rd, rn, rm);
   }
   void Vbsl(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5841,7 +7078,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vceq(cond, dt, rd, rm, operand);
   }
   void Vceq(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -5859,7 +7100,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vceq(cond, dt, rd, rm, operand);
   }
   void Vceq(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -5874,7 +7119,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vceq(cond, dt, rd, rn, rm);
   }
   void Vceq(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5889,7 +7138,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vceq(cond, dt, rd, rn, rm);
   }
   void Vceq(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5907,7 +7160,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcge(cond, dt, rd, rm, operand);
   }
   void Vcge(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -5925,7 +7182,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcge(cond, dt, rd, rm, operand);
   }
   void Vcge(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -5940,7 +7201,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcge(cond, dt, rd, rn, rm);
   }
   void Vcge(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -5955,7 +7220,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcge(cond, dt, rd, rn, rm);
   }
   void Vcge(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -5973,7 +7242,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcgt(cond, dt, rd, rm, operand);
   }
   void Vcgt(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -5991,7 +7264,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcgt(cond, dt, rd, rm, operand);
   }
   void Vcgt(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -6006,7 +7283,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcgt(cond, dt, rd, rn, rm);
   }
   void Vcgt(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -6021,7 +7302,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcgt(cond, dt, rd, rn, rm);
   }
   void Vcgt(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -6039,7 +7324,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcle(cond, dt, rd, rm, operand);
   }
   void Vcle(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -6057,7 +7346,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcle(cond, dt, rd, rm, operand);
   }
   void Vcle(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -6072,7 +7365,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcle(cond, dt, rd, rn, rm);
   }
   void Vcle(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -6087,7 +7384,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcle(cond, dt, rd, rn, rm);
   }
   void Vcle(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -6100,7 +7401,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcls(cond, dt, rd, rm);
   }
   void Vcls(DataType dt, DRegister rd, DRegister rm) { Vcls(al, dt, rd, rm); }
@@ -6111,7 +7416,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcls(cond, dt, rd, rm);
   }
   void Vcls(DataType dt, QRegister rd, QRegister rm) { Vcls(al, dt, rd, rm); }
@@ -6127,7 +7436,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vclt(cond, dt, rd, rm, operand);
   }
   void Vclt(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -6145,7 +7458,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vclt(cond, dt, rd, rm, operand);
   }
   void Vclt(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -6160,7 +7477,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vclt(cond, dt, rd, rn, rm);
   }
   void Vclt(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -6175,7 +7496,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vclt(cond, dt, rd, rn, rm);
   }
   void Vclt(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -6188,7 +7513,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vclz(cond, dt, rd, rm);
   }
   void Vclz(DataType dt, DRegister rd, DRegister rm) { Vclz(al, dt, rd, rm); }
@@ -6199,7 +7528,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vclz(cond, dt, rd, rm);
   }
   void Vclz(DataType dt, QRegister rd, QRegister rm) { Vclz(al, dt, rd, rm); }
@@ -6213,7 +7546,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcmp(cond, dt, rd, operand);
   }
   void Vcmp(DataType dt, SRegister rd, const SOperand& operand) {
@@ -6229,7 +7566,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcmp(cond, dt, rd, operand);
   }
   void Vcmp(DataType dt, DRegister rd, const DOperand& operand) {
@@ -6245,7 +7586,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcmpe(cond, dt, rd, operand);
   }
   void Vcmpe(DataType dt, SRegister rd, const SOperand& operand) {
@@ -6261,7 +7606,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcmpe(cond, dt, rd, operand);
   }
   void Vcmpe(DataType dt, DRegister rd, const DOperand& operand) {
@@ -6274,7 +7623,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcnt(cond, dt, rd, rm);
   }
   void Vcnt(DataType dt, DRegister rd, DRegister rm) { Vcnt(al, dt, rd, rm); }
@@ -6285,7 +7638,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcnt(cond, dt, rd, rm);
   }
   void Vcnt(DataType dt, QRegister rd, QRegister rm) { Vcnt(al, dt, rd, rm); }
@@ -6297,7 +7654,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm);
   }
   void Vcvt(DataType dt1, DataType dt2, DRegister rd, SRegister rm) {
@@ -6311,7 +7672,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm);
   }
   void Vcvt(DataType dt1, DataType dt2, SRegister rd, DRegister rm) {
@@ -6329,7 +7694,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm, fbits);
   }
   void Vcvt(
@@ -6348,7 +7717,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm, fbits);
   }
   void Vcvt(
@@ -6367,7 +7740,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm, fbits);
   }
   void Vcvt(
@@ -6382,7 +7759,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm);
   }
   void Vcvt(DataType dt1, DataType dt2, DRegister rd, DRegister rm) {
@@ -6396,7 +7777,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm);
   }
   void Vcvt(DataType dt1, DataType dt2, QRegister rd, QRegister rm) {
@@ -6410,7 +7795,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm);
   }
   void Vcvt(DataType dt1, DataType dt2, DRegister rd, QRegister rm) {
@@ -6424,7 +7813,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm);
   }
   void Vcvt(DataType dt1, DataType dt2, QRegister rd, DRegister rm) {
@@ -6438,7 +7831,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvt(cond, dt1, dt2, rd, rm);
   }
   void Vcvt(DataType dt1, DataType dt2, SRegister rd, SRegister rm) {
@@ -6488,7 +7885,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvtb(cond, dt1, dt2, rd, rm);
   }
   void Vcvtb(DataType dt1, DataType dt2, SRegister rd, SRegister rm) {
@@ -6502,7 +7903,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvtb(cond, dt1, dt2, rd, rm);
   }
   void Vcvtb(DataType dt1, DataType dt2, DRegister rd, SRegister rm) {
@@ -6516,7 +7921,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvtb(cond, dt1, dt2, rd, rm);
   }
   void Vcvtb(DataType dt1, DataType dt2, SRegister rd, DRegister rm) {
@@ -6638,7 +8047,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvtr(cond, dt1, dt2, rd, rm);
   }
   void Vcvtr(DataType dt1, DataType dt2, SRegister rd, SRegister rm) {
@@ -6652,7 +8065,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvtr(cond, dt1, dt2, rd, rm);
   }
   void Vcvtr(DataType dt1, DataType dt2, SRegister rd, DRegister rm) {
@@ -6666,7 +8083,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvtt(cond, dt1, dt2, rd, rm);
   }
   void Vcvtt(DataType dt1, DataType dt2, SRegister rd, SRegister rm) {
@@ -6680,7 +8101,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvtt(cond, dt1, dt2, rd, rm);
   }
   void Vcvtt(DataType dt1, DataType dt2, DRegister rd, SRegister rm) {
@@ -6694,7 +8119,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vcvtt(cond, dt1, dt2, rd, rm);
   }
   void Vcvtt(DataType dt1, DataType dt2, SRegister rd, DRegister rm) {
@@ -6709,7 +8138,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vdiv(cond, dt, rd, rn, rm);
   }
   void Vdiv(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -6724,7 +8157,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vdiv(cond, dt, rd, rn, rm);
   }
   void Vdiv(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -6737,7 +8174,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vdup(cond, dt, rd, rt);
   }
   void Vdup(DataType dt, QRegister rd, Register rt) { Vdup(al, dt, rd, rt); }
@@ -6748,7 +8189,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vdup(cond, dt, rd, rt);
   }
   void Vdup(DataType dt, DRegister rd, Register rt) { Vdup(al, dt, rd, rt); }
@@ -6759,7 +8204,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vdup(cond, dt, rd, rm);
   }
   void Vdup(DataType dt, DRegister rd, DRegisterLane rm) {
@@ -6772,7 +8221,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vdup(cond, dt, rd, rm);
   }
   void Vdup(DataType dt, QRegister rd, DRegisterLane rm) {
@@ -6787,7 +8240,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     veor(cond, dt, rd, rn, rm);
   }
   void Veor(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -6808,7 +8265,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     veor(cond, dt, rd, rn, rm);
   }
   void Veor(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -6834,7 +8295,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vext(cond, dt, rd, rn, rm, operand);
   }
   void Vext(DataType dt,
@@ -6858,7 +8323,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vext(cond, dt, rd, rn, rm, operand);
   }
   void Vext(DataType dt,
@@ -6877,7 +8346,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfma(cond, dt, rd, rn, rm);
   }
   void Vfma(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -6892,7 +8365,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfma(cond, dt, rd, rn, rm);
   }
   void Vfma(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -6907,7 +8384,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfma(cond, dt, rd, rn, rm);
   }
   void Vfma(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -6922,7 +8403,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfms(cond, dt, rd, rn, rm);
   }
   void Vfms(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -6937,7 +8422,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfms(cond, dt, rd, rn, rm);
   }
   void Vfms(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -6952,7 +8441,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfms(cond, dt, rd, rn, rm);
   }
   void Vfms(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -6967,7 +8460,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfnma(cond, dt, rd, rn, rm);
   }
   void Vfnma(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -6982,7 +8479,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfnma(cond, dt, rd, rn, rm);
   }
   void Vfnma(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -6997,7 +8498,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfnms(cond, dt, rd, rn, rm);
   }
   void Vfnms(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -7012,7 +8517,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vfnms(cond, dt, rd, rn, rm);
   }
   void Vfnms(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -7027,7 +8536,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vhadd(cond, dt, rd, rn, rm);
   }
   void Vhadd(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -7042,7 +8555,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vhadd(cond, dt, rd, rn, rm);
   }
   void Vhadd(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -7057,7 +8574,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vhsub(cond, dt, rd, rn, rm);
   }
   void Vhsub(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -7072,7 +8593,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vhsub(cond, dt, rd, rn, rm);
   }
   void Vhsub(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -7088,7 +8613,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vld1(cond, dt, nreglist, operand);
   }
   void Vld1(DataType dt,
@@ -7106,7 +8635,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vld2(cond, dt, nreglist, operand);
   }
   void Vld2(DataType dt,
@@ -7124,7 +8657,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vld3(cond, dt, nreglist, operand);
   }
   void Vld3(DataType dt,
@@ -7142,7 +8679,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vld3(cond, dt, nreglist, operand);
   }
   void Vld3(DataType dt,
@@ -7160,7 +8701,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vld4(cond, dt, nreglist, operand);
   }
   void Vld4(DataType dt,
@@ -7179,7 +8724,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldm(cond, dt, rn, write_back, dreglist);
   }
   void Vldm(DataType dt,
@@ -7208,7 +8757,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldm(cond, dt, rn, write_back, sreglist);
   }
   void Vldm(DataType dt,
@@ -7237,7 +8790,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldmdb(cond, dt, rn, write_back, dreglist);
   }
   void Vldmdb(DataType dt,
@@ -7266,7 +8823,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldmdb(cond, dt, rn, write_back, sreglist);
   }
   void Vldmdb(DataType dt,
@@ -7295,7 +8856,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldmia(cond, dt, rn, write_back, dreglist);
   }
   void Vldmia(DataType dt,
@@ -7324,7 +8889,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldmia(cond, dt, rn, write_back, sreglist);
   }
   void Vldmia(DataType dt,
@@ -7353,7 +8922,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldr(cond, dt, rd, operand);
   }
   void Vldr(DataType dt, DRegister rd, const MemOperand& operand) {
@@ -7376,7 +8949,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vldr(cond, dt, rd, operand);
   }
   void Vldr(DataType dt, SRegister rd, const MemOperand& operand) {
@@ -7397,7 +8974,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmax(cond, dt, rd, rn, rm);
   }
   void Vmax(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -7412,7 +8993,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmax(cond, dt, rd, rn, rm);
   }
   void Vmax(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -7457,7 +9042,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmin(cond, dt, rd, rn, rm);
   }
   void Vmin(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -7472,7 +9061,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmin(cond, dt, rd, rn, rm);
   }
   void Vmin(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -7520,7 +9113,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmla(cond, dt, rd, rn, rm);
   }
   void Vmla(DataType dt, DRegister rd, DRegister rn, DRegisterLane rm) {
@@ -7538,7 +9135,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmla(cond, dt, rd, rn, rm);
   }
   void Vmla(DataType dt, QRegister rd, QRegister rn, DRegisterLane rm) {
@@ -7553,7 +9154,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmla(cond, dt, rd, rn, rm);
   }
   void Vmla(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -7568,7 +9173,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmla(cond, dt, rd, rn, rm);
   }
   void Vmla(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -7583,7 +9192,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmla(cond, dt, rd, rn, rm);
   }
   void Vmla(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -7601,7 +9214,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmlal(cond, dt, rd, rn, rm);
   }
   void Vmlal(DataType dt, QRegister rd, DRegister rn, DRegisterLane rm) {
@@ -7616,7 +9233,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmlal(cond, dt, rd, rn, rm);
   }
   void Vmlal(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -7634,7 +9255,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmls(cond, dt, rd, rn, rm);
   }
   void Vmls(DataType dt, DRegister rd, DRegister rn, DRegisterLane rm) {
@@ -7652,7 +9277,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmls(cond, dt, rd, rn, rm);
   }
   void Vmls(DataType dt, QRegister rd, QRegister rn, DRegisterLane rm) {
@@ -7667,7 +9296,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmls(cond, dt, rd, rn, rm);
   }
   void Vmls(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -7682,7 +9315,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmls(cond, dt, rd, rn, rm);
   }
   void Vmls(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -7697,7 +9334,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmls(cond, dt, rd, rn, rm);
   }
   void Vmls(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -7715,7 +9356,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmlsl(cond, dt, rd, rn, rm);
   }
   void Vmlsl(DataType dt, QRegister rd, DRegister rn, DRegisterLane rm) {
@@ -7730,7 +9375,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmlsl(cond, dt, rd, rn, rm);
   }
   void Vmlsl(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -7743,7 +9392,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, rt, rn);
   }
   void Vmov(Register rt, SRegister rn) { Vmov(al, rt, rn); }
@@ -7754,7 +9407,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, rn, rt);
   }
   void Vmov(SRegister rn, Register rt) { Vmov(al, rn, rt); }
@@ -7766,7 +9423,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, rt, rt2, rm);
   }
   void Vmov(Register rt, Register rt2, DRegister rm) { Vmov(al, rt, rt2, rm); }
@@ -7778,7 +9439,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, rm, rt, rt2);
   }
   void Vmov(DRegister rm, Register rt, Register rt2) { Vmov(al, rm, rt, rt2); }
@@ -7792,7 +9457,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, rt, rt2, rm, rm1);
   }
   void Vmov(Register rt, Register rt2, SRegister rm, SRegister rm1) {
@@ -7808,7 +9477,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, rm, rm1, rt, rt2);
   }
   void Vmov(SRegister rm, SRegister rm1, Register rt, Register rt2) {
@@ -7821,7 +9494,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, dt, rd, rt);
   }
   void Vmov(DataType dt, DRegisterLane rd, Register rt) {
@@ -7843,7 +9520,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, dt, rd, operand);
   }
   void Vmov(DataType dt, DRegister rd, const DOperand& operand) {
@@ -7859,7 +9540,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, dt, rd, operand);
   }
   void Vmov(DataType dt, QRegister rd, const QOperand& operand) {
@@ -7875,7 +9560,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, dt, rd, operand);
   }
   void Vmov(DataType dt, SRegister rd, const SOperand& operand) {
@@ -7888,7 +9577,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmov(cond, dt, rt, rn);
   }
   void Vmov(DataType dt, Register rt, DRegisterLane rn) {
@@ -7907,7 +9600,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmovl(cond, dt, rd, rm);
   }
   void Vmovl(DataType dt, QRegister rd, DRegister rm) { Vmovl(al, dt, rd, rm); }
@@ -7918,7 +9615,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmovn(cond, dt, rd, rm);
   }
   void Vmovn(DataType dt, DRegister rd, QRegister rm) { Vmovn(al, dt, rd, rm); }
@@ -7930,7 +9631,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmrs(cond, rt, spec_reg);
   }
   void Vmrs(RegisterOrAPSR_nzcv rt, SpecialFPRegister spec_reg) {
@@ -7942,7 +9647,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmsr(cond, spec_reg, rt);
   }
   void Vmsr(SpecialFPRegister spec_reg, Register rt) { Vmsr(al, spec_reg, rt); }
@@ -7959,7 +9668,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmul(cond, dt, rd, rn, dm, index);
   }
   void Vmul(
@@ -7979,7 +9692,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmul(cond, dt, rd, rn, dm, index);
   }
   void Vmul(
@@ -7995,7 +9712,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmul(cond, dt, rd, rn, rm);
   }
   void Vmul(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8010,7 +9731,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmul(cond, dt, rd, rn, rm);
   }
   void Vmul(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -8025,7 +9750,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmul(cond, dt, rd, rn, rm);
   }
   void Vmul(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -8044,7 +9773,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmull(cond, dt, rd, rn, dm, index);
   }
   void Vmull(
@@ -8060,7 +9793,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmull(cond, dt, rd, rn, rm);
   }
   void Vmull(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -8076,7 +9813,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmvn(cond, dt, rd, operand);
   }
   void Vmvn(DataType dt, DRegister rd, const DOperand& operand) {
@@ -8092,7 +9833,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vmvn(cond, dt, rd, operand);
   }
   void Vmvn(DataType dt, QRegister rd, const QOperand& operand) {
@@ -8105,7 +9850,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vneg(cond, dt, rd, rm);
   }
   void Vneg(DataType dt, DRegister rd, DRegister rm) { Vneg(al, dt, rd, rm); }
@@ -8116,7 +9865,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vneg(cond, dt, rd, rm);
   }
   void Vneg(DataType dt, QRegister rd, QRegister rm) { Vneg(al, dt, rd, rm); }
@@ -8127,7 +9880,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vneg(cond, dt, rd, rm);
   }
   void Vneg(DataType dt, SRegister rd, SRegister rm) { Vneg(al, dt, rd, rm); }
@@ -8140,7 +9897,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vnmla(cond, dt, rd, rn, rm);
   }
   void Vnmla(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -8155,7 +9916,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vnmla(cond, dt, rd, rn, rm);
   }
   void Vnmla(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8170,7 +9935,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vnmls(cond, dt, rd, rn, rm);
   }
   void Vnmls(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -8185,7 +9954,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vnmls(cond, dt, rd, rn, rm);
   }
   void Vnmls(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8200,7 +9973,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vnmul(cond, dt, rd, rn, rm);
   }
   void Vnmul(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -8215,7 +9992,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vnmul(cond, dt, rd, rn, rm);
   }
   void Vnmul(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8233,7 +10014,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vorn(cond, dt, rd, rn, operand);
   }
   void Vorn(DataType dt, DRegister rd, DRegister rn, const DOperand& operand) {
@@ -8251,7 +10036,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vorn(cond, dt, rd, rn, operand);
   }
   void Vorn(DataType dt, QRegister rd, QRegister rn, const QOperand& operand) {
@@ -8269,7 +10058,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vorr(cond, dt, rd, rn, operand);
   }
   void Vorr(DataType dt, DRegister rd, DRegister rn, const DOperand& operand) {
@@ -8296,7 +10089,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vorr(cond, dt, rd, rn, operand);
   }
   void Vorr(DataType dt, QRegister rd, QRegister rn, const QOperand& operand) {
@@ -8318,7 +10115,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpadal(cond, dt, rd, rm);
   }
   void Vpadal(DataType dt, DRegister rd, DRegister rm) {
@@ -8331,7 +10132,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpadal(cond, dt, rd, rm);
   }
   void Vpadal(DataType dt, QRegister rd, QRegister rm) {
@@ -8346,7 +10151,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpadd(cond, dt, rd, rn, rm);
   }
   void Vpadd(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8359,7 +10168,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpaddl(cond, dt, rd, rm);
   }
   void Vpaddl(DataType dt, DRegister rd, DRegister rm) {
@@ -8372,7 +10185,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpaddl(cond, dt, rd, rm);
   }
   void Vpaddl(DataType dt, QRegister rd, QRegister rm) {
@@ -8387,7 +10204,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpmax(cond, dt, rd, rn, rm);
   }
   void Vpmax(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8402,7 +10223,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpmin(cond, dt, rd, rn, rm);
   }
   void Vpmin(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8414,7 +10239,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpop(cond, dt, dreglist);
   }
   void Vpop(DataType dt, DRegisterList dreglist) { Vpop(al, dt, dreglist); }
@@ -8428,7 +10257,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpop(cond, dt, sreglist);
   }
   void Vpop(DataType dt, SRegisterList sreglist) { Vpop(al, dt, sreglist); }
@@ -8442,7 +10275,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpush(cond, dt, dreglist);
   }
   void Vpush(DataType dt, DRegisterList dreglist) { Vpush(al, dt, dreglist); }
@@ -8458,7 +10295,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vpush(cond, dt, sreglist);
   }
   void Vpush(DataType dt, SRegisterList sreglist) { Vpush(al, dt, sreglist); }
@@ -8475,7 +10316,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqabs(cond, dt, rd, rm);
   }
   void Vqabs(DataType dt, DRegister rd, DRegister rm) { Vqabs(al, dt, rd, rm); }
@@ -8486,7 +10331,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqabs(cond, dt, rd, rm);
   }
   void Vqabs(DataType dt, QRegister rd, QRegister rm) { Vqabs(al, dt, rd, rm); }
@@ -8499,7 +10348,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqadd(cond, dt, rd, rn, rm);
   }
   void Vqadd(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8514,7 +10367,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqadd(cond, dt, rd, rn, rm);
   }
   void Vqadd(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -8529,7 +10386,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmlal(cond, dt, rd, rn, rm);
   }
   void Vqdmlal(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -8548,7 +10409,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmlal(cond, dt, rd, rn, dm, index);
   }
   void Vqdmlal(
@@ -8564,7 +10429,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmlsl(cond, dt, rd, rn, rm);
   }
   void Vqdmlsl(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -8583,7 +10452,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmlsl(cond, dt, rd, rn, dm, index);
   }
   void Vqdmlsl(
@@ -8599,7 +10472,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmulh(cond, dt, rd, rn, rm);
   }
   void Vqdmulh(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8614,7 +10491,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmulh(cond, dt, rd, rn, rm);
   }
   void Vqdmulh(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -8632,7 +10513,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmulh(cond, dt, rd, rn, rm);
   }
   void Vqdmulh(DataType dt, DRegister rd, DRegister rn, DRegisterLane rm) {
@@ -8650,7 +10535,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmulh(cond, dt, rd, rn, rm);
   }
   void Vqdmulh(DataType dt, QRegister rd, QRegister rn, DRegisterLane rm) {
@@ -8665,7 +10554,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmull(cond, dt, rd, rn, rm);
   }
   void Vqdmull(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -8683,7 +10576,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqdmull(cond, dt, rd, rn, rm);
   }
   void Vqdmull(DataType dt, QRegister rd, DRegister rn, DRegisterLane rm) {
@@ -8696,7 +10593,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqmovn(cond, dt, rd, rm);
   }
   void Vqmovn(DataType dt, DRegister rd, QRegister rm) {
@@ -8709,7 +10610,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqmovun(cond, dt, rd, rm);
   }
   void Vqmovun(DataType dt, DRegister rd, QRegister rm) {
@@ -8722,7 +10627,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqneg(cond, dt, rd, rm);
   }
   void Vqneg(DataType dt, DRegister rd, DRegister rm) { Vqneg(al, dt, rd, rm); }
@@ -8733,7 +10642,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqneg(cond, dt, rd, rm);
   }
   void Vqneg(DataType dt, QRegister rd, QRegister rm) { Vqneg(al, dt, rd, rm); }
@@ -8746,7 +10659,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqrdmulh(cond, dt, rd, rn, rm);
   }
   void Vqrdmulh(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -8761,7 +10678,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqrdmulh(cond, dt, rd, rn, rm);
   }
   void Vqrdmulh(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -8779,7 +10700,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqrdmulh(cond, dt, rd, rn, rm);
   }
   void Vqrdmulh(DataType dt, DRegister rd, DRegister rn, DRegisterLane rm) {
@@ -8797,7 +10722,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqrdmulh(cond, dt, rd, rn, rm);
   }
   void Vqrdmulh(DataType dt, QRegister rd, QRegister rn, DRegisterLane rm) {
@@ -8812,7 +10741,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqrshl(cond, dt, rd, rm, rn);
   }
   void Vqrshl(DataType dt, DRegister rd, DRegister rm, DRegister rn) {
@@ -8827,7 +10760,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqrshl(cond, dt, rd, rm, rn);
   }
   void Vqrshl(DataType dt, QRegister rd, QRegister rm, QRegister rn) {
@@ -8845,7 +10782,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqrshrn(cond, dt, rd, rm, operand);
   }
   void Vqrshrn(DataType dt,
@@ -8866,7 +10807,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqrshrun(cond, dt, rd, rm, operand);
   }
   void Vqrshrun(DataType dt,
@@ -8887,7 +10832,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqshl(cond, dt, rd, rm, operand);
   }
   void Vqshl(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -8905,7 +10854,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqshl(cond, dt, rd, rm, operand);
   }
   void Vqshl(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -8923,7 +10876,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqshlu(cond, dt, rd, rm, operand);
   }
   void Vqshlu(DataType dt,
@@ -8944,7 +10901,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqshlu(cond, dt, rd, rm, operand);
   }
   void Vqshlu(DataType dt,
@@ -8965,7 +10926,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqshrn(cond, dt, rd, rm, operand);
   }
   void Vqshrn(DataType dt,
@@ -8986,7 +10951,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqshrun(cond, dt, rd, rm, operand);
   }
   void Vqshrun(DataType dt,
@@ -9004,7 +10973,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqsub(cond, dt, rd, rn, rm);
   }
   void Vqsub(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -9019,7 +10992,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vqsub(cond, dt, rd, rn, rm);
   }
   void Vqsub(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -9034,7 +11011,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vraddhn(cond, dt, rd, rn, rm);
   }
   void Vraddhn(DataType dt, DRegister rd, QRegister rn, QRegister rm) {
@@ -9047,7 +11028,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrecpe(cond, dt, rd, rm);
   }
   void Vrecpe(DataType dt, DRegister rd, DRegister rm) {
@@ -9060,7 +11045,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrecpe(cond, dt, rd, rm);
   }
   void Vrecpe(DataType dt, QRegister rd, QRegister rm) {
@@ -9075,7 +11064,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrecps(cond, dt, rd, rn, rm);
   }
   void Vrecps(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -9090,7 +11083,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrecps(cond, dt, rd, rn, rm);
   }
   void Vrecps(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -9103,7 +11100,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrev16(cond, dt, rd, rm);
   }
   void Vrev16(DataType dt, DRegister rd, DRegister rm) {
@@ -9116,7 +11117,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrev16(cond, dt, rd, rm);
   }
   void Vrev16(DataType dt, QRegister rd, QRegister rm) {
@@ -9129,7 +11134,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrev32(cond, dt, rd, rm);
   }
   void Vrev32(DataType dt, DRegister rd, DRegister rm) {
@@ -9142,7 +11151,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrev32(cond, dt, rd, rm);
   }
   void Vrev32(DataType dt, QRegister rd, QRegister rm) {
@@ -9155,7 +11168,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrev64(cond, dt, rd, rm);
   }
   void Vrev64(DataType dt, DRegister rd, DRegister rm) {
@@ -9168,7 +11185,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrev64(cond, dt, rd, rm);
   }
   void Vrev64(DataType dt, QRegister rd, QRegister rm) {
@@ -9183,7 +11204,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrhadd(cond, dt, rd, rn, rm);
   }
   void Vrhadd(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -9198,7 +11223,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrhadd(cond, dt, rd, rn, rm);
   }
   void Vrhadd(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -9319,7 +11348,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrintr(cond, dt, rd, rm);
   }
   void Vrintr(DataType dt, SRegister rd, SRegister rm) {
@@ -9332,7 +11365,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrintr(cond, dt, rd, rm);
   }
   void Vrintr(DataType dt, DRegister rd, DRegister rm) {
@@ -9345,7 +11382,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrintx(cond, dt, rd, rm);
   }
   void Vrintx(DataType dt, DRegister rd, DRegister rm) {
@@ -9367,7 +11408,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrintx(cond, dt, rd, rm);
   }
   void Vrintx(DataType dt, SRegister rd, SRegister rm) {
@@ -9380,7 +11425,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrintz(cond, dt, rd, rm);
   }
   void Vrintz(DataType dt, DRegister rd, DRegister rm) {
@@ -9402,7 +11451,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrintz(cond, dt, rd, rm);
   }
   void Vrintz(DataType dt, SRegister rd, SRegister rm) {
@@ -9417,7 +11470,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrshl(cond, dt, rd, rm, rn);
   }
   void Vrshl(DataType dt, DRegister rd, DRegister rm, DRegister rn) {
@@ -9432,7 +11489,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrshl(cond, dt, rd, rm, rn);
   }
   void Vrshl(DataType dt, QRegister rd, QRegister rm, QRegister rn) {
@@ -9450,7 +11511,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrshr(cond, dt, rd, rm, operand);
   }
   void Vrshr(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -9468,7 +11533,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrshr(cond, dt, rd, rm, operand);
   }
   void Vrshr(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -9486,7 +11555,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrshrn(cond, dt, rd, rm, operand);
   }
   void Vrshrn(DataType dt,
@@ -9502,7 +11575,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrsqrte(cond, dt, rd, rm);
   }
   void Vrsqrte(DataType dt, DRegister rd, DRegister rm) {
@@ -9515,7 +11592,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrsqrte(cond, dt, rd, rm);
   }
   void Vrsqrte(DataType dt, QRegister rd, QRegister rm) {
@@ -9530,7 +11611,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrsqrts(cond, dt, rd, rn, rm);
   }
   void Vrsqrts(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -9545,7 +11630,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrsqrts(cond, dt, rd, rn, rm);
   }
   void Vrsqrts(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -9563,7 +11652,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrsra(cond, dt, rd, rm, operand);
   }
   void Vrsra(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -9581,7 +11674,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrsra(cond, dt, rd, rm, operand);
   }
   void Vrsra(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -9596,7 +11693,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vrsubhn(cond, dt, rd, rn, rm);
   }
   void Vrsubhn(DataType dt, DRegister rd, QRegister rn, QRegister rm) {
@@ -9694,7 +11795,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vshl(cond, dt, rd, rm, operand);
   }
   void Vshl(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -9712,7 +11817,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vshl(cond, dt, rd, rm, operand);
   }
   void Vshl(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -9730,7 +11839,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vshll(cond, dt, rd, rm, operand);
   }
   void Vshll(DataType dt, QRegister rd, DRegister rm, const DOperand& operand) {
@@ -9748,7 +11861,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vshr(cond, dt, rd, rm, operand);
   }
   void Vshr(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -9766,7 +11883,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vshr(cond, dt, rd, rm, operand);
   }
   void Vshr(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -9784,7 +11905,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vshrn(cond, dt, rd, rm, operand);
   }
   void Vshrn(DataType dt, DRegister rd, QRegister rm, const QOperand& operand) {
@@ -9802,7 +11927,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsli(cond, dt, rd, rm, operand);
   }
   void Vsli(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -9820,7 +11949,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsli(cond, dt, rd, rm, operand);
   }
   void Vsli(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -9833,7 +11966,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsqrt(cond, dt, rd, rm);
   }
   void Vsqrt(DataType dt, SRegister rd, SRegister rm) { Vsqrt(al, dt, rd, rm); }
@@ -9844,7 +11981,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsqrt(cond, dt, rd, rm);
   }
   void Vsqrt(DataType dt, DRegister rd, DRegister rm) { Vsqrt(al, dt, rd, rm); }
@@ -9860,7 +12001,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsra(cond, dt, rd, rm, operand);
   }
   void Vsra(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -9878,7 +12023,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsra(cond, dt, rd, rm, operand);
   }
   void Vsra(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -9896,7 +12045,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsri(cond, dt, rd, rm, operand);
   }
   void Vsri(DataType dt, DRegister rd, DRegister rm, const DOperand& operand) {
@@ -9914,7 +12067,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsri(cond, dt, rd, rm, operand);
   }
   void Vsri(DataType dt, QRegister rd, QRegister rm, const QOperand& operand) {
@@ -9930,7 +12087,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vst1(cond, dt, nreglist, operand);
   }
   void Vst1(DataType dt,
@@ -9948,7 +12109,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vst2(cond, dt, nreglist, operand);
   }
   void Vst2(DataType dt,
@@ -9966,7 +12131,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vst3(cond, dt, nreglist, operand);
   }
   void Vst3(DataType dt,
@@ -9984,7 +12153,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vst3(cond, dt, nreglist, operand);
   }
   void Vst3(DataType dt,
@@ -10002,7 +12175,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vst4(cond, dt, nreglist, operand);
   }
   void Vst4(DataType dt,
@@ -10021,7 +12198,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vstm(cond, dt, rn, write_back, dreglist);
   }
   void Vstm(DataType dt,
@@ -10050,7 +12231,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vstm(cond, dt, rn, write_back, sreglist);
   }
   void Vstm(DataType dt,
@@ -10079,7 +12264,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vstmdb(cond, dt, rn, write_back, dreglist);
   }
   void Vstmdb(DataType dt,
@@ -10108,7 +12297,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vstmdb(cond, dt, rn, write_back, sreglist);
   }
   void Vstmdb(DataType dt,
@@ -10137,7 +12330,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vstmia(cond, dt, rn, write_back, dreglist);
   }
   void Vstmia(DataType dt,
@@ -10166,7 +12363,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vstmia(cond, dt, rn, write_back, sreglist);
   }
   void Vstmia(DataType dt,
@@ -10194,7 +12395,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vstr(cond, dt, rd, operand);
   }
   void Vstr(DataType dt, DRegister rd, const MemOperand& operand) {
@@ -10216,7 +12421,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vstr(cond, dt, rd, operand);
   }
   void Vstr(DataType dt, SRegister rd, const MemOperand& operand) {
@@ -10237,7 +12446,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsub(cond, dt, rd, rn, rm);
   }
   void Vsub(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -10252,7 +12465,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsub(cond, dt, rd, rn, rm);
   }
   void Vsub(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -10267,7 +12484,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsub(cond, dt, rd, rn, rm);
   }
   void Vsub(DataType dt, SRegister rd, SRegister rn, SRegister rm) {
@@ -10282,7 +12503,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsubhn(cond, dt, rd, rn, rm);
   }
   void Vsubhn(DataType dt, DRegister rd, QRegister rn, QRegister rm) {
@@ -10297,7 +12522,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsubl(cond, dt, rd, rn, rm);
   }
   void Vsubl(DataType dt, QRegister rd, DRegister rn, DRegister rm) {
@@ -10312,7 +12541,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vsubw(cond, dt, rd, rn, rm);
   }
   void Vsubw(DataType dt, QRegister rd, QRegister rn, DRegister rm) {
@@ -10325,7 +12558,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vswp(cond, dt, rd, rm);
   }
   void Vswp(DataType dt, DRegister rd, DRegister rm) { Vswp(al, dt, rd, rm); }
@@ -10342,7 +12579,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vswp(cond, dt, rd, rm);
   }
   void Vswp(DataType dt, QRegister rd, QRegister rm) { Vswp(al, dt, rd, rm); }
@@ -10364,7 +12605,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vtbl(cond, dt, rd, nreglist, rm);
   }
   void Vtbl(DataType dt,
@@ -10385,7 +12630,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vtbx(cond, dt, rd, nreglist, rm);
   }
   void Vtbx(DataType dt,
@@ -10401,7 +12650,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vtrn(cond, dt, rd, rm);
   }
   void Vtrn(DataType dt, DRegister rd, DRegister rm) { Vtrn(al, dt, rd, rm); }
@@ -10412,7 +12665,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vtrn(cond, dt, rd, rm);
   }
   void Vtrn(DataType dt, QRegister rd, QRegister rm) { Vtrn(al, dt, rd, rm); }
@@ -10425,7 +12682,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vtst(cond, dt, rd, rn, rm);
   }
   void Vtst(DataType dt, DRegister rd, DRegister rn, DRegister rm) {
@@ -10440,7 +12701,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vtst(cond, dt, rd, rn, rm);
   }
   void Vtst(DataType dt, QRegister rd, QRegister rn, QRegister rm) {
@@ -10453,7 +12718,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vuzp(cond, dt, rd, rm);
   }
   void Vuzp(DataType dt, DRegister rd, DRegister rm) { Vuzp(al, dt, rd, rm); }
@@ -10464,7 +12733,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vuzp(cond, dt, rd, rm);
   }
   void Vuzp(DataType dt, QRegister rd, QRegister rm) { Vuzp(al, dt, rd, rm); }
@@ -10475,7 +12748,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vzip(cond, dt, rd, rm);
   }
   void Vzip(DataType dt, DRegister rd, DRegister rm) { Vzip(al, dt, rd, rm); }
@@ -10486,7 +12763,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     vzip(cond, dt, rd, rm);
   }
   void Vzip(DataType dt, QRegister rd, QRegister rm) { Vzip(al, dt, rd, rm); }
@@ -10495,7 +12776,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(OutsideITBlock());
     MacroEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ITScope it_scope(this, &cond, guard);
+#else
+    ITScope it_scope(allocator_, this, &cond, guard);
+#endif
     yield(cond);
   }
   void Yield() { Yield(al); }
@@ -11080,7 +13365,9 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
   bool generate_simulator_code_;
   bool allow_macro_instructions_;
   Label* pool_end_;
-
+#ifdef PANDA_BUILD
+  panda::ArenaAllocator* allocator_;
+#endif
   friend class TestMacroAssembler;
 };
 

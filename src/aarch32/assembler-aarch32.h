@@ -99,7 +99,7 @@ class Assembler : public internal::AssemblerBase {
     }
   };
 
-  explicit Assembler(InstructionSet isa = kDefaultISA)
+    explicit Assembler(InstructionSet isa = kDefaultISA)
       : isa_(isa),
         first_condition_(al),
         it_mask_(0),
@@ -115,6 +115,10 @@ class Assembler : public internal::AssemblerBase {
     VIXL_ASSERT(isa == T32);
 #endif
   }
+
+#ifdef PANDA_BUILD
+  explicit Assembler(size_t capacity, InstructionSet isa = kDefaultISA) = delete;
+#else
   explicit Assembler(size_t capacity, InstructionSet isa = kDefaultISA)
       : AssemblerBase(capacity),
         isa_(isa),
@@ -129,6 +133,9 @@ class Assembler : public internal::AssemblerBase {
     VIXL_ASSERT(isa == T32);
 #endif
   }
+#endif
+
+
   Assembler(byte* buffer, size_t capacity, InstructionSet isa = kDefaultISA)
       : AssemblerBase(buffer, capacity),
         isa_(isa),
@@ -142,6 +149,7 @@ class Assembler : public internal::AssemblerBase {
 #elif defined(VIXL_INCLUDE_TARGET_T32_ONLY)
     VIXL_ASSERT(isa == T32);
 #endif
+    USE(isa_);
   }
   virtual ~Assembler() {}
 

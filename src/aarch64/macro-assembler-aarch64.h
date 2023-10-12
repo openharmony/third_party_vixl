@@ -107,7 +107,12 @@ class Pool {
 
 class LiteralPool : public Pool {
  public:
+#ifndef PANDA_BUILD
   explicit LiteralPool(MacroAssembler* masm);
+#else
+  explicit LiteralPool(MacroAssembler* masm) = delete;
+  LiteralPool(panda::ArenaAllocator* allocator, MacroAssembler* masm);
+#endif
   ~LiteralPool() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION;
   void Reset();
 
@@ -147,7 +152,11 @@ class LiteralPool : public Pool {
   static const ptrdiff_t kRecommendedLiteralPoolRange = 128 * KBytes;
 
  private:
+#ifndef PANDA_BUILD
   std::vector<RawLiteral*> entries_;
+#else
+  panda::ArenaVector<RawLiteral*> entries_;
+#endif
   size_t size_;
   ptrdiff_t first_use_;
   // The parent class `Pool` provides a `checkpoint_`, which is the buffer
@@ -157,7 +166,12 @@ class LiteralPool : public Pool {
   // checkpoint is reached.
   ptrdiff_t recommended_checkpoint_;
 
+#ifndef PANDA_BUILD
   std::vector<RawLiteral*> deleted_on_destruction_;
+#else
+  panda::ArenaVector<RawLiteral*> deleted_on_destruction_;
+  panda::ArenaAllocator* allocator_;
+#endif
 };
 
 
@@ -180,8 +194,12 @@ inline ptrdiff_t LiteralPool::GetNextRecommendedCheckpoint() {
 
 class VeneerPool : public Pool {
  public:
+#ifndef PANDA_BUILD
   explicit VeneerPool(MacroAssembler* masm) : Pool(masm) {}
-
+#else
+explicit VeneerPool(MacroAssembler* masm) = delete;
+VeneerPool(panda::ArenaAllocator* allocator, MacroAssembler* masm) : Pool(masm), unresolved_branches_(allocator), allocator_(allocator) {}
+#endif
   void Reset();
 
   void Block() { monitor_++; }
@@ -311,8 +329,13 @@ class VeneerPool : public Pool {
 
   class BranchInfoTypedSet : public BranchInfoTypedSetBase {
    public:
+#ifndef PANDA_BUILD
     BranchInfoTypedSet() : BranchInfoTypedSetBase() {}
-
+#else
+    BranchInfoTypedSet() = delete;
+    explicit BranchInfoTypedSet(panda::ArenaAllocator* alloc) : BranchInfoTypedSetBase(alloc) {}
+    BranchInfoTypedSet(BranchInfoTypedSet&&) = default;
+#endif
     ptrdiff_t GetFirstLimit() {
       if (empty()) {
         return kInvalidOffset;
@@ -337,6 +360,16 @@ class VeneerPool : public Pool {
 
   class BranchInfoSet {
    public:
+#ifdef PANDA_BUILD
+       BranchInfoSet() = delete;
+       BranchInfoSet(panda::ArenaAllocator* allocator) :
+              typed_set_(allocator->Adapter()) {
+                  typed_set_.reserve(3);
+                  typed_set_.emplace_back((allocator));
+                  typed_set_.emplace_back((allocator));
+                  typed_set_.emplace_back((allocator));
+              };
+#endif
     void insert(BranchInfo branch_info) {
       ImmBranchType type = branch_info.branch_type_;
       VIXL_ASSERT(IsValidBranchType(type));
@@ -421,20 +454,33 @@ class VeneerPool : public Pool {
 
    private:
     static const int kNumberOfTrackedBranchTypes = 3;
+#ifndef PANDA_BUILD
     BranchInfoTypedSet typed_set_[kNumberOfTrackedBranchTypes];
-
+#else
+    panda::ArenaVector<BranchInfoTypedSet> typed_set_;
+#endif
     friend class VeneerPool;
     friend class BranchInfoSetIterator;
   };
 
   class BranchInfoSetIterator {
    public:
+#ifndef PANDA_BUILD
     explicit BranchInfoSetIterator(BranchInfoSet* set) : set_(set) {
       for (int i = 0; i < BranchInfoSet::kNumberOfTrackedBranchTypes; i++) {
         new (&sub_iterator_[i])
             BranchInfoTypedSetIterator(&(set_->typed_set_[i]));
       }
     }
+#else
+    explicit BranchInfoSetIterator(BranchInfoSet* set) = delete;
+    BranchInfoSetIterator(panda::ArenaAllocator* allocator, BranchInfoSet* set) : set_(set), sub_iterator_(allocator->Adapter()) {
+      for (int i = 0; i < BranchInfoSet::kNumberOfTrackedBranchTypes; i++) {
+          sub_iterator_.emplace_back(&(set_->typed_set_[i]));
+      }
+    }
+
+#endif
 
     VeneerPool::BranchInfo* Current() {
       for (int i = 0; i < BranchInfoSet::kNumberOfTrackedBranchTypes; i++) {
@@ -486,8 +532,12 @@ class VeneerPool : public Pool {
 
    private:
     BranchInfoSet* set_;
+#ifndef PANDA_BUILD
     BranchInfoTypedSetIterator
         sub_iterator_[BranchInfoSet::kNumberOfTrackedBranchTypes];
+#else
+    panda::ArenaVector<BranchInfoTypedSetIterator> sub_iterator_;
+#endif
   };
 
   ptrdiff_t GetNextCheckPoint() {
@@ -503,6 +553,9 @@ class VeneerPool : public Pool {
 
   // Information about unresolved (forward) branches.
   BranchInfoSet unresolved_branches_;
+#ifdef PANDA_BUILD
+  panda::ArenaAllocator* allocator_;
+#endif
 };
 
 
@@ -664,13 +717,29 @@ enum FPMacroNaNPropagationOption {
 
 class MacroAssembler : public Assembler, public MacroAssemblerInterface {
  public:
+#ifdef PANDA_BUILD
+  explicit MacroAssembler(panda::ArenaAllocator* allocator,
+      PositionIndependentCodeOption pic = PositionIndependentCode);
+#else
   explicit MacroAssembler(
       PositionIndependentCodeOption pic = PositionIndependentCode);
+#endif
+#ifdef PANDA_BUILD
+  MacroAssembler(size_t capacity,
+                 PositionIndependentCodeOption pic = PositionIndependentCode) = delete;
+#else
   MacroAssembler(size_t capacity,
                  PositionIndependentCodeOption pic = PositionIndependentCode);
+#endif
+#ifndef PANDA_BUILD
   MacroAssembler(byte* buffer,
                  size_t capacity,
                  PositionIndependentCodeOption pic = PositionIndependentCode);
+#else
+MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
+               size_t capacity,
+               PositionIndependentCodeOption pic = PositionIndependentCode);
+#endif
   ~MacroAssembler();
 
   enum FinalizeOption {
@@ -1147,6 +1216,11 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     SingleEmissionCheckScope guard(this);
     bl(label);
+  }
+  void Bl(int64_t offset) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    bl(offset >> kInstructionSizeLog2);
   }
   void Blr(const Register& xn) {
     VIXL_ASSERT(allow_macro_instructions_);
@@ -1920,6 +1994,7 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     VIXL_ASSERT(allow_macro_instructions_);
     SingleEmissionCheckScope guard(this);
     RawLiteral* literal;
+#ifndef PANDA_BUILD
     if (vt.IsD()) {
       literal = new Literal<double>(imm,
                                     &literal_pool_,
@@ -1929,12 +2004,24 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
                                    &literal_pool_,
                                    RawLiteral::kDeletedOnPlacementByPool);
     }
+#else
+    if (vt.IsD()) {
+      literal = allocator_->New<Literal<double>>(imm,
+                                    &literal_pool_,
+                                    RawLiteral::kDeletedOnPlacementByPool);
+    } else {
+      literal = allocator_->New<Literal<float>>(static_cast<float>(imm),
+                                   &literal_pool_,
+                                   RawLiteral::kDeletedOnPlacementByPool);
+    }
+#endif
     ldr(vt, literal);
   }
   void Ldr(const VRegister& vt, float imm) {
     VIXL_ASSERT(allow_macro_instructions_);
     SingleEmissionCheckScope guard(this);
     RawLiteral* literal;
+#ifndef PANDA_BUILD
     if (vt.IsS()) {
       literal = new Literal<float>(imm,
                                    &literal_pool_,
@@ -1944,23 +2031,43 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
                                     &literal_pool_,
                                     RawLiteral::kDeletedOnPlacementByPool);
     }
+#else
+    if (vt.IsS()) {
+      literal = allocator_->New<Literal<float>>(imm,
+                                   &literal_pool_,
+                                   RawLiteral::kDeletedOnPlacementByPool);
+    } else {
+      literal = allocator_->New<Literal<double>>(static_cast<double>(imm),
+                                    &literal_pool_,
+                                    RawLiteral::kDeletedOnPlacementByPool);
+    }
+#endif
     ldr(vt, literal);
   }
   void Ldr(const VRegister& vt, uint64_t high64, uint64_t low64) {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(vt.IsQ());
     SingleEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ldr(vt,
         new Literal<uint64_t>(high64,
                               low64,
                               &literal_pool_,
                               RawLiteral::kDeletedOnPlacementByPool));
+#else
+    ldr(vt,
+        allocator_->New<Literal<uint64_t>>(high64,
+                              low64,
+                              &literal_pool_,
+                              RawLiteral::kDeletedOnPlacementByPool));
+#endif
   }
   void Ldr(const Register& rt, uint64_t imm) {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(!rt.IsZero());
     SingleEmissionCheckScope guard(this);
     RawLiteral* literal;
+#ifndef PANDA_BUILD
     if (rt.Is64Bits()) {
       literal = new Literal<uint64_t>(imm,
                                       &literal_pool_,
@@ -1972,16 +2079,36 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
                                       &literal_pool_,
                                       RawLiteral::kDeletedOnPlacementByPool);
     }
+#else
+    if (rt.Is64Bits()) {
+      literal = allocator_->New<Literal<uint64_t>>(imm,
+                                      &literal_pool_,
+                                      RawLiteral::kDeletedOnPlacementByPool);
+    } else {
+      VIXL_ASSERT(rt.Is32Bits());
+      VIXL_ASSERT(IsUint32(imm) || IsInt32(imm));
+      literal = allocator_->New<Literal<uint32_t>>(static_cast<uint32_t>(imm),
+                                      &literal_pool_,
+                                      RawLiteral::kDeletedOnPlacementByPool);
+    }
+#endif
     ldr(rt, literal);
   }
   void Ldrsw(const Register& rt, uint32_t imm) {
     VIXL_ASSERT(allow_macro_instructions_);
     VIXL_ASSERT(!rt.IsZero());
     SingleEmissionCheckScope guard(this);
+#ifndef PANDA_BUILD
     ldrsw(rt,
           new Literal<uint32_t>(imm,
                                 &literal_pool_,
                                 RawLiteral::kDeletedOnPlacementByPool));
+#else
+    ldrsw(rt,
+          allocator_->New<Literal<uint32_t>>(imm,
+                                &literal_pool_,
+                                RawLiteral::kDeletedOnPlacementByPool));
+#endif
   }
   void Ldr(const CPURegister& rt, RawLiteral* literal) {
     VIXL_ASSERT(allow_macro_instructions_);
@@ -7488,17 +7615,30 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
 
   template <typename T>
   Literal<T>* CreateLiteralDestroyedWithPool(T value) {
+#ifndef PANDA_BUILD
     return new Literal<T>(value,
                           &literal_pool_,
                           RawLiteral::kDeletedOnPoolDestruction);
+#else
+    return allocator_->New<Literal<T>>(value,
+                          &literal_pool_,
+                          RawLiteral::kDeletedOnPoolDestruction);
+#endif
   }
 
   template <typename T>
   Literal<T>* CreateLiteralDestroyedWithPool(T high64, T low64) {
+#ifndef PANDA_BUILD
     return new Literal<T>(high64,
                           low64,
                           &literal_pool_,
                           RawLiteral::kDeletedOnPoolDestruction);
+#else
+    return allocator_->New<Literal<T>>(high64,
+                          low64,
+                          &literal_pool_,
+                          RawLiteral::kDeletedOnPoolDestruction);
+#endif
   }
 
   // Push the system stack pointer (sp) down to allow the same to be done to
@@ -8097,6 +8237,9 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
 
   FPMacroNaNPropagationOption fp_nan_propagation_;
 
+#ifdef PANDA_BUILD
+  panda::ArenaAllocator* allocator_;
+#endif
   friend class Pool;
   friend class LiteralPool;
 };
@@ -8434,7 +8577,11 @@ void MacroAssembler::CallRuntimeHelper(R (*function)(P...),
     EmissionCheckScope guard(this,
                              kRuntimeCallLength,
                              CodeBufferCheckScope::kExactSize);
+#ifndef PANDA_BUILD
     Label start;
+#else
+    Label start(allocator_);
+#endif
     bind(&start);
     {
       ExactAssemblyScope scope(this, kInstructionSize);
