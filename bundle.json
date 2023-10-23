@@ -1,0 +1,33 @@
+{
+    "name": "@ohos/vixl",
+    "description": "vixl",
+    "version": "6.2.0",
+    "license": "BSD 3-clause",
+    "publishAs": "code-segment",
+    "segment": {
+        "destPath": "third_party/vixl"
+    },
+    "dirs": {},
+    "scripts": {},
+    "licensePath": "LICENCE",
+    "component": {
+        "name": "vixl",
+        "subsystem": "thirdparty",
+        "syscap": [],
+        "features": [],
+        "adapted_system_type": [ "standard" ],
+        "rom": "",
+        "ram": "",
+        "deps": {
+            "components": [],
+            "third_party": []
+        },
+        "build": {
+            "sub_component": [
+                "//third_party/vixl:libvixl_frontend_static"
+            ],
+            "inner_kits": [],
+            "test": []
+        }
+    }
+}

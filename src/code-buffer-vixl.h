@@ -27,6 +27,12 @@
 #ifndef VIXL_CODE_BUFFER_H
 #define VIXL_CODE_BUFFER_H
 
+#ifdef VIXL_CODE_BUFFER_MMAP
+extern "C" {
+#include <sys/mman.h>
+}
+#endif
+
 #include <cstring>
 
 #include "globals-vixl.h"

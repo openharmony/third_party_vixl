@@ -1,0 +1,19 @@
+{
+    "patches": [
+        {
+            "project":"vendor_hihope",
+            "path":"vendor/hihope/rk3568",
+            "pr_url":"https://gitee.com/openharmony/vendor_hihope/pulls/957"
+        },
+        {
+            "project":"arkcompiler_runtime_core",
+            "path":"arkcompiler/runtime_core",
+            "pr_url":"https://gitee.com/openharmony/arkcompiler_runtime_core/pulls/444"
+        },
+        {
+            "project":"build",
+            "path":"build",
+            "pr_url":"https://gitee.com/openharmony/build/pulls/2446"
+        }
+    ]
+}
