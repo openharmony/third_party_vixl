@@ -10367,12 +10367,18 @@ int Disassembler::SubstitutePrefetchField(const Instruction *instr,
   static const char *stream_options[] = {"keep", "strm"};
 
   auto get_hints = [](bool want_sve_hint) {
+#ifdef PANDA_BUILD
     static constexpr std::array<const char* const, 2U> sve_hints = {"ld", "st"};
     static constexpr std::array<const char* const, 3U> core_hints = {"ld", "li", "st"};
     return (want_sve_hint) ? panda::Span(sve_hints) : panda::Span(core_hints);
+#else
+    static std::vector<const char* const> sve_hints = {"ld", "st"};
+    static std::vector<const char* const> core_hints = {"ld", "li", "st"};
+    return (want_sve_hint) ? sve_hints : core_hints;
+#endif
   };
 
-  auto hints = get_hints(is_sve);
+  const auto& hints = get_hints(is_sve);
   unsigned hint =
       is_sve ? instr->GetSVEPrefetchHint() : instr->GetPrefetchHint();
   unsigned target = instr->GetPrefetchTarget() + 1;

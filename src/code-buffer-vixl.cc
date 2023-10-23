@@ -24,10 +24,6 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-extern "C" {
-#include <sys/mman.h>
-}
-
 #include "code-buffer-vixl.h"
 #include "utils-vixl.h"
 

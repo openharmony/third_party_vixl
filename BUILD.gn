@@ -23,12 +23,22 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import("//ark/runtime_core/ark_config.gni")
+if (is_ohos) {
+  import("//arkcompiler/runtime_core/ark_config.gni")
+} else {
+  import("//ark/runtime_core/ark_config.gni")
+}
+
 import("//build/ohos.gni")
 
 config("vixl_public_config") {
   if (is_debug) {
     defines = [ "VIXL_DEBUG" ]
+  }
+
+
+  if (defined(vixl_with_panda)) {
+    defines += [ "PANDA_BUILD" ]
   }
 
   if (ark_standalone_build) {
@@ -94,25 +104,26 @@ ohos_static_library("libvixl") {
   if (is_mac) {
     cflags_cc += [
       "-DVIXL_CODE_BUFFER_MALLOC",
-      "-DPANDA_BUILD",
     ]
   } else {
     cflags_cc += [
       "-DVIXL_CODE_BUFFER_MMAP",
-      "-DPANDA_BUILD",
     ]
   }
 
   configs = [
     "$ark_root:ark_config",
-    "$ark_root/libpandabase:arkbase_public_config",
   ]
 
   public_configs = [ ":vixl_public_config" ]
 
-  deps = [ "$ark_root/libpandabase:libarkbase" ]
+  if (defined(vixl_with_panda)) {
+    configs += [ "$ark_root/libpandabase:arktsbase_public_config" ]
+    deps = [ "$ark_root/libpandabase:libarktsbase" ]
+  }
 
-  subsystem_name = "ark"
+  subsystem_name = "thirdparty"
+  part_name = "vixl"
 }
 
 ohos_static_library("libvixl_frontend_static") {
@@ -160,23 +171,24 @@ ohos_static_library("libvixl_frontend_static") {
   if (is_mac) {
     cflags_cc += [
       "-DVIXL_CODE_BUFFER_MALLOC",
-      "-DPANDA_BUILD",
     ]
   } else {
     cflags_cc += [
       "-DVIXL_CODE_BUFFER_MMAP",
-      "-DPANDA_BUILD",
     ]
   }
 
   configs = [
     "$ark_root:ark_config",
-    "$ark_root/libpandabase:arkbase_public_config",
   ]
 
   public_configs = [ ":vixl_public_config" ]
 
-  deps = [ "$ark_root/libpandabase:libarkbase_frontend_static" ]
+  if (defined(vixl_with_panda)) {
+    configs += [ "$ark_root/libpandabase:arktsbase_public_config" ]
+    deps = [ "$ark_root/libpandabase:libarktsbase_frontend_static" ]
+  }
 
-  subsystem_name = "ark"
+  subsystem_name = "thirdparty"
+  part_name = "vixl"
 }
