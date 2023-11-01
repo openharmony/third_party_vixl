@@ -58,12 +58,9 @@
 
         <filefilterlist>
             <filefilter name="defaultFilter" desc="Files not to check">
-                <filteritem type="filename" name="*.iml|*.json|*.txt|*.gitreview|*.py|*.gn" desc="desc files"/>
-                <filteritem type="filepath" name="doc/.*" desc="unused"/>
-                <filteritem type="filepath" name="bechmarks/.*" desc="unused"/>
+                <filteritem type="filename" name="*.gitreview|*.py|*.gn" desc="desc files"/>
                 <filteritem type="filepath" name="test/.*" desc="unused"/>
                 <filteritem type="filepath" name="tools/.*" desc="unused"/>
-                <filteritem type="filepath" name="projectroot/[a-zA-Z0-9]{20,}.sh" desc="Temp files"/>
                 <filteritem type="filepath" name="examples/.*" desc="unused"/>
                 <filteritem type="filepath" name="benchmarks/.*" desc="unused"/>
                 <filteritem type="filepath" name="src/.*" desc="src files"/>
@@ -74,7 +71,6 @@
                 <filteritem type="filename" name=".clang-tidy" desc=""/>
             </filefilter>
             <filefilter name="defaultPolicyFilter" desc="Filters for compatibility，license header policies">
-                <filteritem type="filepath" name="src/main/java/ohos/oat/analysis/headermatcher/.*" desc="License matcher rules, not license header"/>
                 <filteritem type="filename" name="BUILD.gn" desc=""/>
                 <filteritem type="filename" name=".clang-tidy" desc=""/>
             </filefilter>
