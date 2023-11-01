@@ -1,11 +1,6 @@
 # VIXL
 
-- [简介](#section11660541593)
-- [接口说明](#section367519246426)
-- [编译](#section137768191623)
-- [许可证](#section126611612164217)
-
-## 简介<a name="section11660541593"></a>
+## 简介
 
 VIXL是一个用于生成和解码ARM、AArch64平台指令的开源库。
 
@@ -15,9 +10,9 @@ VIXL包括三个组件：
 - 反汇编：可以输出汇编程序编译出的指令所对应的反汇编内容。
 - 模拟器：可以模拟AArch64汇编器编译的任何指令。模拟器允许生成的代码在另一个体系结构（如AArch32架构）上运行，而不需要完整的ISA模型。
 
-为了运行时能够编译ARM、AArch64平台代码（Ark编译器后端代码），引入了VIXL。
+为了方舟编译器运行时公共组件能够编译ARM、AArch64平台代码，引入了VIXL。
 
-## 接口说明<a name="section367519246426"></a>
+## 接口说明
 
 VIXL的一些常用接口说明：
 - `MacroAssembler`类：用于生成ARM指令的类。它提供了一组函数，用于生成不同类型的指令，如MOV、ADD、SUB等。
@@ -33,7 +28,7 @@ VIXL的一些常用接口说明：
 更多详细信息可以参考[接口文档](doc/aarch64/supported-instructions-aarch64.md)。
 
 
-## 编译<a name="section137768191623"></a>
+## 编译
 
 使用OpenHarmony中编译部件的方式进行编译即可：
 1. 主干代码下载
@@ -50,8 +45,8 @@ VIXL的一些常用接口说明：
    ```
    ./build.sh --product-name rk3568 --build-target libvixl_frontend_static
    ```
-编译生成物对应路径：`out/rk3568/obj/third_party/vixl/libvixl_frontend_static.a`。
+   编译生成物对应路径：`out/rk3568/obj/third_party/vixl/libvixl_frontend_static.a`。
 
-## 许可证<a name="section126611612164217"></a>
+## 许可证
 
 本项目遵从[LICENCE](LICENCE)中所描述的许可证。

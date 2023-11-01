@@ -63,32 +63,36 @@
                 <filteritem type="filepath" name="bechmarks/.*" desc="unused"/>
                 <filteritem type="filepath" name="test/.*" desc="unused"/>
                 <filteritem type="filepath" name="tools/.*" desc="unused"/>
-		<filteritem type="filepath" name="projectroot/[a-zA-Z0-9]{20,}.sh" desc="Temp files"/>
-		<filteritem type="filepath" name="examples/.*" desc="unused"/>
-		<filteritem type="filepath" name="benchmarks/.*" desc="unused"/>
-		<filteritem type="filepath" name="src/.*" desc="src files"/>
-		<filteritem type="filename" name="AUTHORS" desc="authors declear"/>
-		<filteritem type="filename" name="LICENCE*" desc="LICENCE file"/>
-		<filteritem type="filename" name="SConstruct" desc=""/>
-		<filteritem type="filename" name="BUILD.gn" desc=""/>
+                <filteritem type="filepath" name="projectroot/[a-zA-Z0-9]{20,}.sh" desc="Temp files"/>
+                <filteritem type="filepath" name="examples/.*" desc="unused"/>
+                <filteritem type="filepath" name="benchmarks/.*" desc="unused"/>
+                <filteritem type="filepath" name="src/.*" desc="src files"/>
+                <filteritem type="filename" name="AUTHORS" desc="authors declear"/>
+                <filteritem type="filename" name="LICENCE*" desc="LICENCE file"/>
+                <filteritem type="filename" name="SConstruct" desc=""/>
+                <filteritem type="filename" name="BUILD.gn" desc=""/>
+                <filteritem type="filename" name=".clang-tidy" desc=""/>
             </filefilter>
             <filefilter name="defaultPolicyFilter" desc="Filters for compatibility，license header policies">
-		    <filteritem type="filepath" name="src/main/java/ohos/oat/analysis/headermatcher/.*" desc="License matcher rules, not license header"/>
-		    <filteritem type="filename" name="BUILD.gn" desc=""/>
+                <filteritem type="filepath" name="src/main/java/ohos/oat/analysis/headermatcher/.*" desc="License matcher rules, not license header"/>
+                <filteritem type="filename" name="BUILD.gn" desc=""/>
+                <filteritem type="filename" name=".clang-tidy" desc=""/>
             </filefilter>
-	    <filefilter name="copyrightPolicyFilter" desc="Filters for copyright header policies">
-		    <filteritem type="filename" name="AUTHORS"/>
-		    <filteritem type="filename" name="BUILD.gn" desc=""/>
+            <filefilter name="copyrightPolicyFilter" desc="Filters for copyright header policies">
+                <filteritem type="filename" name="AUTHORS"/>
+                <filteritem type="filename" name="BUILD.gn" desc=""/>
+                <filteritem type="filename" name=".clang-tidy" desc="Vixl native file without copyright"/>
             </filefilter>
-	    <filefilter name="licenseFileNamePolicyFilter" desc="Filters for LICENSE file policies">
-		    <filteritem type="filename" name="BUILD.gn" desc=""/>
+            <filefilter name="licenseFileNamePolicyFilter" desc="Filters for LICENSE file policies">
+                <filteritem type="filename" name="BUILD.gn" desc=""/>
+                <filteritem type="filename" name=".clang-tidy" desc="Vixl native file without license"/>
             </filefilter>
-	    <filefilter name="readmeFileNamePolicyFilter" desc="Filters for README file policies">
-                    <filteritem type="filename" name="README.md"/>
+            <filefilter name="readmeFileNamePolicyFilter" desc="Filters for README file policies">
+                        <filteritem type="filename" name="README.md"/>
             </filefilter>
             <filefilter name="readmeOpenSourcefileNamePolicyFilter" desc="Filters for README.OpenSource file policies">
-	            <filteritem type="filename" name="Readme.OpenSource"/>
-	    </filefilter>
+                    <filteritem type="filename" name="Readme.OpenSource"/>
+            </filefilter>
             <filefilter name="binaryFileTypePolicyFilter" desc="Filters for binary file policies">
             </filefilter>
         </filefilterlist>
