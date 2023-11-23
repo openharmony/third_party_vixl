@@ -23,19 +23,14 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-if (is_ohos) {
-  import("//arkcompiler/runtime_core/ark_config.gni")
-} else {
-  import("//ark/runtime_core/ark_config.gni")
-}
-
+import("//arkcompiler/runtime_core/static_core/ark_config.gni")
 import("//build/ohos.gni")
 
 config("vixl_public_config") {
+  defines = []
   if (is_debug) {
-    defines = [ "VIXL_DEBUG" ]
+    defines += [ "VIXL_DEBUG" ]
   }
-
 
   if (defined(vixl_with_panda)) {
     defines += [ "PANDA_BUILD" ]
@@ -102,91 +97,17 @@ ohos_static_library("libvixl") {
   }
 
   if (is_mac) {
-    cflags_cc += [
-      "-DVIXL_CODE_BUFFER_MALLOC",
-    ]
+    cflags_cc += [ "-DVIXL_CODE_BUFFER_MALLOC" ]
   } else {
-    cflags_cc += [
-      "-DVIXL_CODE_BUFFER_MMAP",
-    ]
+    cflags_cc += [ "-DVIXL_CODE_BUFFER_MMAP" ]
   }
 
-  configs = [
-    "$ark_root:ark_config",
-  ]
+  configs = [ "$ark_root:ark_config" ]
 
   public_configs = [ ":vixl_public_config" ]
 
   if (defined(vixl_with_panda)) {
-    configs += [ "$ark_root/libpandabase:arktsbase_public_config" ]
-    deps = [ "$ark_root/libpandabase:libarktsbase" ]
-  }
-
-  subsystem_name = "thirdparty"
-  part_name = "vixl"
-}
-
-ohos_static_library("libvixl_frontend_static") {
-  sources = [
-    "src/code-buffer-vixl.cc",
-    "src/compiler-intrinsics-vixl.cc",
-    "src/cpu-features.cc",
-    "src/utils-vixl.cc",
-  ]
-
-  if (target_cpu == "arm") {
-    sources += [
-      "src/aarch32/assembler-aarch32.cc",
-      "src/aarch32/constants-aarch32.cc",
-      "src/aarch32/disasm-aarch32.cc",
-      "src/aarch32/instructions-aarch32.cc",
-      "src/aarch32/location-aarch32.cc",
-      "src/aarch32/macro-assembler-aarch32.cc",
-      "src/aarch32/operands-aarch32.cc",
-    ]
-    cflags_cc = [ "-DVIXL_INCLUDE_TARGET_A32" ]
-  } else if (target_cpu == "arm64" || target_cpu == "amd64" ||
-             target_cpu == "x64" || target_cpu == "x86_64") {
-    sources += [
-      "src/aarch64/assembler-aarch64.cc",
-      "src/aarch64/cpu-aarch64.cc",
-      "src/aarch64/cpu-features-auditor-aarch64.cc",
-      "src/aarch64/decoder-aarch64.cc",
-      "src/aarch64/disasm-aarch64.cc",
-      "src/aarch64/instructions-aarch64.cc",
-      "src/aarch64/logic-aarch64.cc",
-      "src/aarch64/macro-assembler-aarch64.cc",
-      "src/aarch64/operands-aarch64.cc",
-      "src/aarch64/pointer-auth-aarch64.cc",
-      "src/aarch64/simulator-aarch64.cc",
-    ]
-    cflags_cc = [
-      "-DVIXL_INCLUDE_TARGET_A64",
-      "-DVIXL_INCLUDE_SIMULATOR_AARCH64",
-    ]
-  } else {
-    cflags_cc = []
-  }
-
-  if (is_mac) {
-    cflags_cc += [
-      "-DVIXL_CODE_BUFFER_MALLOC",
-    ]
-  } else {
-    cflags_cc += [
-      "-DVIXL_CODE_BUFFER_MMAP",
-    ]
-  }
-
-  configs = [
-    "$ark_root:ark_config",
-  ]
-
-  public_configs = [ ":vixl_public_config" ]
-
-  if (defined(vixl_with_panda)) {
-    configs += [ "$ark_root/libpandabase:arktsbase_public_config" ]
-    deps = [ "$ark_root/libpandabase:libarktsbase_frontend_static" ]
+    configs += [ "$ark_root/libpandabase:arkbase_public_config" ]
   }
 
   subsystem_name = "thirdparty"
