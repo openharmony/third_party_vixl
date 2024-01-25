@@ -106,10 +106,6 @@ ohos_static_library("libvixl") {
 
   public_configs = [ ":vixl_public_config" ]
 
-  if (defined(vixl_with_panda)) {
-    configs += [ "$ark_root/libpandabase:arkbase_public_config" ]
-  }
-
   subsystem_name = "thirdparty"
   part_name = "vixl"
 }

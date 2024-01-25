@@ -33,10 +33,7 @@
 #include <vector>
 
 #include "globals-vixl.h"
-
-#ifdef PANDA_BUILD
-#include "utils/arena_containers.h"
-#endif
+#include "utils-vixl.h"
 
 namespace vixl {
 
@@ -98,8 +95,8 @@ class InvalSet {
   InvalSet();
 #else
   InvalSet() = delete;
-  InvalSet(panda::ArenaAllocator* alocator);
-  InvalSet(InvalSet&&) {VIXL_ASSERT(false);}
+  InvalSet(AllocatorWrapper alocator);
+  InvalSet(InvalSet&&) = default;
 #endif
   ~InvalSet() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION;
 
@@ -224,8 +221,8 @@ class InvalSet {
   // storage always only contains valid elements.
   ElementType preallocated_[kNPreallocatedElements];
 #ifdef PANDA_BUILD
-  panda::ArenaAllocator* allocator_;
-  panda::ArenaVector<ElementType>* vector_;
+  AllocatorWrapper allocator_;
+  Vector<ElementType>* vector_;
 #else
   std::vector<ElementType>* vector_;
 #endif
@@ -319,11 +316,7 @@ class InvalSetIterator : public std::iterator<std::forward_iterator_tag,
   // Used when looking at the preallocated elements, or in debug mode when using
   // the vector to track how many times the iterator has advanced.
   size_t index_;
-#ifdef PANDA_BUILD
-  typename panda::ArenaVector<ElementType>::iterator iterator_;
-#else
-  typename std::vector<ElementType>::iterator iterator_;
-#endif
+  typename Vector<ElementType>::iterator iterator_;
   S* inval_set_;
 
   // TODO: These helpers are deprecated and will be removed in future versions
@@ -342,7 +335,7 @@ InvalSet<TEMPLATE_INVALSET_P_DEF>::InvalSet()
 }
 #else
 template <TEMPLATE_INVALSET_P_DECL>
-InvalSet<TEMPLATE_INVALSET_P_DEF>::InvalSet(panda::ArenaAllocator* allocator)
+InvalSet<TEMPLATE_INVALSET_P_DEF>::InvalSet(AllocatorWrapper allocator)
     : valid_cached_min_(false), sorted_(true), size_(0), allocator_(allocator), vector_(NULL) {
 #ifdef VIXL_DEBUG
   monitor_ = 0;
@@ -354,7 +347,7 @@ template <TEMPLATE_INVALSET_P_DECL>
 InvalSet<TEMPLATE_INVALSET_P_DEF>::~InvalSet()
     VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION {
   VIXL_ASSERT(monitor_ == 0);
-#ifndef PANDA_BUILD
+#ifndef VIXL_USE_PANDA_ALLOC
   delete vector_;
 #endif
 }
@@ -393,8 +386,8 @@ void InvalSet<TEMPLATE_INVALSET_P_DEF>::insert(const ElementType& element) {
       vector_ =
           new std::vector<ElementType>(preallocated_, preallocated_ + size_);
 #else
-      vector_ = allocator_->New<panda::ArenaVector<ElementType>>(
-            preallocated_, preallocated_ + size_, allocator_->Adapter());
+      vector_ = allocator_.New<Vector<ElementType>>(
+            preallocated_, preallocated_ + size_, allocator_.Adapter());
 #endif
       vector_->push_back(element);
     }
@@ -655,11 +648,7 @@ const ElementType InvalSet<TEMPLATE_INVALSET_P_DEF>::CleanBack() {
   VIXL_ASSERT(monitor() == 0);
   if (IsUsingVector()) {
     // Delete the invalid trailing elements.
-#ifndef PANDA_BUILD
-    typename std::vector<ElementType>::reverse_iterator it = vector_->rbegin();
-#else
-    typename panda::ArenaVector<ElementType>::reverse_iterator it = vector_->rbegin();
-#endif
+    typename Vector<ElementType>::reverse_iterator it = vector_->rbegin();
     while (!IsValid(*it)) {
       it++;
     }
@@ -780,7 +769,7 @@ InvalSetIterator<S>::InvalSetIterator(S* inval_set)
       iterator_ = typename std::vector<ElementType>::iterator(
           inval_set_->vector_->begin());
 #else
-      iterator_ = typename panda::ArenaVector<ElementType>::iterator(
+      iterator_ = typename Vector<ElementType>::iterator(
             inval_set_->vector_->begin());
 #endif
     }
@@ -918,7 +907,7 @@ bool InvalSetIterator<S>::operator==(const InvalSetIterator<S>& rhs) const {
 #ifndef PANDA_BUILD
     typename std::vector<ElementType>::iterator default_iterator;
 #else
-    typename panda::ArenaVector<ElementType>::iterator default_iterator;
+    typename Vector<ElementType>::iterator default_iterator;
 #endif
     VIXL_ASSERT(iterator_ == default_iterator);
     VIXL_ASSERT(rhs.iterator_ == default_iterator);
