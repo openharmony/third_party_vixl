@@ -1037,7 +1037,7 @@ class Simulator : public DecoderVisitor {
   explicit Simulator(Decoder* decoder,
                      FILE* stream = stdout,
                      SimStack::Allocated stack = SimStack().Allocate()) = delete;
-  Simulator(panda::ArenaAllocator* allocator,
+  Simulator(PandaAllocator* allocator,
             Decoder* decoder,
             SimStack::Allocated stack,
             FILE* stream = stdout);
@@ -4857,9 +4857,7 @@ class Simulator : public DecoderVisitor {
   void ExtractFromSimVRegister(VectorFormat vform,
                                SimPRegister& pd,  // NOLINT(runtime/references)
                                SimVRegister vreg);
-#ifdef PANDA_BUILD
-    panda::ArenaAllocator* allocator_;
-#endif
+  AllocatorWrapper allocator_;
 
   bool coloured_trace_;
 
@@ -4874,7 +4872,7 @@ class Simulator : public DecoderVisitor {
 #ifndef PANDA_BUILD
   std::vector<CPUFeatures> saved_cpu_features_;
 #else
-  panda::ArenaVector<CPUFeatures>saved_cpu_features_;
+  Vector<CPUFeatures>saved_cpu_features_;
 #endif
 
   // State for *rand48 functions, used to simulate randomness with repeatable

@@ -31,10 +31,6 @@
 
 #include "disasm-aarch64.h"
 
-#ifdef PANDA_BUILD
-#include "utils/span.h"
-#endif
-
 namespace vixl {
 namespace aarch64 {
 
@@ -653,17 +649,13 @@ const Disassembler::FormToVisitorFnMap *Disassembler::GetFormToVisitorFnMap() {
 }  // NOLINT(readability/fn_size)
 
 #ifndef PANDA_BUILD
-Disassembler::Disassembler() {
+Disassembler::Disassembler() : allocator_(std::make_optional<AllocatorWrapper>()) {
 #else
-Disassembler::Disassembler(panda::ArenaAllocator* allocator) {
+Disassembler::Disassembler(PandaAllocator* allocator) : allocator_(std::make_optional<AllocatorWrapper>(allocator)) {
 #endif
   buffer_size_ = static_cast<uint32_t>(kDefaultBufferSize);
-#ifndef PANDA_BUILD
-  buffer_ = reinterpret_cast<char *>(malloc(buffer_size_));
+  buffer_ = static_cast<char *>(allocator_->Alloc(buffer_size_));
   own_buffer_ = true;
-#else
-  buffer_ = reinterpret_cast<char *>(allocator->Alloc(buffer_size_));
-#endif
   buffer_pos_ = 0;
   code_address_offset_ = 0;
 }
@@ -672,18 +664,14 @@ Disassembler::Disassembler(char *text_buffer, int buffer_size) {
   buffer_size_ = buffer_size;
   buffer_ = text_buffer;
   buffer_pos_ = 0;
-#ifndef PANDA_BUILD
   own_buffer_ = false;
-#endif
   code_address_offset_ = 0;
 }
 
 Disassembler::~Disassembler() {
-#ifndef PANDA_BUILD
   if (own_buffer_) {
-    free(buffer_);
+    allocator_->Free(buffer_);
   }
-#endif
 }
 
 char *Disassembler::GetOutput() { return buffer_; }
@@ -10367,15 +10355,9 @@ int Disassembler::SubstitutePrefetchField(const Instruction *instr,
   static const char *stream_options[] = {"keep", "strm"};
 
   auto get_hints = [](bool want_sve_hint) {
-#ifdef PANDA_BUILD
-    static constexpr std::array<const char* const, 2U> sve_hints = {"ld", "st"};
-    static constexpr std::array<const char* const, 3U> core_hints = {"ld", "li", "st"};
-    return (want_sve_hint) ? panda::Span(sve_hints) : panda::Span(core_hints);
-#else
-    static std::vector<const char* const> sve_hints = {"ld", "st"};
-    static std::vector<const char* const> core_hints = {"ld", "li", "st"};
+    static std::vector<std::string> sve_hints = {"ld", "st"};
+    static std::vector<std::string> core_hints = {"ld", "li", "st"};
     return (want_sve_hint) ? sve_hints : core_hints;
-#endif
   };
 
   const auto& hints = get_hints(is_sve);
@@ -10396,7 +10378,7 @@ int Disassembler::SubstitutePrefetchField(const Instruction *instr,
   } else {
     VIXL_ASSERT(stream < ArrayLength(stream_options));
     AppendToOutput("p%sl%d%s",
-                   hints[hint],
+                   hints[hint].c_str(),
                    target,
                    stream_options[stream]);
   }

@@ -37,10 +37,6 @@
 #include "globals-vixl.h"
 #include "macro-assembler-interface.h"
 #include "utils-vixl.h"
-
-#ifdef PANDA_BUILD
-#include "utils/arena_containers.h"
-#endif
 namespace vixl {
 
 class TestPoolManager;
@@ -397,9 +393,9 @@ template <typename T>
 class PoolManager {
  public:
 #ifdef PANDA_BUILD
-  PoolManager(panda::ArenaAllocator* allocator, int header_size, int alignment, int buffer_alignment)
-      : allocator_(allocator), objects_(allocator->Adapter()),
-      delete_on_destruction_(allocator->Adapter()),
+  PoolManager(PandaAllocator* allocator, int header_size, int alignment, int buffer_alignment)
+      : allocator_(allocator), objects_(allocator_.Adapter()),
+      delete_on_destruction_(allocator_.Adapter()),
         header_size_(header_size),
 #else
   PoolManager(int header_size, int alignment, int buffer_alignment)
@@ -464,9 +460,9 @@ class PoolManager {
   typedef
       typename std::vector<PoolObject<T> >::const_iterator const_objects_iter;
 #else
-  typedef typename panda::ArenaVector<PoolObject<T> >::iterator objects_iter;
+  typedef typename Vector<PoolObject<T> >::iterator objects_iter;
   typedef
-    typename panda::ArenaVector<PoolObject<T> >::const_iterator const_objects_iter;
+    typename Vector<PoolObject<T> >::const_iterator const_objects_iter;
 #endif
 
   PoolObject<T>* GetObjectIfTracked(LocationBase<T>* label) {
@@ -535,11 +531,11 @@ class PoolManager {
   // Objects to be deleted on pool destruction.
   std::vector<LocationBase<T>*> delete_on_destruction_;
 #else
-  panda::ArenaAllocator* allocator_ = nullptr;
-  panda::ArenaVector<PoolObject<T> > objects_;
+  AllocatorWrapper allocator_;
+  Vector<PoolObject<T> > objects_;
 
 // Objects to be deleted on pool destruction.
-  panda::ArenaVector<LocationBase<T>*> delete_on_destruction_;
+  Vector<LocationBase<T>*> delete_on_destruction_;
 #endif
 
   // The header_size_ and alignment_ values are hardcoded for each instance of

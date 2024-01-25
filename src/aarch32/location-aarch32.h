@@ -63,7 +63,7 @@ class Location : public LocationBase<int32_t> {
         referenced_(false) {}
 #else
   Location() = delete;
-  Location(panda::ArenaAllocator* allocator)
+  Location(AllocatorWrapper allocator)
     : LocationBase<int32_t>(kRawLocation, 1 /* dummy size*/),
       referenced_(false),
       forward_(allocator) {}
@@ -174,7 +174,7 @@ class Location : public LocationBase<int32_t> {
     ForwardRefList() : ForwardRefListBase() {}
 #else
     ForwardRefList() = delete;
-    ForwardRefList(panda::ArenaAllocator* allocator) : ForwardRefListBase(allocator) {}
+    ForwardRefList(AllocatorWrapper allocator) : ForwardRefListBase(allocator) {}
 #endif
     using ForwardRefListBase::Back;
     using ForwardRefListBase::Front;
@@ -244,7 +244,7 @@ class Location : public LocationBase<int32_t> {
   Location(uint32_t type, int size, int alignment)
       : LocationBase<int32_t>(type, size, alignment), referenced_(false) {}
 #else
-  Location(panda::ArenaAllocator* allocator, uint32_t type, int size, int alignment)
+  Location(AllocatorWrapper allocator, uint32_t type, int size, int alignment)
       : LocationBase<int32_t>(type, size, alignment), referenced_(false), forward_(allocator){}
 #endif
 
@@ -254,7 +254,7 @@ class Location : public LocationBase<int32_t> {
       : LocationBase<int32_t>(location), referenced_(false) {}
 #else
   explicit Location(Offset location) = delete;
-  Location(panda::ArenaAllocator* allocator, Offset location)
+  Location(AllocatorWrapper allocator, Offset location)
     : LocationBase<int32_t>(location), referenced_(false), forward_(allocator) {}
 #endif
 
@@ -287,9 +287,9 @@ class Label : public Location {
   explicit Label(Offset location) : Location(location) {}
 #else
   Label() = delete;
-  Label(panda::ArenaAllocator* allocator) : Location(allocator, kVeneerType, kVeneerSize, kVeneerAlignment) {}
+  Label(AllocatorWrapper allocator) : Location(allocator, kVeneerType, kVeneerSize, kVeneerAlignment) {}
   explicit Label(Offset location) = delete;
-  explicit Label(panda::ArenaAllocator* allocator, Offset location) : Location(allocator, location) {}
+  explicit Label(AllocatorWrapper allocator, Offset location) : Location(allocator, location) {}
 #endif
 
  private:
@@ -355,7 +355,7 @@ RawLiteral(const void* addr,
            int size,
            PlacementPolicy placement_policy = kPlacedWhenUsed,
            DeletionPolicy deletion_policy = kManuallyDeleted) = delete;
-RawLiteral(panda::ArenaAllocator* allocator, const void* addr,
+RawLiteral(AllocatorWrapper allocator, const void* addr,
            int size,
            PlacementPolicy placement_policy = kPlacedWhenUsed,
            DeletionPolicy deletion_policy = kManuallyDeleted)
@@ -371,7 +371,7 @@ RawLiteral(panda::ArenaAllocator* allocator, const void* addr,
 }
 RawLiteral(const void* addr, int size, DeletionPolicy deletion_policy) = delete;
 
-RawLiteral(panda::ArenaAllocator* allocator, const void* addr, int size, DeletionPolicy deletion_policy)
+RawLiteral(AllocatorWrapper allocator, const void* addr, int size, DeletionPolicy deletion_policy)
     : Location(allocator, kLiteralType,
                size,
                (size < kLiteralAlignment) ? size : kLiteralAlignment),
@@ -426,12 +426,12 @@ explicit Literal(const T& ,
                  PlacementPolicy placement_policy = kPlacedWhenUsed,
                  DeletionPolicy deletion_policy = kManuallyDeleted) = delete;
 explicit Literal(const T& value, DeletionPolicy deletion_policy) = delete;
-explicit Literal(panda::ArenaAllocator* allocator, const T& value,
+explicit Literal(AllocatorWrapper allocator, const T& value,
                  PlacementPolicy placement_policy = kPlacedWhenUsed,
                  DeletionPolicy deletion_policy = kManuallyDeleted)
     : RawLiteral(allocator, &value_, sizeof(T), placement_policy, deletion_policy),
       value_(value) {}
-explicit Literal(panda::ArenaAllocator* allocator, const T& value, DeletionPolicy deletion_policy)
+explicit Literal(AllocatorWrapper allocator, const T& value, DeletionPolicy deletion_policy)
     : RawLiteral(allocator, &value_, sizeof(T), deletion_policy), value_(value) {}
 
 #endif
@@ -466,7 +466,7 @@ class StringLiteral : public RawLiteral {
 explicit StringLiteral(const char* str,
                        PlacementPolicy placement_policy = kPlacedWhenUsed,
                        DeletionPolicy deletion_policy = kManuallyDeleted) = delete;
-StringLiteral(panda::ArenaAllocator* allocator, const char* str,
+StringLiteral(AllocatorWrapper allocator, const char* str,
                        PlacementPolicy placement_policy = kPlacedWhenUsed,
                        DeletionPolicy deletion_policy = kManuallyDeleted)
     : RawLiteral(allocator, str,
@@ -476,7 +476,7 @@ StringLiteral(panda::ArenaAllocator* allocator, const char* str,
   VIXL_ASSERT((strlen(str) + 1) <= kMaxObjectSize);
 }
 explicit StringLiteral(const char* str, DeletionPolicy deletion_policy) = delete;
-explicit StringLiteral(panda::ArenaAllocator* allocator, const char* str, DeletionPolicy deletion_policy)
+explicit StringLiteral(AllocatorWrapper allocator, const char* str, DeletionPolicy deletion_policy)
     : RawLiteral(allocator, str, static_cast<int>(strlen(str) + 1), deletion_policy) {
   VIXL_ASSERT((strlen(str) + 1) <= kMaxObjectSize);
 }

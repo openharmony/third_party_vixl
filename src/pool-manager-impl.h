@@ -431,7 +431,7 @@ typename PoolManager<T>::objects_iter PoolManager<T>::RemoveAndDelete(
   }
   if (label_base->ShouldBeDeletedOnPlacementByPoolManager()) {
     VIXL_ASSERT(!label_base->ShouldBeDeletedOnPoolManagerDestruction());
-#ifndef PANDA_BUILD
+#ifndef VIXL_USE_PANDA_ALLOC
     delete label_base;
 #else
     label_base = nullptr;
@@ -500,7 +500,7 @@ PoolManager<T>::~PoolManager<T>() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION {
     VIXL_ASSERT(!(*iter).label_base_->IsBound());
   }
 #endif
-#ifndef PANDA_BUILD
+#ifndef VIXL_USE_PANDA_ALLOC
   // Delete objects the pool manager owns.
   for (typename std::vector<LocationBase<T>*>::iterator
            iter = delete_on_destruction_.begin(),

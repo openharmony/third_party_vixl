@@ -27,11 +27,13 @@
 #ifndef VIXL_AARCH64_DECODER_AARCH64_H_
 #define VIXL_AARCH64_DECODER_AARCH64_H_
 
+#include <functional>
 #include <list>
 #include <map>
 #include <string>
 
 #include "../globals-vixl.h"
+#include "../utils-vixl.h"
 
 #include "instructions-aarch64.h"
 
@@ -2956,10 +2958,10 @@ class Decoder {
 #ifndef PANDA_BUILD
   Decoder() { ConstructDecodeGraph(); }
 #else
-  Decoder(panda::ArenaAllocator* allocator) :
+  Decoder(AllocatorWrapper allocator) :
       allocator_(allocator),
-      visitors_(allocator->Adapter()),
-      decode_nodes_(allocator->Adapter()) {
+      visitors_(allocator_.Adapter()),
+      decode_nodes_(allocator_.Adapter()) {
     ConstructDecodeGraph();
   }
 #endif
@@ -2971,11 +2973,9 @@ class Decoder {
 
   ~Decoder() = default;
 
-#ifdef PANDA_BUILD
   auto GetAllocator() {
     return allocator_;
   }
-#endif
 
   // Top-level wrappers around the actual decoding function.
   void Decode(const Instruction* instr);
@@ -3028,11 +3028,9 @@ class Decoder {
   // of visitors stored by the decoder.
   void RemoveVisitor(DecoderVisitor* visitor);
 
-#ifdef PANDA_BUILD
-  PandaAllocator* GetAllocator() const {
+  auto GetAllocator() const {
     return allocator_;
   }
-#endif
 
   class ScopedAddVisitors {
    public:
@@ -3057,7 +3055,7 @@ class Decoder {
 #ifndef PANDA_BUILD
   std::list<DecoderVisitor*>* visitors() { return &visitors_; }
 #else
-  panda::ArenaList<DecoderVisitor*>* visitors() { return &visitors_; }
+  List<DecoderVisitor*>* visitors() { return &visitors_; }
 #endif
 
   // Get a DecodeNode by name from the Decoder's map.
@@ -3071,9 +3069,7 @@ class Decoder {
   // Add an initialised DecodeNode to the decode_node_ map.
   void AddDecodeNode(const DecodeNode& node);
 
-#ifdef PANDA_BUILD
-  PandaAllocator* allocator_{nullptr};
-#endif
+  AllocatorWrapper allocator_;
 
   // Visitors are registered in a list.
   List<DecoderVisitor*> visitors_;
@@ -3132,7 +3128,7 @@ class CompiledDecodeNode {
 #ifndef PANDA_BUILD
   CompiledDecodeNode(BitExtractFn bit_extract_fn, size_t decode_table_size)
 #else
-  CompiledDecodeNode(BitExtractFn bit_extract_fn, size_t decode_table_size, panda::ArenaAllocator* allocator)
+  CompiledDecodeNode(BitExtractFn bit_extract_fn, size_t decode_table_size, AllocatorWrapper allocator)
 #endif
       : bit_extract_fn_(bit_extract_fn),
         visitor_fn_(NULL),
@@ -3141,7 +3137,7 @@ class CompiledDecodeNode {
 #ifndef PANDA_BUILD
     decode_table_ = new CompiledDecodeNode*[decode_table_size_];
 #else
-    decode_table_ = allocator->New<CompiledDecodeNode*[]>(decode_table_size_);
+    decode_table_ = allocator.New<CompiledDecodeNode*[]>(decode_table_size_);
 #endif
     memset(decode_table_, 0, decode_table_size_ * sizeof(decode_table_[0]));
   }
@@ -3159,7 +3155,7 @@ class CompiledDecodeNode {
     // Free the decode table, if this is a compiled, non-leaf node.
     if (decode_table_ != NULL) {
       VIXL_ASSERT(!IsLeafNode());
-#ifndef PANDA_BUILD
+#ifndef VIXL_USE_PANDA_ALLOC
       delete[] decode_table_;
 #endif
     }
@@ -3219,10 +3215,10 @@ class DecodeNode {
 #ifdef PANDA_BUILD
         allocator_(decoder->GetAllocator()),
 #endif
-        name_(visitor.name, GetContainerAllocator(*this)),
-        sampled_bits_(GetContainerAllocator(*this)),
+        name_(visitor.name, allocator_.Adapter()),
+        sampled_bits_(allocator_.Adapter()),
         visitor_fn_(visitor.visitor_fn),
-        pattern_table_(GetContainerAllocator(*this)),
+        pattern_table_(allocator_.Adapter()),
         decoder_(decoder),
         compiled_node_(NULL) {}
 
@@ -3232,10 +3228,10 @@ class DecodeNode {
 #ifdef PANDA_BUILD
         allocator_(decoder->GetAllocator()),
 #endif
-        name_(map.name, GetContainerAllocator(*this)),
-        sampled_bits_(GetContainerAllocator(*this)),
+        name_(map.name, allocator_.Adapter()),
+        sampled_bits_(allocator_.Adapter()),
         visitor_fn_(NULL),
-        pattern_table_(GetContainerAllocator(*this)),
+        pattern_table_(allocator_.Adapter()),
         decoder_(decoder),
         compiled_node_(NULL) {
     // The length of the bit string in the first mapping determines the number
@@ -3249,7 +3245,7 @@ class DecodeNode {
   }
 
   ~DecodeNode() {
-#ifndef PANDA_BUILD
+#ifndef VIXL_USE_PANDA_ALLOC
     // Delete the compiled version of this node, if one was created.
     if (compiled_node_ != NULL) {
       delete compiled_node_;
@@ -3257,11 +3253,9 @@ class DecodeNode {
 #endif
   }
 
-#ifdef PANDA_BUILD
-  PandaAllocator* GetAllocator() const {
+  auto GetAllocator() const {
     return allocator_;
   }
-#endif
 
   // Set the bits sampled from the instruction by this node.
   void SetSampledBits(const uint8_t* bits, int bit_count);
@@ -3290,7 +3284,7 @@ class DecodeNode {
     compiled_node_ = new CompiledDecodeNode(bit_extract_fn, table_size);
 #else
     auto allocator{decoder_->GetAllocator()};
-    compiled_node_ = allocator->New<CompiledDecodeNode>(bit_extract_fn, table_size, allocator);
+    compiled_node_ = allocator.New<CompiledDecodeNode>(bit_extract_fn, table_size, allocator);
 #endif
   }
 
@@ -3301,7 +3295,7 @@ class DecodeNode {
     compiled_node_ = new CompiledDecodeNode(visitor_fn_, decoder_);
 #else
     auto allocator{decoder_->GetAllocator()};
-    compiled_node_ = allocator->New<CompiledDecodeNode>(visitor_fn_, decoder_);
+    compiled_node_ = allocator.New<CompiledDecodeNode>(visitor_fn_, decoder_);
 #endif
   }
 
@@ -3364,9 +3358,7 @@ class DecodeNode {
   // to match after masking.
   BitExtractFn GetBitExtractFunctionHelper(uint32_t x, uint32_t y);
 
-#ifdef PANDA_BUILD
-  PandaAllocator* allocator_{nullptr};
-#endif
+  AllocatorWrapper allocator_;
 
   // Name of this decoder node, used to construct edges in the decode graph.
   String name_;
