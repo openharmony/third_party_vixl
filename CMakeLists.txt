@@ -101,6 +101,8 @@ target_link_libraries(vixl arkbase)
 target_compile_options(vixl PUBLIC ${VIXL_FLAGS})
 target_compile_options(vixl PRIVATE -Wno-shadow)
 
+target_compile_definitions(vixl PUBLIC "VIXL_USE_PANDA_ALLOC")
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 14.0.0)
     target_compile_options(vixl PRIVATE -Wno-bitwise-instead-of-logical)
 endif()

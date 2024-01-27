@@ -49,7 +49,7 @@ class Disassembler : public DecoderVisitor {
   Disassembler();
 #else
   Disassembler() = delete;
-  Disassembler(panda::ArenaAllocator* allocator);
+  Disassembler(PandaAllocator* allocator);
 #endif
   Disassembler(char* text_buffer, int buffer_size);
   virtual ~Disassembler();
@@ -297,9 +297,8 @@ class Disassembler : public DecoderVisitor {
   char* buffer_;
   uint32_t buffer_pos_;
   uint32_t buffer_size_;
-#ifndef PANDA_BUILD
-  bool own_buffer_;
-#endif
+  std::optional<AllocatorWrapper> allocator_;
+  bool own_buffer_ {false};
 
   int64_t code_address_offset_;
 };
@@ -312,7 +311,7 @@ class PrintDisassembler : public Disassembler {
       : cpu_features_auditor_(NULL),
 #else
   explicit PrintDisassembler(FILE* stream) = delete;
-  explicit PrintDisassembler(panda::ArenaAllocator* allocator, FILE* stream)
+  explicit PrintDisassembler(PandaAllocator* allocator, FILE* stream)
       : Disassembler(allocator), cpu_features_auditor_(NULL), allocator_(allocator),
 #endif
         cpu_features_prefix_("// Needs: "),
@@ -362,7 +361,7 @@ class PrintDisassembler : public Disassembler {
 
   CPUFeaturesAuditor* cpu_features_auditor_;
 #ifdef PANDA_BUILD
-  panda::ArenaAllocator* allocator_;
+  AllocatorWrapper allocator_;
 #endif
   const char* cpu_features_prefix_;
   const char* cpu_features_suffix_;

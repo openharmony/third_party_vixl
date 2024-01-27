@@ -39,7 +39,7 @@ void Decoder::Decode(const Instruction* instr) {
 #ifndef PANDA_BUILD
     std::list<DecoderVisitor*>::iterator it;
 #else
-    panda::ArenaList<DecoderVisitor*>::iterator it;
+    List<DecoderVisitor*>::iterator it;
 #endif
 
   for (it = visitors_.begin(); it != visitors_.end(); it++) {
@@ -60,7 +60,7 @@ void Decoder::AddDecodeNode(const DecodeNode& node) {
 DecodeNode* Decoder::GetDecodeNode(const String& name) {
   auto elem{decode_nodes_.find(name)};
   if (elem == decode_nodes_.end()) {
-    auto msg = String("Can't find decode node ", GetContainerAllocator(*this)) + name.data() + ".\n";
+    auto msg = String("Can't find decode node ", GetAllocator().Adapter()) + name.data() + ".\n";
     VIXL_ABORT_WITH_MSG(msg.c_str());
   }
   return &elem->second;
@@ -78,7 +78,7 @@ void Decoder::ConstructDecodeGraph() {
   }
 
   // Compile the graph from the root.
-  auto root_node{String("Root", GetContainerAllocator(*this))};
+  auto root_node{String("Root", GetAllocator().Adapter())};
   compiled_decoder_root_ = GetDecodeNode(root_node)->Compile(this);
 }
 
@@ -97,7 +97,7 @@ void Decoder::InsertVisitorBefore(DecoderVisitor* new_visitor,
 #ifndef PANDA_BUILD
   std::list<DecoderVisitor*>::iterator it;
 #else
-  panda::ArenaList<DecoderVisitor*>::iterator it;
+  List<DecoderVisitor*>::iterator it;
 #endif
   for (it = visitors_.begin(); it != visitors_.end(); it++) {
     if (*it == registered_visitor) {
@@ -117,7 +117,7 @@ void Decoder::InsertVisitorAfter(DecoderVisitor* new_visitor,
 #ifndef PANDA_BUILD
   std::list<DecoderVisitor*>::iterator it;
 #else
-  panda::ArenaList<DecoderVisitor*>::iterator it;
+  List<DecoderVisitor*>::iterator it;
 #endif
   for (it = visitors_.begin(); it != visitors_.end(); it++) {
     if (*it == registered_visitor) {
@@ -149,7 +149,7 @@ void Decoder::RemoveVisitor(DecoderVisitor* visitor) {
 #else
 #define DEFINE_VISITOR_CALLERS(A)                               \
   void Decoder::Visit_##A(const Instruction* instr) {           \
-    panda::ArenaList<DecoderVisitor*>::iterator it;             \
+    List<DecoderVisitor*>::iterator it;             \
     Metadata m = {{"form", #A}};                                \
     for (it = visitors_.begin(); it != visitors_.end(); it++) { \
       (*it)->Visit(&m, instr);                                  \
@@ -474,10 +474,10 @@ bool DecodeNode::TryCompileOptimisedDecodeTable(Decoder* decoder) {
       // value.
       const char* doesnt_match_handler =
           (table_size == 1) ? "Visit_Unallocated" : pattern_table_[1].handler;
-      CompileNodeForBits(decoder, String(doesnt_match_handler, GetContainerAllocator(*this)), 0);
+      CompileNodeForBits(decoder, String(doesnt_match_handler, GetAllocator().Adapter()), 0);
 
       // Set DecodeNode for when it does match.
-      CompileNodeForBits(decoder, String(pattern_table_[0].handler, GetContainerAllocator(*this)), 1);
+      CompileNodeForBits(decoder, String(pattern_table_[0].handler, GetAllocator().Adapter()), 1);
 
       return true;
     }
@@ -492,17 +492,17 @@ CompiledDecodeNode* DecodeNode::Compile(Decoder* decoder) {
     CreateVisitorNode();
   } else if (!TryCompileOptimisedDecodeTable(decoder)) {
     // The "otherwise" node is the default next node if no pattern matches.
-    String otherwise("Visit_Unallocated", GetContainerAllocator(*this));
+    String otherwise("Visit_Unallocated", GetAllocator().Adapter());
 
     // For each pattern in pattern_table_, create an entry in matches that
     // has a corresponding mask and value for the pattern.
-    Vector<MaskValuePair> matches(GetContainerAllocator(*this));
+    Vector<MaskValuePair> matches(GetAllocator().Adapter());
     for (size_t i = 0; i < pattern_table_.size(); i++) {
       if (strcmp(pattern_table_[i].pattern, "otherwise") == 0) {
         // "otherwise" must be the last pattern in the list, otherwise the
         // indices won't match for pattern_table_ and matches.
         VIXL_ASSERT(i == pattern_table_.size() - 1);
-        otherwise = String(pattern_table_[i].handler, GetContainerAllocator(*this));
+        otherwise = String(pattern_table_[i].handler, GetAllocator().Adapter());
       } else {
         matches.push_back(GenerateMaskValuePair(
             GenerateOrderedPattern(pattern_table_[i].pattern)));
@@ -525,7 +525,7 @@ CompiledDecodeNode* DecodeNode::Compile(Decoder* decoder) {
           // Only one instruction class should match for each value of bits, so
           // if we get here, the node pointed to should still be unallocated.
           VIXL_ASSERT(compiled_node_->GetNodeForBits(bits) == NULL);
-          CompileNodeForBits(decoder, String(pattern_table_[i].handler, GetContainerAllocator(*this)), bits);
+          CompileNodeForBits(decoder, String(pattern_table_[i].handler, GetAllocator().Adapter()), bits);
           break;
         }
       }
@@ -534,7 +534,7 @@ CompiledDecodeNode* DecodeNode::Compile(Decoder* decoder) {
       // instruction must be handled by the "otherwise" case, which by default
       // is the Unallocated visitor.
       if (compiled_node_->GetNodeForBits(bits) == NULL) {
-        CompileNodeForBits(decoder, String(otherwise, GetContainerAllocator(*this)), bits);
+        CompileNodeForBits(decoder, String(otherwise, GetAllocator().Adapter()), bits);
       }
     }
   }
@@ -572,14 +572,14 @@ String DecodeNode::GenerateOrderedPattern(const char* pattern) const {
   const auto& sampled_bits = GetSampledBits();
   // Construct a temporary 32-character string containing '_', then at each
   // sampled bit position, set the corresponding pattern character.
-  String temp(32, '_', GetContainerAllocator(*this));
+  String temp(32, '_', GetAllocator().Adapter());
   for (size_t i = 0; i < sampled_bits.size(); i++) {
     temp[sampled_bits[i]] = pattern[i];
   }
 
   // Iterate through the temporary string, filtering out the non-'_' characters
   // into a new ordered pattern result string.
-  String result(GetContainerAllocator(*this));
+  String result(GetAllocator().Adapter());
   for (size_t i = 0; i < temp.size(); i++) {
     if (temp[i] != '_') {
       result.push_back(temp[i]);

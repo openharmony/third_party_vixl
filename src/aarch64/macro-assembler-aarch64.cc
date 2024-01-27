@@ -53,19 +53,19 @@ LiteralPool::LiteralPool(MacroAssembler* masm)
       first_use_(-1),
       recommended_checkpoint_(kNoCheckpointRequired) {}
 #else
-LiteralPool::LiteralPool(panda::ArenaAllocator* allocator, MacroAssembler* masm)
+LiteralPool::LiteralPool(AllocatorWrapper allocator, MacroAssembler* masm)
     : Pool(masm),
-      entries_(allocator->Adapter()),
+      entries_(allocator.Adapter()),
       size_(0),
       first_use_(-1),
       recommended_checkpoint_(kNoCheckpointRequired),
-      deleted_on_destruction_(allocator->Adapter()),
+      deleted_on_destruction_(allocator.Adapter()),
       allocator_(allocator) {}
 #endif
 
 LiteralPool::~LiteralPool() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION {
   VIXL_ASSERT(!IsBlocked());
-#ifndef PANDA_BUILD
+#ifndef VIXL_USE_PANDA_ALLOC
   VIXL_ASSERT(IsEmpty());
   for (std::vector<RawLiteral*>::iterator it = deleted_on_destruction_.begin();
        it != deleted_on_destruction_.end();
@@ -77,7 +77,7 @@ LiteralPool::~LiteralPool() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION {
 
 
 void LiteralPool::Reset() {
-#ifndef PANDA_BUILD
+#ifndef VIXL_USE_PANDA_ALLOC
   std::vector<RawLiteral *>::iterator it, end;
   for (it = entries_.begin(), end = entries_.end(); it != end; ++it) {
     RawLiteral* literal = *it;
@@ -166,7 +166,7 @@ void LiteralPool::Emit(EmitOption option) {
 #ifndef PANDA_BUILD
     std::vector<RawLiteral *>::iterator it, end;
 #else
-    panda::ArenaVector<RawLiteral*>::iterator it, end;
+    Vector<RawLiteral*>::iterator it, end;
 #endif
     for (it = entries_.begin(), end = entries_.end(); it != end; ++it) {
       VIXL_ASSERT((*it)->IsUsed());
@@ -354,7 +354,7 @@ void VeneerPool::Emit(EmitOption option, size_t amount) {
 #ifndef PANDA_BUILD
 MacroAssembler::MacroAssembler(PositionIndependentCodeOption pic)
 #else
-MacroAssembler::MacroAssembler(panda::ArenaAllocator* allocator,
+MacroAssembler::MacroAssembler(PandaAllocator* allocator,
           PositionIndependentCodeOption pic)
 #endif
     : Assembler(pic),
@@ -427,7 +427,7 @@ MacroAssembler::MacroAssembler(byte* buffer,
   checkpoint_ = GetNextCheckPoint();
 }
 #else
-MacroAssembler::MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
+MacroAssembler::MacroAssembler(PandaAllocator* allocator, byte* buffer,
                                size_t capacity,
                                PositionIndependentCodeOption pic)
     : Assembler(buffer, capacity, pic),
@@ -1589,7 +1589,7 @@ void MacroAssembler::Fmov(VRegister vd, double imm) {
 #ifndef PANDA_BUILD
             new Literal<double>(imm,
 #else
-            allocator_->New<Literal<double>> (imm,
+            allocator_.New<Literal<double>> (imm,
 #endif
                                 &literal_pool_,
                                 RawLiteral::kDeletedOnPlacementByPool));
@@ -1630,7 +1630,7 @@ void MacroAssembler::Fmov(VRegister vd, float imm) {
 #ifndef PANDA_BUILD
             new Literal<float>(imm,
 #else
-            allocator_->New<Literal<float>>(imm,
+            allocator_.New<Literal<float>>(imm,
 #endif
                                &literal_pool_,
                                RawLiteral::kDeletedOnPlacementByPool));

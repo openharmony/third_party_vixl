@@ -527,11 +527,10 @@ class Disassembler {
     }
   };
 
+  std::optional<AllocatorWrapper> allocator_;
   ITBlock it_block_;
   DisassemblerStream* os_;
-#ifndef PANDA_BUILD
-  bool owns_os_;
-#endif
+  bool owns_os_ {false};
   uint32_t code_address_;
   // True if the disassembler always output instructions with all the
   // registers (even if two registers are identical and only one could be
@@ -542,29 +541,27 @@ class Disassembler {
 #ifndef PANDA_BUILD
   explicit Disassembler(std::ostream& os,  // NOLINT(runtime/references)
                         uint32_t code_address = 0)
-      : os_(new DisassemblerStream(os)),
-        owns_os_(true),
+      : allocator_(std::make_optional<AllocatorWrapper>()),
+        os_(new DisassemblerStream(os)),
 #else
     explicit Disassembler(std::ostream& os, uint32_t code_address = 0) = delete;
-    explicit Disassembler(panda::ArenaAllocator* allocator, std::ostream& os,  // NOLINT(runtime/references)
+    explicit Disassembler(PandaAllocator* allocator, std::ostream& os,  // NOLINT(runtime/references)
                           uint32_t code_address = 0)
-        : os_(allocator->New<DisassemblerStream>(os)),
+        : allocator_(std::make_optional<AllocatorWrapper>(allocator)),
+          os_(allocator_->New<DisassemblerStream>(os)),
 #endif
+        owns_os_(true),
         code_address_(code_address),
         use_short_hand_form_(true) {}
   explicit Disassembler(DisassemblerStream* os, uint32_t code_address = 0)
       : os_(os),
-#ifndef PANDA_BUILD
         owns_os_(false),
-#endif
         code_address_(code_address),
         use_short_hand_form_(true) {}
   virtual ~Disassembler() {
-#ifndef PANDA_BUILD
     if (owns_os_) {
-      delete os_;
+      allocator_->DeleteObject(os_);
     }
-#endif
   }
   DisassemblerStream& os() const { return *os_; }
   void SetIT(Condition first_condition, uint16_t it_mask) {
@@ -2702,7 +2699,7 @@ class PrintDisassembler : public Disassembler {
 #else
   explicit PrintDisassembler(std::ostream& os,  // NOLINT(runtime/references)
                            uint32_t code_address = 0) = delete;
-  PrintDisassembler(panda::ArenaAllocator* allocator, std::ostream& os,  // NOLINT(runtime/references)
+  PrintDisassembler(PandaAllocator* allocator, std::ostream& os,  // NOLINT(runtime/references)
                           uint32_t code_address = 0)
     : Disassembler(allocator, os, code_address) {}
 

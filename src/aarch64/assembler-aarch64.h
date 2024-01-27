@@ -47,7 +47,7 @@ class Label {
   Label() : location_(kLocationUnbound) {}
 #else
   Label() = delete;
-  Label(panda::ArenaAllocator* allocator) : links_(allocator), location_(kLocationUnbound) {}
+  Label(AllocatorWrapper allocator) : links_(allocator), location_(kLocationUnbound) {}
 #endif
   virtual ~Label() {
     // All links to a label must have been resolved before it is destructed.
@@ -87,7 +87,7 @@ class Label {
     LinksSet() : LinksSetBase() {}
 #else
     LinksSet() = delete;
-    LinksSet(panda::ArenaAllocator* allocator) : LinksSetBase(allocator) {}
+    LinksSet(AllocatorWrapper allocator) : LinksSetBase(allocator) {}
 #endif
   };
 

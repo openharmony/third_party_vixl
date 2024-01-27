@@ -30,12 +30,18 @@
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <optional>
+#include <type_traits>
 #include <vector>
 
 #include "compiler-intrinsics-vixl.h"
 #include "globals-vixl.h"
 
-#ifdef PANDA_BUILD
+#if defined(VIXL_USE_PANDA_ALLOC) && !defined(PANDA_BUILD)
+#error "PANDA_BUILD should be defined for VIXL_USE_PANDA_ALLOC"
+#endif
+
+#ifdef VIXL_USE_PANDA_ALLOC
 #include "mem/arena_allocator_stl_adapter.h"
 #include "mem/arena_allocator.h"
 #include "utils/arena_containers.h"
@@ -44,18 +50,27 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 #endif
 
-namespace vixl {
-#ifdef PANDA_BUILD
-using PandaAllocator = panda::ArenaAllocator;
+#if defined(PANDA_BUILD) && !defined(VIXL_USE_PANDA_ALLOC)
+namespace panda {
+  template <bool> class ArenaAllocatorT;
+  using ArenaAllocator = ArenaAllocatorT<false>;
+}
+#endif
 
+namespace vixl {
+#ifdef VIXL_USE_PANDA_ALLOC
 template <typename T>
 using List = panda::ArenaList<T>;
 
 template <typename K, typename V>
 using Map = panda::ArenaMap<K, V>;
+
+template <typename K, typename V>
+using UnorderedMap = panda::ArenaUnorderedMap<K, V>;
 
 using String = panda::ArenaString;
 
@@ -68,20 +83,99 @@ using List = std::list<T>;
 template <typename K, typename V>
 using Map = std::map<K, V>;
 
+template <typename K, typename V>
+using UnorderedMap = std::unordered_map<K, V>;
+
 using String = std::string;
 
 template <typename T>
 using Vector = std::vector<T>;
 #endif
 
-template <typename T>
-inline auto GetContainerAllocator(const T& obj) {
 #ifdef PANDA_BUILD
-  return obj.GetAllocator()->Adapter();
-#else
-  return std::allocator<void>();
+using PandaAllocator = panda::ArenaAllocator;
+#endif // PANDA_BUILD
+
+template <typename T>
+struct is_unbounded_array : public std::false_type {};
+
+template <typename T>
+struct is_unbounded_array<T[]> : public std::true_type {};
+
+template <typename T>
+constexpr bool is_unbounded_array_v = is_unbounded_array<T>::value;
+
+class AllocatorWrapper {
+public:
+#ifndef PANDA_BUILD
+  AllocatorWrapper() = default;
+#else // PANDA_BUILD
+  AllocatorWrapper([[maybe_unused]] PandaAllocator* allocator)
+#ifdef VIXL_USE_PANDA_ALLOC
+    : allocator_(allocator)
 #endif
-}
+    {}
+#endif // PANDA_BUILD
+
+  auto Adapter() {
+#ifdef VIXL_USE_PANDA_ALLOC
+    return allocator_->Adapter();
+#else
+    return std::allocator<void>();
+#endif
+  }
+
+  template <typename T, typename... Args>
+  [[nodiscard]] std::enable_if_t<!std::is_array_v<T>, T*> New(Args&&... args) {
+#ifdef VIXL_USE_PANDA_ALLOC
+    return allocator_->template New<T>(std::forward<Args>(args)...);
+#else
+    return new T(std::forward<Args>(args)...);
+#endif
+  }
+
+  template <typename T>
+  [[nodiscard]] std::enable_if_t<is_unbounded_array_v<T>, std::remove_extent_t<T>*> New(size_t size) {
+#ifdef VIXL_USE_PANDA_ALLOC
+    return allocator_->template New<T>(size);
+#else
+    return new std::remove_extent_t<T>[size];
+#endif
+  }
+
+  [[nodiscard]] void* Alloc(size_t size) {
+#ifdef VIXL_USE_PANDA_ALLOC
+    return allocator_->Alloc(size);
+#else
+    return malloc(size);
+#endif
+  }
+
+  template <typename T>
+  void DeleteObject([[maybe_unused]] T* obj) {
+#ifndef VIXL_USE_PANDA_ALLOC
+    delete obj;
+#endif
+  }
+
+  template <typename T>
+  void DeleteArray([[maybe_unused]] T* arr) {
+#ifndef VIXL_USE_PANDA_ALLOC
+    delete[] arr;
+#endif
+  }
+
+  void Free([[maybe_unused]] void* ptr) {
+#ifndef VIXL_USE_PANDA_ALLOC
+    free(ptr);
+#endif
+  }
+
+private:
+#ifdef VIXL_USE_PANDA_ALLOC
+  PandaAllocator* allocator_;
+#endif
+};
 
 // Macros for compile-time format checking.
 #if GCC_VERSION_OR_NEWER(4, 4, 0)
@@ -821,7 +915,7 @@ class BitField {
   explicit BitField(unsigned size) : bitfield_(size, 0) {}
 #else
   explicit BitField(unsigned size) = delete;
-  explicit BitField(panda::ArenaAllocator* allocator, unsigned size) : bitfield_(size, 0, allocator->Adapter()) {}
+  explicit BitField(PandaAllocator* allocator, unsigned size) : bitfield_(size, 0, AllocatorWrapper(allocator).Adapter()) {}
 #endif
 
   void Set(int i) {
@@ -859,7 +953,7 @@ class BitField {
 #ifndef PANDA_BUILD
   std::vector<bool> bitfield_;
 #else
-  panda::ArenaVector<bool> bitfield_;
+  Vector<bool> bitfield_;
 #endif
 };
 
