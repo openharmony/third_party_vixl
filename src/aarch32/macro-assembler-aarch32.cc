@@ -468,7 +468,7 @@ void MacroAssembler::Printf(const char* format,
     StringLiteral* format_literal =
         new StringLiteral(format, RawLiteral::kDeletedOnPlacementByPool);
 #else
-    StringLiteral* format_literal = allocator_->New<StringLiteral>(
+    StringLiteral* format_literal = allocator_.New<StringLiteral>(
         allocator_, format, RawLiteral::kDeletedOnPlacementByPool);
 #endif
 
@@ -599,7 +599,7 @@ void MacroAssembler::Printf(const char* format,
     StringLiteral* format_literal =
         new StringLiteral(format, RawLiteral::kDeletedOnPlacementByPool);
 #else
-    StringLiteral* format_literal = allocator_->New<StringLiteral>(
+    StringLiteral* format_literal = allocator_.New<StringLiteral>(
         allocator_, format, RawLiteral::kDeletedOnPlacementByPool);
 #endif
     Adr(r0, format_literal);

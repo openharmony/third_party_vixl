@@ -85,7 +85,7 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
 #ifndef PANDA_BUILD
     pool_end_ = new Label();
 #else
-    pool_end_ = allocator_->New<Label>(allocator_);
+    pool_end_ = allocator_.New<Label>(allocator_);
 #endif
     ExactAssemblyScopeWithoutPoolsCheck guard(this,
                                               kMaxInstructionSizeInBytes,
@@ -97,7 +97,7 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
     GetBuffer()->Align();
     if (pool_end_ != NULL) {
       Bind(pool_end_);
-#ifndef PANDA_BUILD
+#ifndef VIXL_USE_PANDA_ALLOC
       delete pool_end_;
 #endif
       pool_end_ = NULL;
@@ -195,7 +195,7 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
 #else
 ITScope(MacroAssembler* , Condition* , const MacroEmissionCheckScope& ,
         bool can_use_it = false) = delete;
-ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
+ITScope(AllocatorWrapper allocator, MacroAssembler* masm,
         Condition* cond,
         const MacroEmissionCheckScope& scope,
         bool can_use_it = false)
@@ -275,7 +275,7 @@ ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
   // we can change the alignment of the pool in the pool manager constructor to
   // be 2 bytes for T32.
 #ifdef PANDA_BUILD
-  explicit MacroAssembler(panda::ArenaAllocator* allocator, InstructionSet isa = kDefaultISA)
+  explicit MacroAssembler(PandaAllocator* allocator, InstructionSet isa = kDefaultISA)
 #else
   explicit MacroAssembler(InstructionSet isa = kDefaultISA)
 #endif
@@ -334,7 +334,7 @@ ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
         generate_simulator_code_(VIXL_AARCH32_GENERATE_SIMULATOR_CODE),
         pool_end_(NULL) {
 #else
-  MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer, size_t size, InstructionSet isa = kDefaultISA)
+  MacroAssembler(PandaAllocator* allocator, byte* buffer, size_t size, InstructionSet isa = kDefaultISA)
       : Assembler(buffer, size, isa),
         available_(r12),
         current_scratch_scope_(NULL),
@@ -884,7 +884,7 @@ ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
     RawLiteral* literal =
         new Literal<uint32_t>(v, RawLiteral::kDeletedOnPlacementByPool);
 #else
-    RawLiteral* literal = allocator_->New<Literal<uint32_t>>(
+    RawLiteral* literal = allocator_.New<Literal<uint32_t>>(
         allocator_, v, RawLiteral::kDeletedOnPlacementByPool);
 #endif
     Ldr(cond, rt, literal);
@@ -904,7 +904,7 @@ ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
     RawLiteral* literal =
         new Literal<uint64_t>(v, RawLiteral::kDeletedOnPlacementByPool);
 #else
-    RawLiteral* literal = allocator_->New<Literal<uint64_t>>(
+    RawLiteral* literal = allocator_.New<Literal<uint64_t>>(
         allocator_, v, RawLiteral::kDeletedOnPlacementByPool);
 #endif
     Ldrd(cond, rt, rt2, literal);
@@ -922,7 +922,7 @@ ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
     RawLiteral* literal =
         new Literal<float>(v, RawLiteral::kDeletedOnPlacementByPool);
 #else
-    RawLiteral* literal = allocator_->New<Literal<float>>(
+    RawLiteral* literal = allocator_.New<Literal<float>>(
         allocator_, v, RawLiteral::kDeletedOnPlacementByPool);
 #endif
     Vldr(cond, rd, literal);
@@ -937,7 +937,7 @@ ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
     RawLiteral* literal =
         new Literal<double>(v, RawLiteral::kDeletedOnPlacementByPool);
 #else
-    RawLiteral* literal = allocator_->New<Literal<double>>(
+    RawLiteral* literal = allocator_.New<Literal<double>>(
         allocator_, v, RawLiteral::kDeletedOnPlacementByPool);
 #endif
     Vldr(cond, rd, literal);
@@ -13366,7 +13366,7 @@ ITScope(panda::ArenaAllocator* allocator, MacroAssembler* masm,
   bool allow_macro_instructions_;
   Label* pool_end_;
 #ifdef PANDA_BUILD
-  panda::ArenaAllocator* allocator_;
+  AllocatorWrapper allocator_;
 #endif
   friend class TestMacroAssembler;
 };

@@ -111,7 +111,7 @@ class LiteralPool : public Pool {
   explicit LiteralPool(MacroAssembler* masm);
 #else
   explicit LiteralPool(MacroAssembler* masm) = delete;
-  LiteralPool(panda::ArenaAllocator* allocator, MacroAssembler* masm);
+  LiteralPool(AllocatorWrapper allocator, MacroAssembler* masm);
 #endif
   ~LiteralPool() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION;
   void Reset();
@@ -155,7 +155,7 @@ class LiteralPool : public Pool {
 #ifndef PANDA_BUILD
   std::vector<RawLiteral*> entries_;
 #else
-  panda::ArenaVector<RawLiteral*> entries_;
+  Vector<RawLiteral*> entries_;
 #endif
   size_t size_;
   ptrdiff_t first_use_;
@@ -169,8 +169,8 @@ class LiteralPool : public Pool {
 #ifndef PANDA_BUILD
   std::vector<RawLiteral*> deleted_on_destruction_;
 #else
-  panda::ArenaVector<RawLiteral*> deleted_on_destruction_;
-  panda::ArenaAllocator* allocator_;
+  Vector<RawLiteral*> deleted_on_destruction_;
+  AllocatorWrapper allocator_;
 #endif
 };
 
@@ -198,7 +198,7 @@ class VeneerPool : public Pool {
   explicit VeneerPool(MacroAssembler* masm) : Pool(masm) {}
 #else
 explicit VeneerPool(MacroAssembler* masm) = delete;
-VeneerPool(panda::ArenaAllocator* allocator, MacroAssembler* masm) : Pool(masm), unresolved_branches_(allocator), allocator_(allocator) {}
+VeneerPool(AllocatorWrapper allocator, MacroAssembler* masm) : Pool(masm), unresolved_branches_(allocator), allocator_(allocator) {}
 #endif
   void Reset();
 
@@ -333,7 +333,7 @@ VeneerPool(panda::ArenaAllocator* allocator, MacroAssembler* masm) : Pool(masm),
     BranchInfoTypedSet() : BranchInfoTypedSetBase() {}
 #else
     BranchInfoTypedSet() = delete;
-    explicit BranchInfoTypedSet(panda::ArenaAllocator* alloc) : BranchInfoTypedSetBase(alloc) {}
+    explicit BranchInfoTypedSet(AllocatorWrapper alloc) : BranchInfoTypedSetBase(alloc) {}
     BranchInfoTypedSet(BranchInfoTypedSet&&) = default;
 #endif
     ptrdiff_t GetFirstLimit() {
@@ -362,8 +362,8 @@ VeneerPool(panda::ArenaAllocator* allocator, MacroAssembler* masm) : Pool(masm),
    public:
 #ifdef PANDA_BUILD
        BranchInfoSet() = delete;
-       BranchInfoSet(panda::ArenaAllocator* allocator) :
-              typed_set_(allocator->Adapter()) {
+       BranchInfoSet(AllocatorWrapper allocator) :
+              typed_set_(allocator.Adapter()) {
                   typed_set_.reserve(3);
                   typed_set_.emplace_back((allocator));
                   typed_set_.emplace_back((allocator));
@@ -457,7 +457,7 @@ VeneerPool(panda::ArenaAllocator* allocator, MacroAssembler* masm) : Pool(masm),
 #ifndef PANDA_BUILD
     BranchInfoTypedSet typed_set_[kNumberOfTrackedBranchTypes];
 #else
-    panda::ArenaVector<BranchInfoTypedSet> typed_set_;
+    Vector<BranchInfoTypedSet> typed_set_;
 #endif
     friend class VeneerPool;
     friend class BranchInfoSetIterator;
@@ -474,7 +474,7 @@ VeneerPool(panda::ArenaAllocator* allocator, MacroAssembler* masm) : Pool(masm),
     }
 #else
     explicit BranchInfoSetIterator(BranchInfoSet* set) = delete;
-    BranchInfoSetIterator(panda::ArenaAllocator* allocator, BranchInfoSet* set) : set_(set), sub_iterator_(allocator->Adapter()) {
+    BranchInfoSetIterator(AllocatorWrapper allocator, BranchInfoSet* set) : set_(set), sub_iterator_(allocator.Adapter()) {
       for (int i = 0; i < BranchInfoSet::kNumberOfTrackedBranchTypes; i++) {
           sub_iterator_.emplace_back(&(set_->typed_set_[i]));
       }
@@ -536,7 +536,7 @@ VeneerPool(panda::ArenaAllocator* allocator, MacroAssembler* masm) : Pool(masm),
     BranchInfoTypedSetIterator
         sub_iterator_[BranchInfoSet::kNumberOfTrackedBranchTypes];
 #else
-    panda::ArenaVector<BranchInfoTypedSetIterator> sub_iterator_;
+    Vector<BranchInfoTypedSetIterator> sub_iterator_;
 #endif
   };
 
@@ -554,7 +554,7 @@ VeneerPool(panda::ArenaAllocator* allocator, MacroAssembler* masm) : Pool(masm),
   // Information about unresolved (forward) branches.
   BranchInfoSet unresolved_branches_;
 #ifdef PANDA_BUILD
-  panda::ArenaAllocator* allocator_;
+  AllocatorWrapper allocator_;
 #endif
 };
 
@@ -718,7 +718,7 @@ enum FPMacroNaNPropagationOption {
 class MacroAssembler : public Assembler, public MacroAssemblerInterface {
  public:
 #ifdef PANDA_BUILD
-  explicit MacroAssembler(panda::ArenaAllocator* allocator,
+  explicit MacroAssembler(PandaAllocator* allocator,
       PositionIndependentCodeOption pic = PositionIndependentCode);
 #else
   explicit MacroAssembler(
@@ -736,7 +736,7 @@ class MacroAssembler : public Assembler, public MacroAssemblerInterface {
                  size_t capacity,
                  PositionIndependentCodeOption pic = PositionIndependentCode);
 #else
-MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
+MacroAssembler(PandaAllocator* allocator, byte* buffer,
                size_t capacity,
                PositionIndependentCodeOption pic = PositionIndependentCode);
 #endif
@@ -2006,11 +2006,11 @@ MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
     }
 #else
     if (vt.IsD()) {
-      literal = allocator_->New<Literal<double>>(imm,
+      literal = allocator_.New<Literal<double>>(imm,
                                     &literal_pool_,
                                     RawLiteral::kDeletedOnPlacementByPool);
     } else {
-      literal = allocator_->New<Literal<float>>(static_cast<float>(imm),
+      literal = allocator_.New<Literal<float>>(static_cast<float>(imm),
                                    &literal_pool_,
                                    RawLiteral::kDeletedOnPlacementByPool);
     }
@@ -2033,11 +2033,11 @@ MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
     }
 #else
     if (vt.IsS()) {
-      literal = allocator_->New<Literal<float>>(imm,
+      literal = allocator_.New<Literal<float>>(imm,
                                    &literal_pool_,
                                    RawLiteral::kDeletedOnPlacementByPool);
     } else {
-      literal = allocator_->New<Literal<double>>(static_cast<double>(imm),
+      literal = allocator_.New<Literal<double>>(static_cast<double>(imm),
                                     &literal_pool_,
                                     RawLiteral::kDeletedOnPlacementByPool);
     }
@@ -2056,7 +2056,7 @@ MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
                               RawLiteral::kDeletedOnPlacementByPool));
 #else
     ldr(vt,
-        allocator_->New<Literal<uint64_t>>(high64,
+        allocator_.New<Literal<uint64_t>>(high64,
                               low64,
                               &literal_pool_,
                               RawLiteral::kDeletedOnPlacementByPool));
@@ -2081,13 +2081,13 @@ MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
     }
 #else
     if (rt.Is64Bits()) {
-      literal = allocator_->New<Literal<uint64_t>>(imm,
+      literal = allocator_.New<Literal<uint64_t>>(imm,
                                       &literal_pool_,
                                       RawLiteral::kDeletedOnPlacementByPool);
     } else {
       VIXL_ASSERT(rt.Is32Bits());
       VIXL_ASSERT(IsUint32(imm) || IsInt32(imm));
-      literal = allocator_->New<Literal<uint32_t>>(static_cast<uint32_t>(imm),
+      literal = allocator_.New<Literal<uint32_t>>(static_cast<uint32_t>(imm),
                                       &literal_pool_,
                                       RawLiteral::kDeletedOnPlacementByPool);
     }
@@ -2105,7 +2105,7 @@ MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
                                 RawLiteral::kDeletedOnPlacementByPool));
 #else
     ldrsw(rt,
-          allocator_->New<Literal<uint32_t>>(imm,
+          allocator_.New<Literal<uint32_t>>(imm,
                                 &literal_pool_,
                                 RawLiteral::kDeletedOnPlacementByPool));
 #endif
@@ -7620,7 +7620,7 @@ MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
                           &literal_pool_,
                           RawLiteral::kDeletedOnPoolDestruction);
 #else
-    return allocator_->New<Literal<T>>(value,
+    return allocator_.New<Literal<T>>(value,
                           &literal_pool_,
                           RawLiteral::kDeletedOnPoolDestruction);
 #endif
@@ -7634,7 +7634,7 @@ MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
                           &literal_pool_,
                           RawLiteral::kDeletedOnPoolDestruction);
 #else
-    return allocator_->New<Literal<T>>(high64,
+    return allocator_.New<Literal<T>>(high64,
                           low64,
                           &literal_pool_,
                           RawLiteral::kDeletedOnPoolDestruction);
@@ -8238,7 +8238,7 @@ MacroAssembler(panda::ArenaAllocator* allocator, byte* buffer,
   FPMacroNaNPropagationOption fp_nan_propagation_;
 
 #ifdef PANDA_BUILD
-  panda::ArenaAllocator* allocator_;
+  AllocatorWrapper allocator_;
 #endif
   friend class Pool;
   friend class LiteralPool;
