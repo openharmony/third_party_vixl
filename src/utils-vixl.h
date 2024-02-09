@@ -55,7 +55,7 @@
 #endif
 
 #if defined(PANDA_BUILD) && !defined(VIXL_USE_PANDA_ALLOC)
-namespace panda {
+namespace ark {
   template <bool> class ArenaAllocatorT;
   using ArenaAllocator = ArenaAllocatorT<false>;
 }
@@ -64,18 +64,18 @@ namespace panda {
 namespace vixl {
 #ifdef VIXL_USE_PANDA_ALLOC
 template <typename T>
-using List = panda::ArenaList<T>;
+using List = ark::ArenaList<T>;
 
 template <typename K, typename V>
-using Map = panda::ArenaMap<K, V>;
+using Map = ark::ArenaMap<K, V>;
 
 template <typename K, typename V>
-using UnorderedMap = panda::ArenaUnorderedMap<K, V>;
+using UnorderedMap = ark::ArenaUnorderedMap<K, V>;
 
-using String = panda::ArenaString;
+using String = ark::ArenaString;
 
 template <typename T>
-using Vector = panda::ArenaVector<T>;
+using Vector = ark::ArenaVector<T>;
 #else
 template <typename T>
 using List = std::list<T>;
@@ -93,7 +93,7 @@ using Vector = std::vector<T>;
 #endif
 
 #ifdef PANDA_BUILD
-using PandaAllocator = panda::ArenaAllocator;
+using PandaAllocator = ark::ArenaAllocator;
 #endif // PANDA_BUILD
 
 template <typename T>
