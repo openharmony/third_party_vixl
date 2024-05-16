@@ -23,7 +23,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import("//arkcompiler/runtime_core/static_core/ark_config.gni")
 import("//build/ohos.gni")
 
 config("vixl_public_config") {
@@ -32,23 +31,21 @@ config("vixl_public_config") {
     defines += [ "VIXL_DEBUG" ]
   }
 
-  if (defined(vixl_with_panda)) {
-    defines += [ "PANDA_BUILD" ]
-  }
+  defines += [ "PANDA_BUILD" ]
 
-  if (ark_standalone_build) {
+  if (defined(ark_standalone_build) && ark_standalone_build) {
     cflags_cc = [ "-Wno-bitwise-instead-of-logical" ]
   }
 
   include_dirs = [
-    "$ark_third_party_root/vixl",
-    "$ark_third_party_root/vixl/src",
+    ".",
+    "src",
   ]
   if (target_cpu == "arm") {
-    include_dirs += [ "$ark_third_party_root/vixl/src/aarch32" ]
+    include_dirs += [ "src/aarch32" ]
   } else if (target_cpu == "arm64" || target_cpu == "amd64" ||
              target_cpu == "x64" || target_cpu == "x86_64") {
-    include_dirs += [ "$ark_third_party_root/vixl/src/aarch64" ]
+    include_dirs += [ "src/aarch64" ]
   }
 }
 
@@ -60,6 +57,34 @@ ohos_static_library("libvixl") {
     "src/utils-vixl.cc",
   ]
 
+  defines = []
+  cflags_cc = [
+    "-std=c++17",
+    "-pedantic",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-fno-rtti",
+    "-fno-exceptions",
+    "-Wno-invalid-offsetof",
+
+    "-Wno-gnu-statement-expression",
+    "-Wno-unused-parameter",
+    "-Wno-unused-result",
+  ]
+  if (is_debug) {
+    cflags_cc += [
+      "-Og",
+      "-ggdb3",
+      "-gdwarf-4",
+    ]
+  }
+
+  if (is_asan) {
+    cflags_cc += [ "-g" ]
+    defines += [ "__SANITIZE_ADDRESS__" ]
+  }
+
   if (target_cpu == "arm") {
     sources += [
       "src/aarch32/assembler-aarch32.cc",
@@ -70,7 +95,7 @@ ohos_static_library("libvixl") {
       "src/aarch32/macro-assembler-aarch32.cc",
       "src/aarch32/operands-aarch32.cc",
     ]
-    cflags_cc = [ "-DVIXL_INCLUDE_TARGET_A32" ]
+    defines += [ "VIXL_INCLUDE_TARGET_A32" ]
   } else if (target_cpu == "arm64" || target_cpu == "amd64" ||
              target_cpu == "x64" || target_cpu == "x86_64") {
     sources += [
@@ -88,12 +113,18 @@ ohos_static_library("libvixl") {
       "src/aarch64/pointer-auth-aarch64.cc",
       "src/aarch64/simulator-aarch64.cc",
     ]
-    cflags_cc = [
-      "-DVIXL_INCLUDE_TARGET_A64",
-      "-DVIXL_INCLUDE_SIMULATOR_AARCH64",
+    defines += [
+      "VIXL_INCLUDE_TARGET_A64",
+      "VIXL_INCLUDE_SIMULATOR_AARCH64",
     ]
-  } else {
-    cflags_cc = []
+  }
+  if (current_cpu == "arm") {
+    cflags_cc += [
+      "-march=armv7-a",
+      "-mfloat-abi=softfp",
+      "-marm",
+      "-mfpu=vfp",
+    ]
   }
 
   if (is_mac) {
@@ -101,8 +132,6 @@ ohos_static_library("libvixl") {
   } else {
     cflags_cc += [ "-DVIXL_CODE_BUFFER_MMAP" ]
   }
-
-  configs = [ "$ark_root:ark_config" ]
 
   public_configs = [ ":vixl_public_config" ]
 
