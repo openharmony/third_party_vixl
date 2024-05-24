@@ -24,7 +24,7 @@
         },
         "build": {
             "sub_component": [
-                "//third_party/vixl:libvixl_frontend_static"
+                "//third_party/vixl:libvixl"
             ],
             "inner_kits": [
                 {
