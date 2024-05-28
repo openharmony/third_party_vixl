@@ -1165,8 +1165,8 @@ class Simulator : public DecoderVisitor {
       }
     }
 
-    bool last_instr_was_movprfx =
-        (form_hash_ == "movprfx_z_z"_h) || (form_hash_ == "movprfx_z_p_z"_h);
+    bool last_instr_was_movprfx = (form_hash_ == Hash("movprfx_z_z")) ||
+                                  (form_hash_ == Hash("movprfx_z_p_z"));
 
     // decoder_->Decode(...) triggers at least the following visitors:
     //  1. The CPUFeaturesAuditor (`cpu_features_auditor_`).

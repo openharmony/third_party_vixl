@@ -36,642 +36,613 @@ namespace aarch64 {
 
 const Disassembler::FormToVisitorFnMap Disassembler::FORM_TO_VISITOR = {
     DEFAULT_FORM_TO_VISITOR_MAP(Disassembler),
-    {"autia1716_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"autiasp_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"autiaz_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"autib1716_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"autibsp_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"autibz_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"axflag_m_pstate"_h, &Disassembler::DisassembleNoArgs},
-    {"cfinv_m_pstate"_h, &Disassembler::DisassembleNoArgs},
-    {"csdb_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"dgh_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"ssbb_only_barriers"_h, &Disassembler::DisassembleNoArgs},
-    {"pssbb_only_barriers"_h, &Disassembler::DisassembleNoArgs},
-    {"esb_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"isb_bi_barriers"_h, &Disassembler::DisassembleNoArgs},
-    {"nop_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"pacia1716_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"paciasp_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"paciaz_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"pacib1716_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"pacibsp_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"pacibz_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"sev_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"sevl_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"wfe_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"wfi_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"xaflag_m_pstate"_h, &Disassembler::DisassembleNoArgs},
-    {"xpaclri_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"yield_hi_hints"_h, &Disassembler::DisassembleNoArgs},
-    {"abs_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"cls_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"clz_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"cnt_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"neg_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"rev16_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"rev32_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"rev64_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"sqabs_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"sqneg_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"suqadd_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"urecpe_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"ursqrte_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"usqadd_asimdmisc_r"_h, &Disassembler::VisitNEON2RegMisc},
-    {"not_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegLogical},
-    {"rbit_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegLogical},
-    {"xtn_asimdmisc_n"_h, &Disassembler::DisassembleNEON2RegExtract},
-    {"sqxtn_asimdmisc_n"_h, &Disassembler::DisassembleNEON2RegExtract},
-    {"uqxtn_asimdmisc_n"_h, &Disassembler::DisassembleNEON2RegExtract},
-    {"sqxtun_asimdmisc_n"_h, &Disassembler::DisassembleNEON2RegExtract},
-    {"shll_asimdmisc_s"_h, &Disassembler::DisassembleNEON2RegExtract},
-    {"sadalp_asimdmisc_p"_h, &Disassembler::DisassembleNEON2RegAddlp},
-    {"saddlp_asimdmisc_p"_h, &Disassembler::DisassembleNEON2RegAddlp},
-    {"uadalp_asimdmisc_p"_h, &Disassembler::DisassembleNEON2RegAddlp},
-    {"uaddlp_asimdmisc_p"_h, &Disassembler::DisassembleNEON2RegAddlp},
-    {"cmeq_asimdmisc_z"_h, &Disassembler::DisassembleNEON2RegCompare},
-    {"cmge_asimdmisc_z"_h, &Disassembler::DisassembleNEON2RegCompare},
-    {"cmgt_asimdmisc_z"_h, &Disassembler::DisassembleNEON2RegCompare},
-    {"cmle_asimdmisc_z"_h, &Disassembler::DisassembleNEON2RegCompare},
-    {"cmlt_asimdmisc_z"_h, &Disassembler::DisassembleNEON2RegCompare},
-    {"fcmeq_asimdmisc_fz"_h, &Disassembler::DisassembleNEON2RegFPCompare},
-    {"fcmge_asimdmisc_fz"_h, &Disassembler::DisassembleNEON2RegFPCompare},
-    {"fcmgt_asimdmisc_fz"_h, &Disassembler::DisassembleNEON2RegFPCompare},
-    {"fcmle_asimdmisc_fz"_h, &Disassembler::DisassembleNEON2RegFPCompare},
-    {"fcmlt_asimdmisc_fz"_h, &Disassembler::DisassembleNEON2RegFPCompare},
-    {"fcvtl_asimdmisc_l"_h, &Disassembler::DisassembleNEON2RegFPConvert},
-    {"fcvtn_asimdmisc_n"_h, &Disassembler::DisassembleNEON2RegFPConvert},
-    {"fcvtxn_asimdmisc_n"_h, &Disassembler::DisassembleNEON2RegFPConvert},
-    {"fabs_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtas_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtau_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtms_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtmu_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtns_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtnu_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtps_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtpu_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtzs_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fcvtzu_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fneg_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frecpe_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frint32x_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frint32z_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frint64x_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frint64z_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frinta_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frinti_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frintm_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frintn_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frintp_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frintx_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frintz_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"frsqrte_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"fsqrt_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"scvtf_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"ucvtf_asimdmisc_r"_h, &Disassembler::DisassembleNEON2RegFP},
-    {"smlal_asimdelem_l"_h, &Disassembler::DisassembleNEONMulByElementLong},
-    {"smlsl_asimdelem_l"_h, &Disassembler::DisassembleNEONMulByElementLong},
-    {"smull_asimdelem_l"_h, &Disassembler::DisassembleNEONMulByElementLong},
-    {"umlal_asimdelem_l"_h, &Disassembler::DisassembleNEONMulByElementLong},
-    {"umlsl_asimdelem_l"_h, &Disassembler::DisassembleNEONMulByElementLong},
-    {"umull_asimdelem_l"_h, &Disassembler::DisassembleNEONMulByElementLong},
-    {"sqdmull_asimdelem_l"_h, &Disassembler::DisassembleNEONMulByElementLong},
-    {"sqdmlal_asimdelem_l"_h, &Disassembler::DisassembleNEONMulByElementLong},
-    {"sqdmlsl_asimdelem_l"_h, &Disassembler::DisassembleNEONMulByElementLong},
-    {"sdot_asimdelem_d"_h, &Disassembler::DisassembleNEONDotProdByElement},
-    {"udot_asimdelem_d"_h, &Disassembler::DisassembleNEONDotProdByElement},
-    {"usdot_asimdelem_d"_h, &Disassembler::DisassembleNEONDotProdByElement},
-    {"sudot_asimdelem_d"_h, &Disassembler::DisassembleNEONDotProdByElement},
-    {"fmlal2_asimdelem_lh"_h,
-    &Disassembler::DisassembleNEONFPMulByElementLong},
-    {"fmlal_asimdelem_lh"_h,
-    &Disassembler::DisassembleNEONFPMulByElementLong},
-    {"fmlsl2_asimdelem_lh"_h,
-    &Disassembler::DisassembleNEONFPMulByElementLong},
-    {"fmlsl_asimdelem_lh"_h,
-    &Disassembler::DisassembleNEONFPMulByElementLong},
-    {"fcmla_asimdelem_c_h"_h,
-    &Disassembler::DisassembleNEONComplexMulByElement},
-    {"fcmla_asimdelem_c_s"_h,
-    &Disassembler::DisassembleNEONComplexMulByElement},
-    {"fmla_asimdelem_rh_h"_h,
-    &Disassembler::DisassembleNEONHalfFPMulByElement},
-    {"fmls_asimdelem_rh_h"_h,
-    &Disassembler::DisassembleNEONHalfFPMulByElement},
-    {"fmulx_asimdelem_rh_h"_h,
-    &Disassembler::DisassembleNEONHalfFPMulByElement},
-    {"fmul_asimdelem_rh_h"_h,
-    &Disassembler::DisassembleNEONHalfFPMulByElement},
-    {"fmla_asimdelem_r_sd"_h, &Disassembler::DisassembleNEONFPMulByElement},
-    {"fmls_asimdelem_r_sd"_h, &Disassembler::DisassembleNEONFPMulByElement},
-    {"fmulx_asimdelem_r_sd"_h, &Disassembler::DisassembleNEONFPMulByElement},
-    {"fmul_asimdelem_r_sd"_h, &Disassembler::DisassembleNEONFPMulByElement},
-    {"mla_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"mls_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"mul_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"saba_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"sabd_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"shadd_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"shsub_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"smaxp_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"smax_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"sminp_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"smin_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"srhadd_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"uaba_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"uabd_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"uhadd_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"uhsub_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"umaxp_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"umax_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"uminp_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"umin_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"urhadd_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameNoD},
-    {"and_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameLogical},
-    {"bic_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameLogical},
-    {"bif_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameLogical},
-    {"bit_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameLogical},
-    {"bsl_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameLogical},
-    {"eor_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameLogical},
-    {"orr_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameLogical},
-    {"orn_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameLogical},
-    {"pmul_asimdsame_only"_h, &Disassembler::DisassembleNEON3SameLogical},
-    {"fmlal2_asimdsame_f"_h, &Disassembler::DisassembleNEON3SameFHM},
-    {"fmlal_asimdsame_f"_h, &Disassembler::DisassembleNEON3SameFHM},
-    {"fmlsl2_asimdsame_f"_h, &Disassembler::DisassembleNEON3SameFHM},
-    {"fmlsl_asimdsame_f"_h, &Disassembler::DisassembleNEON3SameFHM},
-    {"sri_asimdshf_r"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"srshr_asimdshf_r"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"srsra_asimdshf_r"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"sshr_asimdshf_r"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"ssra_asimdshf_r"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"urshr_asimdshf_r"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"ursra_asimdshf_r"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"ushr_asimdshf_r"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"usra_asimdshf_r"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"scvtf_asimdshf_c"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"ucvtf_asimdshf_c"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"fcvtzs_asimdshf_c"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"fcvtzu_asimdshf_c"_h, &Disassembler::DisassembleNEONShiftRightImm},
-    {"ushll_asimdshf_l"_h, &Disassembler::DisassembleNEONShiftLeftLongImm},
-    {"sshll_asimdshf_l"_h, &Disassembler::DisassembleNEONShiftLeftLongImm},
-    {"shrn_asimdshf_n"_h, &Disassembler::DisassembleNEONShiftRightNarrowImm},
-    {"rshrn_asimdshf_n"_h, &Disassembler::DisassembleNEONShiftRightNarrowImm},
-    {"sqshrn_asimdshf_n"_h,
-    &Disassembler::DisassembleNEONShiftRightNarrowImm},
-    {"sqrshrn_asimdshf_n"_h,
-    &Disassembler::DisassembleNEONShiftRightNarrowImm},
-    {"sqshrun_asimdshf_n"_h,
-    &Disassembler::DisassembleNEONShiftRightNarrowImm},
-    {"sqrshrun_asimdshf_n"_h,
-    &Disassembler::DisassembleNEONShiftRightNarrowImm},
-    {"uqshrn_asimdshf_n"_h,
-    &Disassembler::DisassembleNEONShiftRightNarrowImm},
-    {"uqrshrn_asimdshf_n"_h,
-    &Disassembler::DisassembleNEONShiftRightNarrowImm},
-    {"sqdmlal_asisdelem_l"_h,
-    &Disassembler::DisassembleNEONScalarSatMulLongIndex},
-    {"sqdmlsl_asisdelem_l"_h,
-    &Disassembler::DisassembleNEONScalarSatMulLongIndex},
-    {"sqdmull_asisdelem_l"_h,
-    &Disassembler::DisassembleNEONScalarSatMulLongIndex},
-    {"fmla_asisdelem_rh_h"_h, &Disassembler::DisassembleNEONFPScalarMulIndex},
-    {"fmla_asisdelem_r_sd"_h, &Disassembler::DisassembleNEONFPScalarMulIndex},
-    {"fmls_asisdelem_rh_h"_h, &Disassembler::DisassembleNEONFPScalarMulIndex},
-    {"fmls_asisdelem_r_sd"_h, &Disassembler::DisassembleNEONFPScalarMulIndex},
-    {"fmulx_asisdelem_rh_h"_h,
-    &Disassembler::DisassembleNEONFPScalarMulIndex},
-    {"fmulx_asisdelem_r_sd"_h,
-    &Disassembler::DisassembleNEONFPScalarMulIndex},
-    {"fmul_asisdelem_rh_h"_h, &Disassembler::DisassembleNEONFPScalarMulIndex},
-    {"fmul_asisdelem_r_sd"_h, &Disassembler::DisassembleNEONFPScalarMulIndex},
-    {"fabd_asisdsame_only"_h, &Disassembler::DisassembleNEONFPScalar3Same},
-    {"facge_asisdsame_only"_h, &Disassembler::DisassembleNEONFPScalar3Same},
-    {"facgt_asisdsame_only"_h, &Disassembler::DisassembleNEONFPScalar3Same},
-    {"fcmeq_asisdsame_only"_h, &Disassembler::DisassembleNEONFPScalar3Same},
-    {"fcmge_asisdsame_only"_h, &Disassembler::DisassembleNEONFPScalar3Same},
-    {"fcmgt_asisdsame_only"_h, &Disassembler::DisassembleNEONFPScalar3Same},
-    {"fmulx_asisdsame_only"_h, &Disassembler::DisassembleNEONFPScalar3Same},
-    {"frecps_asisdsame_only"_h, &Disassembler::DisassembleNEONFPScalar3Same},
-    {"frsqrts_asisdsame_only"_h, &Disassembler::DisassembleNEONFPScalar3Same},
-    {"sqrdmlah_asisdsame2_only"_h, &Disassembler::VisitNEONScalar3Same},
-    {"sqrdmlsh_asisdsame2_only"_h, &Disassembler::VisitNEONScalar3Same},
-    {"cmeq_asisdsame_only"_h, &Disassembler::DisassembleNEONScalar3SameOnlyD},
-    {"cmge_asisdsame_only"_h, &Disassembler::DisassembleNEONScalar3SameOnlyD},
-    {"cmgt_asisdsame_only"_h, &Disassembler::DisassembleNEONScalar3SameOnlyD},
-    {"cmhi_asisdsame_only"_h, &Disassembler::DisassembleNEONScalar3SameOnlyD},
-    {"cmhs_asisdsame_only"_h, &Disassembler::DisassembleNEONScalar3SameOnlyD},
-    {"cmtst_asisdsame_only"_h,
-    &Disassembler::DisassembleNEONScalar3SameOnlyD},
-    {"add_asisdsame_only"_h, &Disassembler::DisassembleNEONScalar3SameOnlyD},
-    {"sub_asisdsame_only"_h, &Disassembler::DisassembleNEONScalar3SameOnlyD},
-    {"fmaxnmv_asimdall_only_h"_h,
-    &Disassembler::DisassembleNEONFP16AcrossLanes},
-    {"fmaxv_asimdall_only_h"_h,
-    &Disassembler::DisassembleNEONFP16AcrossLanes},
-    {"fminnmv_asimdall_only_h"_h,
-    &Disassembler::DisassembleNEONFP16AcrossLanes},
-    {"fminv_asimdall_only_h"_h,
-    &Disassembler::DisassembleNEONFP16AcrossLanes},
-    {"fmaxnmv_asimdall_only_sd"_h,
-    &Disassembler::DisassembleNEONFPAcrossLanes},
-    {"fminnmv_asimdall_only_sd"_h,
-    &Disassembler::DisassembleNEONFPAcrossLanes},
-    {"fmaxv_asimdall_only_sd"_h, &Disassembler::DisassembleNEONFPAcrossLanes},
-    {"fminv_asimdall_only_sd"_h, &Disassembler::DisassembleNEONFPAcrossLanes},
-    {"shl_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"sli_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"sri_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"srshr_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"srsra_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"sshr_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"ssra_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"urshr_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"ursra_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"ushr_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"usra_asisdshf_r"_h, &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
-    {"sqrshrn_asisdshf_n"_h,
-    &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
-    {"sqrshrun_asisdshf_n"_h,
-    &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
-    {"sqshrn_asisdshf_n"_h,
-    &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
-    {"sqshrun_asisdshf_n"_h,
-    &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
-    {"uqrshrn_asisdshf_n"_h,
-    &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
-    {"uqshrn_asisdshf_n"_h,
-    &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
-    {"cmeq_asisdmisc_z"_h, &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
-    {"cmge_asisdmisc_z"_h, &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
-    {"cmgt_asisdmisc_z"_h, &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
-    {"cmle_asisdmisc_z"_h, &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
-    {"cmlt_asisdmisc_z"_h, &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
-    {"abs_asisdmisc_r"_h, &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
-    {"neg_asisdmisc_r"_h, &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
-    {"fcmeq_asisdmisc_fz"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcmge_asisdmisc_fz"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcmgt_asisdmisc_fz"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcmle_asisdmisc_fz"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcmlt_asisdmisc_fz"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtas_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtau_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtms_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtmu_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtns_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtnu_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtps_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtpu_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtxn_asisdmisc_n"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtzs_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"fcvtzu_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"frecpe_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"frecpx_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"frsqrte_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"scvtf_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"ucvtf_asisdmisc_r"_h, &Disassembler::DisassembleNEONFPScalar2RegMisc},
-    {"adclb_z_zzz"_h, &Disassembler::DisassembleSVEAddSubCarry},
-    {"adclt_z_zzz"_h, &Disassembler::DisassembleSVEAddSubCarry},
-    {"addhnb_z_zz"_h, &Disassembler::DisassembleSVEAddSubHigh},
-    {"addhnt_z_zz"_h, &Disassembler::DisassembleSVEAddSubHigh},
-    {"addp_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"aesd_z_zz"_h, &Disassembler::Disassemble_ZdnB_ZdnB_ZmB},
-    {"aese_z_zz"_h, &Disassembler::Disassemble_ZdnB_ZdnB_ZmB},
-    {"aesimc_z_z"_h, &Disassembler::Disassemble_ZdnB_ZdnB},
-    {"aesmc_z_z"_h, &Disassembler::Disassemble_ZdnB_ZdnB},
-    {"bcax_z_zzz"_h, &Disassembler::DisassembleSVEBitwiseTernary},
-    {"bdep_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"bext_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"bgrp_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"bsl1n_z_zzz"_h, &Disassembler::DisassembleSVEBitwiseTernary},
-    {"bsl2n_z_zzz"_h, &Disassembler::DisassembleSVEBitwiseTernary},
-    {"bsl_z_zzz"_h, &Disassembler::DisassembleSVEBitwiseTernary},
-    {"cadd_z_zz"_h, &Disassembler::DisassembleSVEComplexIntAddition},
-    {"cdot_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb_const},
-    {"cdot_z_zzzi_d"_h, &Disassembler::Disassemble_ZdaD_ZnH_ZmH_imm_const},
-    {"cdot_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnB_ZmB_imm_const},
-    {"cmla_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnT_ZmT_const},
-    {"cmla_z_zzzi_h"_h, &Disassembler::Disassemble_ZdaH_ZnH_ZmH_imm_const},
-    {"cmla_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnS_ZmS_imm_const},
-    {"eor3_z_zzz"_h, &Disassembler::DisassembleSVEBitwiseTernary},
-    {"eorbt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"eortb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"ext_z_zi_con"_h, &Disassembler::Disassemble_ZdB_Zn1B_Zn2B_imm},
-    {"faddp_z_p_zz"_h, &Disassembler::DisassembleSVEFPPair},
-    {"fcvtlt_z_p_z_h2s"_h, &Disassembler::Disassemble_ZdS_PgM_ZnH},
-    {"fcvtlt_z_p_z_s2d"_h, &Disassembler::Disassemble_ZdD_PgM_ZnS},
-    {"fcvtnt_z_p_z_d2s"_h, &Disassembler::Disassemble_ZdS_PgM_ZnD},
-    {"fcvtnt_z_p_z_s2h"_h, &Disassembler::Disassemble_ZdH_PgM_ZnS},
-    {"fcvtx_z_p_z_d2s"_h, &Disassembler::Disassemble_ZdS_PgM_ZnD},
-    {"fcvtxnt_z_p_z_d2s"_h, &Disassembler::Disassemble_ZdS_PgM_ZnD},
-    {"flogb_z_p_z"_h, &Disassembler::DisassembleSVEFlogb},
-    {"fmaxnmp_z_p_zz"_h, &Disassembler::DisassembleSVEFPPair},
-    {"fmaxp_z_p_zz"_h, &Disassembler::DisassembleSVEFPPair},
-    {"fminnmp_z_p_zz"_h, &Disassembler::DisassembleSVEFPPair},
-    {"fminp_z_p_zz"_h, &Disassembler::DisassembleSVEFPPair},
-    {"fmlalb_z_zzz"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH},
-    {"fmlalb_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
-    {"fmlalt_z_zzz"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH},
-    {"fmlalt_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
-    {"fmlslb_z_zzz"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH},
-    {"fmlslb_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
-    {"fmlslt_z_zzz"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH},
-    {"fmlslt_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
-    {"histcnt_z_p_zz"_h, &Disassembler::Disassemble_ZdT_PgZ_ZnT_ZmT},
-    {"histseg_z_zz"_h, &Disassembler::Disassemble_ZdB_ZnB_ZmB},
-    {"ldnt1b_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
-    {"ldnt1b_z_p_ar_s_x32_unscaled"_h,
-    &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
-    {"ldnt1d_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
-    {"ldnt1h_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
-    {"ldnt1h_z_p_ar_s_x32_unscaled"_h,
-    &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
-    {"ldnt1sb_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
-    {"ldnt1sb_z_p_ar_s_x32_unscaled"_h,
-    &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
-    {"ldnt1sh_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
-    {"ldnt1sh_z_p_ar_s_x32_unscaled"_h,
-    &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
-    {"ldnt1sw_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
-    {"ldnt1w_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
-    {"ldnt1w_z_p_ar_s_x32_unscaled"_h,
-    &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
-    {"match_p_p_zz"_h, &Disassembler::Disassemble_PdT_PgZ_ZnT_ZmT},
-    {"mla_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
-    {"mla_z_zzzi_h"_h, &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
-    {"mla_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
-    {"mls_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
-    {"mls_z_zzzi_h"_h, &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
-    {"mls_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
-    {"mul_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"mul_z_zzi_d"_h, &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
-    {"mul_z_zzi_h"_h, &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
-    {"mul_z_zzi_s"_h, &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
-    {"nbsl_z_zzz"_h, &Disassembler::DisassembleSVEBitwiseTernary},
-    {"nmatch_p_p_zz"_h, &Disassembler::Disassemble_PdT_PgZ_ZnT_ZmT},
-    {"pmul_z_zz"_h, &Disassembler::Disassemble_ZdB_ZnB_ZmB},
-    {"pmullb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"pmullt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"raddhnb_z_zz"_h, &Disassembler::DisassembleSVEAddSubHigh},
-    {"raddhnt_z_zz"_h, &Disassembler::DisassembleSVEAddSubHigh},
-    {"rax1_z_zz"_h, &Disassembler::Disassemble_ZdD_ZnD_ZmD},
-    {"rshrnb_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"rshrnt_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"rsubhnb_z_zz"_h, &Disassembler::DisassembleSVEAddSubHigh},
-    {"rsubhnt_z_zz"_h, &Disassembler::DisassembleSVEAddSubHigh},
-    {"saba_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
-    {"sabalb_z_zzz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"sabalt_z_zzz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"sabdlb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"sabdlt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"sadalp_z_p_z"_h, &Disassembler::Disassemble_ZdaT_PgM_ZnTb},
-    {"saddlb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"saddlbt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"saddlt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"saddwb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
-    {"saddwt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
-    {"sbclb_z_zzz"_h, &Disassembler::DisassembleSVEAddSubCarry},
-    {"sbclt_z_zzz"_h, &Disassembler::DisassembleSVEAddSubCarry},
-    {"shadd_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"shrnb_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"shrnt_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"shsub_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"shsubr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sli_z_zzi"_h, &Disassembler::VisitSVEBitwiseShiftUnpredicated},
-    {"sm4e_z_zz"_h, &Disassembler::Disassemble_ZdnS_ZdnS_ZmS},
-    {"sm4ekey_z_zz"_h, &Disassembler::Disassemble_ZdS_ZnS_ZmS},
-    {"smaxp_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sminp_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"smlalb_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"smlalb_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"smlalb_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"smlalt_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"smlalt_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"smlalt_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"smlslb_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"smlslb_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"smlslb_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"smlslt_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"smlslt_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"smlslt_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"smulh_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"smullb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"smullb_z_zzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"smullb_z_zzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"smullt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"smullt_z_zzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"smullt_z_zzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"splice_z_p_zz_con"_h, &Disassembler::Disassemble_ZdT_Pg_Zn1T_Zn2T},
-    {"sqabs_z_p_z"_h, &Disassembler::Disassemble_ZdT_PgM_ZnT},
-    {"sqadd_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sqcadd_z_zz"_h, &Disassembler::DisassembleSVEComplexIntAddition},
-    {"sqdmlalb_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"sqdmlalb_z_zzzi_d"_h, &Disassembler::Disassemble_ZdaD_ZnS_ZmS_imm},
-    {"sqdmlalb_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
-    {"sqdmlalbt_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"sqdmlalt_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"sqdmlalt_z_zzzi_d"_h, &Disassembler::Disassemble_ZdaD_ZnS_ZmS_imm},
-    {"sqdmlalt_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
-    {"sqdmlslb_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"sqdmlslb_z_zzzi_d"_h, &Disassembler::Disassemble_ZdaD_ZnS_ZmS_imm},
-    {"sqdmlslb_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
-    {"sqdmlslbt_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"sqdmlslt_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"sqdmlslt_z_zzzi_d"_h, &Disassembler::Disassemble_ZdaD_ZnS_ZmS_imm},
-    {"sqdmlslt_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
-    {"sqdmulh_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"sqdmulh_z_zzi_d"_h, &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
-    {"sqdmulh_z_zzi_h"_h, &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
-    {"sqdmulh_z_zzi_s"_h, &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
-    {"sqdmullb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"sqdmullb_z_zzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"sqdmullb_z_zzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"sqdmullt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"sqdmullt_z_zzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"sqdmullt_z_zzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"sqneg_z_p_z"_h, &Disassembler::Disassemble_ZdT_PgM_ZnT},
-    {"sqrdcmlah_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnT_ZmT_const},
-    {"sqrdcmlah_z_zzzi_h"_h,
-    &Disassembler::Disassemble_ZdaH_ZnH_ZmH_imm_const},
-    {"sqrdcmlah_z_zzzi_s"_h,
-    &Disassembler::Disassemble_ZdaS_ZnS_ZmS_imm_const},
-    {"sqrdmlah_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
-    {"sqrdmlah_z_zzzi_d"_h, &Disassembler::Disassemble_ZdaD_ZnD_ZmD_imm},
-    {"sqrdmlah_z_zzzi_h"_h, &Disassembler::Disassemble_ZdaH_ZnH_ZmH_imm},
-    {"sqrdmlah_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnS_ZmS_imm},
-    {"sqrdmlsh_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
-    {"sqrdmlsh_z_zzzi_d"_h, &Disassembler::Disassemble_ZdaD_ZnD_ZmD_imm},
-    {"sqrdmlsh_z_zzzi_h"_h, &Disassembler::Disassemble_ZdaH_ZnH_ZmH_imm},
-    {"sqrdmlsh_z_zzzi_s"_h, &Disassembler::Disassemble_ZdaS_ZnS_ZmS_imm},
-    {"sqrdmulh_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"sqrdmulh_z_zzi_d"_h, &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
-    {"sqrdmulh_z_zzi_h"_h, &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
-    {"sqrdmulh_z_zzi_s"_h, &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
-    {"sqrshl_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sqrshlr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sqrshrnb_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"sqrshrnt_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"sqrshrunb_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"sqrshrunt_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"sqshl_z_p_zi"_h, &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
-    {"sqshl_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sqshlr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sqshlu_z_p_zi"_h, &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
-    {"sqshrnb_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"sqshrnt_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"sqshrunb_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"sqshrunt_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"sqsub_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sqsubr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sqxtnb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb},
-    {"sqxtnt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb},
-    {"sqxtunb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb},
-    {"sqxtunt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb},
-    {"srhadd_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"sri_z_zzi"_h, &Disassembler::VisitSVEBitwiseShiftUnpredicated},
-    {"srshl_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"srshlr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"srshr_z_p_zi"_h, &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
-    {"srsra_z_zi"_h, &Disassembler::VisitSVEBitwiseShiftUnpredicated},
-    {"sshllb_z_zi"_h, &Disassembler::DisassembleSVEShiftLeftImm},
-    {"sshllt_z_zi"_h, &Disassembler::DisassembleSVEShiftLeftImm},
-    {"ssra_z_zi"_h, &Disassembler::VisitSVEBitwiseShiftUnpredicated},
-    {"ssublb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"ssublbt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"ssublt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"ssubltb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"ssubwb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
-    {"ssubwt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
-    {"stnt1b_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_Pg_ZnD_Xm},
-    {"stnt1b_z_p_ar_s_x32_unscaled"_h,
-    &Disassembler::Disassemble_ZtS_Pg_ZnS_Xm},
-    {"stnt1d_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_Pg_ZnD_Xm},
-    {"stnt1h_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_Pg_ZnD_Xm},
-    {"stnt1h_z_p_ar_s_x32_unscaled"_h,
-    &Disassembler::Disassemble_ZtS_Pg_ZnS_Xm},
-    {"stnt1w_z_p_ar_d_64_unscaled"_h,
-    &Disassembler::Disassemble_ZtD_Pg_ZnD_Xm},
-    {"stnt1w_z_p_ar_s_x32_unscaled"_h,
-    &Disassembler::Disassemble_ZtS_Pg_ZnS_Xm},
-    {"subhnb_z_zz"_h, &Disassembler::DisassembleSVEAddSubHigh},
-    {"subhnt_z_zz"_h, &Disassembler::DisassembleSVEAddSubHigh},
-    {"suqadd_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"tbl_z_zz_2"_h, &Disassembler::Disassemble_ZdT_Zn1T_Zn2T_ZmT},
-    {"tbx_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"uaba_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
-    {"uabalb_z_zzz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"uabalt_z_zzz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"uabdlb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"uabdlt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"uadalp_z_p_z"_h, &Disassembler::Disassemble_ZdaT_PgM_ZnTb},
-    {"uaddlb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"uaddlt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"uaddwb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
-    {"uaddwt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
-    {"uhadd_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uhsub_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uhsubr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"umaxp_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uminp_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"umlalb_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"umlalb_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"umlalb_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"umlalt_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"umlalt_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"umlalt_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"umlslb_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"umlslb_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"umlslb_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"umlslt_z_zzz"_h, &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
-    {"umlslt_z_zzzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"umlslt_z_zzzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"umulh_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmT},
-    {"umullb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"umullb_z_zzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"umullb_z_zzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"umullt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"umullt_z_zzi_d"_h, &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
-    {"umullt_z_zzi_s"_h, &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
-    {"uqadd_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uqrshl_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uqrshlr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uqrshrnb_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"uqrshrnt_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"uqshl_z_p_zi"_h, &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
-    {"uqshl_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uqshlr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uqshrnb_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"uqshrnt_z_zi"_h, &Disassembler::DisassembleSVEShiftRightImm},
-    {"uqsub_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uqsubr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"uqxtnb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb},
-    {"uqxtnt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb},
-    {"urecpe_z_p_z"_h, &Disassembler::Disassemble_ZdS_PgM_ZnS},
-    {"urhadd_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"urshl_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"urshlr_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"urshr_z_p_zi"_h, &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
-    {"ursqrte_z_p_z"_h, &Disassembler::Disassemble_ZdS_PgM_ZnS},
-    {"ursra_z_zi"_h, &Disassembler::VisitSVEBitwiseShiftUnpredicated},
-    {"ushllb_z_zi"_h, &Disassembler::DisassembleSVEShiftLeftImm},
-    {"ushllt_z_zi"_h, &Disassembler::DisassembleSVEShiftLeftImm},
-    {"usqadd_z_p_zz"_h, &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
-    {"usra_z_zi"_h, &Disassembler::VisitSVEBitwiseShiftUnpredicated},
-    {"usublb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"usublt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
-    {"usubwb_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
-    {"usubwt_z_zz"_h, &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
-    {"whilege_p_p_rr"_h,
-    &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
-    {"whilegt_p_p_rr"_h,
-    &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
-    {"whilehi_p_p_rr"_h,
-    &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
-    {"whilehs_p_p_rr"_h,
-    &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
-    {"whilerw_p_rr"_h, &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
-    {"whilewr_p_rr"_h, &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
-    {"xar_z_zzi"_h, &Disassembler::Disassemble_ZdnT_ZdnT_ZmT_const},
-    {"fmmla_z_zzz_s"_h, &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
-    {"fmmla_z_zzz_d"_h, &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
-    {"smmla_z_zzz"_h, &Disassembler::Disassemble_ZdaS_ZnB_ZmB},
-    {"ummla_z_zzz"_h, &Disassembler::Disassemble_ZdaS_ZnB_ZmB},
-    {"usmmla_z_zzz"_h, &Disassembler::Disassemble_ZdaS_ZnB_ZmB},
-    {"usdot_z_zzz_s"_h, &Disassembler::Disassemble_ZdaS_ZnB_ZmB},
-    {"smmla_asimdsame2_g"_h, &Disassembler::Disassemble_Vd4S_Vn16B_Vm16B},
-    {"ummla_asimdsame2_g"_h, &Disassembler::Disassemble_Vd4S_Vn16B_Vm16B},
-    {"usmmla_asimdsame2_g"_h, &Disassembler::Disassemble_Vd4S_Vn16B_Vm16B},
-    {"ld1row_z_p_bi_u32"_h,
-    &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusImm},
-    {"ld1row_z_p_br_contiguous"_h,
-    &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusScalar},
-    {"ld1rod_z_p_bi_u64"_h,
-    &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusImm},
-    {"ld1rod_z_p_br_contiguous"_h,
-    &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusScalar},
-    {"ld1rob_z_p_bi_u8"_h,
-    &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusImm},
-    {"ld1rob_z_p_br_contiguous"_h,
-    &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusScalar},
-    {"ld1roh_z_p_bi_u16"_h,
-    &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusImm},
-    {"ld1roh_z_p_br_contiguous"_h,
-    &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusScalar},
-    {"usdot_z_zzzi_s"_h, &Disassembler::VisitSVEMulIndex},
-    {"sudot_z_zzzi_s"_h, &Disassembler::VisitSVEMulIndex},
-    {"usdot_asimdsame2_d"_h, &Disassembler::VisitNEON3SameExtra},
-  };
+    {"autia1716_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"autiasp_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"autiaz_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"autib1716_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"autibsp_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"autibz_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"axflag_m_pstate", &Disassembler::DisassembleNoArgs},
+    {"cfinv_m_pstate", &Disassembler::DisassembleNoArgs},
+    {"csdb_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"dgh_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"ssbb_only_barriers", &Disassembler::DisassembleNoArgs},
+    {"pssbb_only_barriers", &Disassembler::DisassembleNoArgs},
+    {"esb_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"isb_bi_barriers", &Disassembler::DisassembleNoArgs},
+    {"nop_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"pacia1716_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"paciasp_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"paciaz_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"pacib1716_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"pacibsp_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"pacibz_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"sev_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"sevl_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"wfe_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"wfi_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"xaflag_m_pstate", &Disassembler::DisassembleNoArgs},
+    {"xpaclri_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"yield_hi_hints", &Disassembler::DisassembleNoArgs},
+    {"abs_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"cls_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"clz_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"cnt_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"neg_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"rev16_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"rev32_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"rev64_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"sqabs_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"sqneg_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"suqadd_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"urecpe_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"ursqrte_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"usqadd_asimdmisc_r", &Disassembler::VisitNEON2RegMisc},
+    {"not_asimdmisc_r", &Disassembler::DisassembleNEON2RegLogical},
+    {"rbit_asimdmisc_r", &Disassembler::DisassembleNEON2RegLogical},
+    {"xtn_asimdmisc_n", &Disassembler::DisassembleNEON2RegExtract},
+    {"sqxtn_asimdmisc_n", &Disassembler::DisassembleNEON2RegExtract},
+    {"uqxtn_asimdmisc_n", &Disassembler::DisassembleNEON2RegExtract},
+    {"sqxtun_asimdmisc_n", &Disassembler::DisassembleNEON2RegExtract},
+    {"shll_asimdmisc_s", &Disassembler::DisassembleNEON2RegExtract},
+    {"sadalp_asimdmisc_p", &Disassembler::DisassembleNEON2RegAddlp},
+    {"saddlp_asimdmisc_p", &Disassembler::DisassembleNEON2RegAddlp},
+    {"uadalp_asimdmisc_p", &Disassembler::DisassembleNEON2RegAddlp},
+    {"uaddlp_asimdmisc_p", &Disassembler::DisassembleNEON2RegAddlp},
+    {"cmeq_asimdmisc_z", &Disassembler::DisassembleNEON2RegCompare},
+    {"cmge_asimdmisc_z", &Disassembler::DisassembleNEON2RegCompare},
+    {"cmgt_asimdmisc_z", &Disassembler::DisassembleNEON2RegCompare},
+    {"cmle_asimdmisc_z", &Disassembler::DisassembleNEON2RegCompare},
+    {"cmlt_asimdmisc_z", &Disassembler::DisassembleNEON2RegCompare},
+    {"fcmeq_asimdmisc_fz", &Disassembler::DisassembleNEON2RegFPCompare},
+    {"fcmge_asimdmisc_fz", &Disassembler::DisassembleNEON2RegFPCompare},
+    {"fcmgt_asimdmisc_fz", &Disassembler::DisassembleNEON2RegFPCompare},
+    {"fcmle_asimdmisc_fz", &Disassembler::DisassembleNEON2RegFPCompare},
+    {"fcmlt_asimdmisc_fz", &Disassembler::DisassembleNEON2RegFPCompare},
+    {"fcvtl_asimdmisc_l", &Disassembler::DisassembleNEON2RegFPConvert},
+    {"fcvtn_asimdmisc_n", &Disassembler::DisassembleNEON2RegFPConvert},
+    {"fcvtxn_asimdmisc_n", &Disassembler::DisassembleNEON2RegFPConvert},
+    {"fabs_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtas_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtau_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtms_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtmu_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtns_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtnu_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtps_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtpu_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtzs_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fcvtzu_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fneg_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frecpe_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frint32x_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frint32z_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frint64x_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frint64z_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frinta_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frinti_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frintm_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frintn_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frintp_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frintx_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frintz_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"frsqrte_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"fsqrt_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"scvtf_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"ucvtf_asimdmisc_r", &Disassembler::DisassembleNEON2RegFP},
+    {"smlal_asimdelem_l", &Disassembler::DisassembleNEONMulByElementLong},
+    {"smlsl_asimdelem_l", &Disassembler::DisassembleNEONMulByElementLong},
+    {"smull_asimdelem_l", &Disassembler::DisassembleNEONMulByElementLong},
+    {"umlal_asimdelem_l", &Disassembler::DisassembleNEONMulByElementLong},
+    {"umlsl_asimdelem_l", &Disassembler::DisassembleNEONMulByElementLong},
+    {"umull_asimdelem_l", &Disassembler::DisassembleNEONMulByElementLong},
+    {"sqdmull_asimdelem_l", &Disassembler::DisassembleNEONMulByElementLong},
+    {"sqdmlal_asimdelem_l", &Disassembler::DisassembleNEONMulByElementLong},
+    {"sqdmlsl_asimdelem_l", &Disassembler::DisassembleNEONMulByElementLong},
+    {"sdot_asimdelem_d", &Disassembler::DisassembleNEONDotProdByElement},
+    {"udot_asimdelem_d", &Disassembler::DisassembleNEONDotProdByElement},
+    {"usdot_asimdelem_d", &Disassembler::DisassembleNEONDotProdByElement},
+    {"sudot_asimdelem_d", &Disassembler::DisassembleNEONDotProdByElement},
+    {"fmlal2_asimdelem_lh", &Disassembler::DisassembleNEONFPMulByElementLong},
+    {"fmlal_asimdelem_lh", &Disassembler::DisassembleNEONFPMulByElementLong},
+    {"fmlsl2_asimdelem_lh", &Disassembler::DisassembleNEONFPMulByElementLong},
+    {"fmlsl_asimdelem_lh", &Disassembler::DisassembleNEONFPMulByElementLong},
+    {"fcmla_asimdelem_c_h",
+      &Disassembler::DisassembleNEONComplexMulByElement},
+    {"fcmla_asimdelem_c_s",
+      &Disassembler::DisassembleNEONComplexMulByElement},
+    {"fmla_asimdelem_rh_h", &Disassembler::DisassembleNEONHalfFPMulByElement},
+    {"fmls_asimdelem_rh_h", &Disassembler::DisassembleNEONHalfFPMulByElement},
+    {"fmulx_asimdelem_rh_h",
+      &Disassembler::DisassembleNEONHalfFPMulByElement},
+    {"fmul_asimdelem_rh_h", &Disassembler::DisassembleNEONHalfFPMulByElement},
+    {"fmla_asimdelem_r_sd", &Disassembler::DisassembleNEONFPMulByElement},
+    {"fmls_asimdelem_r_sd", &Disassembler::DisassembleNEONFPMulByElement},
+    {"fmulx_asimdelem_r_sd", &Disassembler::DisassembleNEONFPMulByElement},
+    {"fmul_asimdelem_r_sd", &Disassembler::DisassembleNEONFPMulByElement},
+    {"mla_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"mls_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"mul_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"saba_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"sabd_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"shadd_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"shsub_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"smaxp_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"smax_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"sminp_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"smin_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"srhadd_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"uaba_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"uabd_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"uhadd_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"uhsub_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"umaxp_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"umax_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"uminp_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"umin_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"urhadd_asimdsame_only", &Disassembler::DisassembleNEON3SameNoD},
+    {"and_asimdsame_only", &Disassembler::DisassembleNEON3SameLogical},
+    {"bic_asimdsame_only", &Disassembler::DisassembleNEON3SameLogical},
+    {"bif_asimdsame_only", &Disassembler::DisassembleNEON3SameLogical},
+    {"bit_asimdsame_only", &Disassembler::DisassembleNEON3SameLogical},
+    {"bsl_asimdsame_only", &Disassembler::DisassembleNEON3SameLogical},
+    {"eor_asimdsame_only", &Disassembler::DisassembleNEON3SameLogical},
+    {"orr_asimdsame_only", &Disassembler::DisassembleNEON3SameLogical},
+    {"orn_asimdsame_only", &Disassembler::DisassembleNEON3SameLogical},
+    {"pmul_asimdsame_only", &Disassembler::DisassembleNEON3SameLogical},
+    {"fmlal2_asimdsame_f", &Disassembler::DisassembleNEON3SameFHM},
+    {"fmlal_asimdsame_f", &Disassembler::DisassembleNEON3SameFHM},
+    {"fmlsl2_asimdsame_f", &Disassembler::DisassembleNEON3SameFHM},
+    {"fmlsl_asimdsame_f", &Disassembler::DisassembleNEON3SameFHM},
+    {"sri_asimdshf_r", &Disassembler::DisassembleNEONShiftRightImm},
+    {"srshr_asimdshf_r", &Disassembler::DisassembleNEONShiftRightImm},
+    {"srsra_asimdshf_r", &Disassembler::DisassembleNEONShiftRightImm},
+    {"sshr_asimdshf_r", &Disassembler::DisassembleNEONShiftRightImm},
+    {"ssra_asimdshf_r", &Disassembler::DisassembleNEONShiftRightImm},
+    {"urshr_asimdshf_r", &Disassembler::DisassembleNEONShiftRightImm},
+    {"ursra_asimdshf_r", &Disassembler::DisassembleNEONShiftRightImm},
+    {"ushr_asimdshf_r", &Disassembler::DisassembleNEONShiftRightImm},
+    {"usra_asimdshf_r", &Disassembler::DisassembleNEONShiftRightImm},
+    {"scvtf_asimdshf_c", &Disassembler::DisassembleNEONShiftRightImm},
+    {"ucvtf_asimdshf_c", &Disassembler::DisassembleNEONShiftRightImm},
+    {"fcvtzs_asimdshf_c", &Disassembler::DisassembleNEONShiftRightImm},
+    {"fcvtzu_asimdshf_c", &Disassembler::DisassembleNEONShiftRightImm},
+    {"ushll_asimdshf_l", &Disassembler::DisassembleNEONShiftLeftLongImm},
+    {"sshll_asimdshf_l", &Disassembler::DisassembleNEONShiftLeftLongImm},
+    {"shrn_asimdshf_n", &Disassembler::DisassembleNEONShiftRightNarrowImm},
+    {"rshrn_asimdshf_n", &Disassembler::DisassembleNEONShiftRightNarrowImm},
+    {"sqshrn_asimdshf_n", &Disassembler::DisassembleNEONShiftRightNarrowImm},
+    {"sqrshrn_asimdshf_n", &Disassembler::DisassembleNEONShiftRightNarrowImm},
+    {"sqshrun_asimdshf_n", &Disassembler::DisassembleNEONShiftRightNarrowImm},
+    {"sqrshrun_asimdshf_n",
+      &Disassembler::DisassembleNEONShiftRightNarrowImm},
+    {"uqshrn_asimdshf_n", &Disassembler::DisassembleNEONShiftRightNarrowImm},
+    {"uqrshrn_asimdshf_n", &Disassembler::DisassembleNEONShiftRightNarrowImm},
+    {"sqdmlal_asisdelem_l",
+      &Disassembler::DisassembleNEONScalarSatMulLongIndex},
+    {"sqdmlsl_asisdelem_l",
+      &Disassembler::DisassembleNEONScalarSatMulLongIndex},
+    {"sqdmull_asisdelem_l",
+      &Disassembler::DisassembleNEONScalarSatMulLongIndex},
+    {"fmla_asisdelem_rh_h", &Disassembler::DisassembleNEONFPScalarMulIndex},
+    {"fmla_asisdelem_r_sd", &Disassembler::DisassembleNEONFPScalarMulIndex},
+    {"fmls_asisdelem_rh_h", &Disassembler::DisassembleNEONFPScalarMulIndex},
+    {"fmls_asisdelem_r_sd", &Disassembler::DisassembleNEONFPScalarMulIndex},
+    {"fmulx_asisdelem_rh_h", &Disassembler::DisassembleNEONFPScalarMulIndex},
+    {"fmulx_asisdelem_r_sd", &Disassembler::DisassembleNEONFPScalarMulIndex},
+    {"fmul_asisdelem_rh_h", &Disassembler::DisassembleNEONFPScalarMulIndex},
+    {"fmul_asisdelem_r_sd", &Disassembler::DisassembleNEONFPScalarMulIndex},
+    {"fabd_asisdsame_only", &Disassembler::DisassembleNEONFPScalar3Same},
+    {"facge_asisdsame_only", &Disassembler::DisassembleNEONFPScalar3Same},
+    {"facgt_asisdsame_only", &Disassembler::DisassembleNEONFPScalar3Same},
+    {"fcmeq_asisdsame_only", &Disassembler::DisassembleNEONFPScalar3Same},
+    {"fcmge_asisdsame_only", &Disassembler::DisassembleNEONFPScalar3Same},
+    {"fcmgt_asisdsame_only", &Disassembler::DisassembleNEONFPScalar3Same},
+    {"fmulx_asisdsame_only", &Disassembler::DisassembleNEONFPScalar3Same},
+    {"frecps_asisdsame_only", &Disassembler::DisassembleNEONFPScalar3Same},
+    {"frsqrts_asisdsame_only", &Disassembler::DisassembleNEONFPScalar3Same},
+    {"sqrdmlah_asisdsame2_only", &Disassembler::VisitNEONScalar3Same},
+    {"sqrdmlsh_asisdsame2_only", &Disassembler::VisitNEONScalar3Same},
+    {"cmeq_asisdsame_only", &Disassembler::DisassembleNEONScalar3SameOnlyD},
+    {"cmge_asisdsame_only", &Disassembler::DisassembleNEONScalar3SameOnlyD},
+    {"cmgt_asisdsame_only", &Disassembler::DisassembleNEONScalar3SameOnlyD},
+    {"cmhi_asisdsame_only", &Disassembler::DisassembleNEONScalar3SameOnlyD},
+    {"cmhs_asisdsame_only", &Disassembler::DisassembleNEONScalar3SameOnlyD},
+    {"cmtst_asisdsame_only", &Disassembler::DisassembleNEONScalar3SameOnlyD},
+    {"add_asisdsame_only", &Disassembler::DisassembleNEONScalar3SameOnlyD},
+    {"sub_asisdsame_only", &Disassembler::DisassembleNEONScalar3SameOnlyD},
+    {"fmaxnmv_asimdall_only_h",
+      &Disassembler::DisassembleNEONFP16AcrossLanes},
+    {"fmaxv_asimdall_only_h", &Disassembler::DisassembleNEONFP16AcrossLanes},
+    {"fminnmv_asimdall_only_h",
+      &Disassembler::DisassembleNEONFP16AcrossLanes},
+    {"fminv_asimdall_only_h", &Disassembler::DisassembleNEONFP16AcrossLanes},
+    {"fmaxnmv_asimdall_only_sd", &Disassembler::DisassembleNEONFPAcrossLanes},
+    {"fminnmv_asimdall_only_sd", &Disassembler::DisassembleNEONFPAcrossLanes},
+    {"fmaxv_asimdall_only_sd", &Disassembler::DisassembleNEONFPAcrossLanes},
+    {"fminv_asimdall_only_sd", &Disassembler::DisassembleNEONFPAcrossLanes},
+    {"shl_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"sli_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"sri_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"srshr_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"srsra_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"sshr_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"ssra_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"urshr_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"ursra_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"ushr_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"usra_asisdshf_r", &Disassembler::DisassembleNEONScalarShiftImmOnlyD},
+    {"sqrshrn_asisdshf_n",
+      &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
+    {"sqrshrun_asisdshf_n",
+      &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
+    {"sqshrn_asisdshf_n",
+      &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
+    {"sqshrun_asisdshf_n",
+      &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
+    {"uqrshrn_asisdshf_n",
+      &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
+    {"uqshrn_asisdshf_n",
+      &Disassembler::DisassembleNEONScalarShiftRightNarrowImm},
+    {"cmeq_asisdmisc_z", &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
+    {"cmge_asisdmisc_z", &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
+    {"cmgt_asisdmisc_z", &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
+    {"cmle_asisdmisc_z", &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
+    {"cmlt_asisdmisc_z", &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
+    {"abs_asisdmisc_r", &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
+    {"neg_asisdmisc_r", &Disassembler::DisassembleNEONScalar2RegMiscOnlyD},
+    {"fcmeq_asisdmisc_fz", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcmge_asisdmisc_fz", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcmgt_asisdmisc_fz", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcmle_asisdmisc_fz", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcmlt_asisdmisc_fz", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtas_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtau_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtms_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtmu_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtns_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtnu_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtps_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtpu_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtxn_asisdmisc_n", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtzs_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"fcvtzu_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"frecpe_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"frecpx_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"frsqrte_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"scvtf_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"ucvtf_asisdmisc_r", &Disassembler::DisassembleNEONFPScalar2RegMisc},
+    {"adclb_z_zzz", &Disassembler::DisassembleSVEAddSubCarry},
+    {"adclt_z_zzz", &Disassembler::DisassembleSVEAddSubCarry},
+    {"addhnb_z_zz", &Disassembler::DisassembleSVEAddSubHigh},
+    {"addhnt_z_zz", &Disassembler::DisassembleSVEAddSubHigh},
+    {"addp_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"aesd_z_zz", &Disassembler::Disassemble_ZdnB_ZdnB_ZmB},
+    {"aese_z_zz", &Disassembler::Disassemble_ZdnB_ZdnB_ZmB},
+    {"aesimc_z_z", &Disassembler::Disassemble_ZdnB_ZdnB},
+    {"aesmc_z_z", &Disassembler::Disassemble_ZdnB_ZdnB},
+    {"bcax_z_zzz", &Disassembler::DisassembleSVEBitwiseTernary},
+    {"bdep_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"bext_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"bgrp_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"bsl1n_z_zzz", &Disassembler::DisassembleSVEBitwiseTernary},
+    {"bsl2n_z_zzz", &Disassembler::DisassembleSVEBitwiseTernary},
+    {"bsl_z_zzz", &Disassembler::DisassembleSVEBitwiseTernary},
+    {"cadd_z_zz", &Disassembler::DisassembleSVEComplexIntAddition},
+    {"cdot_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb_const},
+    {"cdot_z_zzzi_d", &Disassembler::Disassemble_ZdaD_ZnH_ZmH_imm_const},
+    {"cdot_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnB_ZmB_imm_const},
+    {"cmla_z_zzz", &Disassembler::Disassemble_ZdaT_ZnT_ZmT_const},
+    {"cmla_z_zzzi_h", &Disassembler::Disassemble_ZdaH_ZnH_ZmH_imm_const},
+    {"cmla_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnS_ZmS_imm_const},
+    {"eor3_z_zzz", &Disassembler::DisassembleSVEBitwiseTernary},
+    {"eorbt_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"eortb_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"ext_z_zi_con", &Disassembler::Disassemble_ZdB_Zn1B_Zn2B_imm},
+    {"faddp_z_p_zz", &Disassembler::DisassembleSVEFPPair},
+    {"fcvtlt_z_p_z_h2s", &Disassembler::Disassemble_ZdS_PgM_ZnH},
+    {"fcvtlt_z_p_z_s2d", &Disassembler::Disassemble_ZdD_PgM_ZnS},
+    {"fcvtnt_z_p_z_d2s", &Disassembler::Disassemble_ZdS_PgM_ZnD},
+    {"fcvtnt_z_p_z_s2h", &Disassembler::Disassemble_ZdH_PgM_ZnS},
+    {"fcvtx_z_p_z_d2s", &Disassembler::Disassemble_ZdS_PgM_ZnD},
+    {"fcvtxnt_z_p_z_d2s", &Disassembler::Disassemble_ZdS_PgM_ZnD},
+    {"flogb_z_p_z", &Disassembler::DisassembleSVEFlogb},
+    {"fmaxnmp_z_p_zz", &Disassembler::DisassembleSVEFPPair},
+    {"fmaxp_z_p_zz", &Disassembler::DisassembleSVEFPPair},
+    {"fminnmp_z_p_zz", &Disassembler::DisassembleSVEFPPair},
+    {"fminp_z_p_zz", &Disassembler::DisassembleSVEFPPair},
+    {"fmlalb_z_zzz", &Disassembler::Disassemble_ZdaS_ZnH_ZmH},
+    {"fmlalb_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
+    {"fmlalt_z_zzz", &Disassembler::Disassemble_ZdaS_ZnH_ZmH},
+    {"fmlalt_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
+    {"fmlslb_z_zzz", &Disassembler::Disassemble_ZdaS_ZnH_ZmH},
+    {"fmlslb_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
+    {"fmlslt_z_zzz", &Disassembler::Disassemble_ZdaS_ZnH_ZmH},
+    {"fmlslt_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
+    {"histcnt_z_p_zz", &Disassembler::Disassemble_ZdT_PgZ_ZnT_ZmT},
+    {"histseg_z_zz", &Disassembler::Disassemble_ZdB_ZnB_ZmB},
+    {"ldnt1b_z_p_ar_d_64_unscaled",
+      &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
+    {"ldnt1b_z_p_ar_s_x32_unscaled",
+      &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
+    {"ldnt1d_z_p_ar_d_64_unscaled",
+      &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
+    {"ldnt1h_z_p_ar_d_64_unscaled",
+      &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
+    {"ldnt1h_z_p_ar_s_x32_unscaled",
+      &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
+    {"ldnt1sb_z_p_ar_d_64_unscaled",
+      &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
+    {"ldnt1sb_z_p_ar_s_x32_unscaled",
+      &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
+    {"ldnt1sh_z_p_ar_d_64_unscaled",
+      &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
+    {"ldnt1sh_z_p_ar_s_x32_unscaled",
+      &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
+    {"ldnt1sw_z_p_ar_d_64_unscaled",
+      &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
+    {"ldnt1w_z_p_ar_d_64_unscaled",
+      &Disassembler::Disassemble_ZtD_PgZ_ZnD_Xm},
+    {"ldnt1w_z_p_ar_s_x32_unscaled",
+      &Disassembler::Disassemble_ZtS_PgZ_ZnS_Xm},
+    {"match_p_p_zz", &Disassembler::Disassemble_PdT_PgZ_ZnT_ZmT},
+    {"mla_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
+    {"mla_z_zzzi_h", &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
+    {"mla_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
+    {"mls_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
+    {"mls_z_zzzi_h", &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
+    {"mls_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
+    {"mul_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"mul_z_zzi_d", &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
+    {"mul_z_zzi_h", &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
+    {"mul_z_zzi_s", &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
+    {"nbsl_z_zzz", &Disassembler::DisassembleSVEBitwiseTernary},
+    {"nmatch_p_p_zz", &Disassembler::Disassemble_PdT_PgZ_ZnT_ZmT},
+    {"pmul_z_zz", &Disassembler::Disassemble_ZdB_ZnB_ZmB},
+    {"pmullb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"pmullt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"raddhnb_z_zz", &Disassembler::DisassembleSVEAddSubHigh},
+    {"raddhnt_z_zz", &Disassembler::DisassembleSVEAddSubHigh},
+    {"rax1_z_zz", &Disassembler::Disassemble_ZdD_ZnD_ZmD},
+    {"rshrnb_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"rshrnt_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"rsubhnb_z_zz", &Disassembler::DisassembleSVEAddSubHigh},
+    {"rsubhnt_z_zz", &Disassembler::DisassembleSVEAddSubHigh},
+    {"saba_z_zzz", &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
+    {"sabalb_z_zzz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"sabalt_z_zzz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"sabdlb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"sabdlt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"sadalp_z_p_z", &Disassembler::Disassemble_ZdaT_PgM_ZnTb},
+    {"saddlb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"saddlbt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"saddlt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"saddwb_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
+    {"saddwt_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
+    {"sbclb_z_zzz", &Disassembler::DisassembleSVEAddSubCarry},
+    {"sbclt_z_zzz", &Disassembler::DisassembleSVEAddSubCarry},
+    {"shadd_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"shrnb_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"shrnt_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"shsub_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"shsubr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sli_z_zzi", &Disassembler::VisitSVEBitwiseShiftUnpredicated},
+    {"sm4e_z_zz", &Disassembler::Disassemble_ZdnS_ZdnS_ZmS},
+    {"sm4ekey_z_zz", &Disassembler::Disassemble_ZdS_ZnS_ZmS},
+    {"smaxp_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sminp_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"smlalb_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"smlalb_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"smlalb_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"smlalt_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"smlalt_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"smlalt_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"smlslb_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"smlslb_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"smlslb_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"smlslt_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"smlslt_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"smlslt_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"smulh_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"smullb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"smullb_z_zzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"smullb_z_zzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"smullt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"smullt_z_zzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"smullt_z_zzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"splice_z_p_zz_con", &Disassembler::Disassemble_ZdT_Pg_Zn1T_Zn2T},
+    {"sqabs_z_p_z", &Disassembler::Disassemble_ZdT_PgM_ZnT},
+    {"sqadd_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sqcadd_z_zz", &Disassembler::DisassembleSVEComplexIntAddition},
+    {"sqdmlalb_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"sqdmlalb_z_zzzi_d", &Disassembler::Disassemble_ZdaD_ZnS_ZmS_imm},
+    {"sqdmlalb_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
+    {"sqdmlalbt_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"sqdmlalt_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"sqdmlalt_z_zzzi_d", &Disassembler::Disassemble_ZdaD_ZnS_ZmS_imm},
+    {"sqdmlalt_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
+    {"sqdmlslb_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"sqdmlslb_z_zzzi_d", &Disassembler::Disassemble_ZdaD_ZnS_ZmS_imm},
+    {"sqdmlslb_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
+    {"sqdmlslbt_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"sqdmlslt_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"sqdmlslt_z_zzzi_d", &Disassembler::Disassemble_ZdaD_ZnS_ZmS_imm},
+    {"sqdmlslt_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnH_ZmH_imm},
+    {"sqdmulh_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"sqdmulh_z_zzi_d", &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
+    {"sqdmulh_z_zzi_h", &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
+    {"sqdmulh_z_zzi_s", &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
+    {"sqdmullb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"sqdmullb_z_zzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"sqdmullb_z_zzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"sqdmullt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"sqdmullt_z_zzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"sqdmullt_z_zzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"sqneg_z_p_z", &Disassembler::Disassemble_ZdT_PgM_ZnT},
+    {"sqrdcmlah_z_zzz", &Disassembler::Disassemble_ZdaT_ZnT_ZmT_const},
+    {"sqrdcmlah_z_zzzi_h", &Disassembler::Disassemble_ZdaH_ZnH_ZmH_imm_const},
+    {"sqrdcmlah_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnS_ZmS_imm_const},
+    {"sqrdmlah_z_zzz", &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
+    {"sqrdmlah_z_zzzi_d", &Disassembler::Disassemble_ZdaD_ZnD_ZmD_imm},
+    {"sqrdmlah_z_zzzi_h", &Disassembler::Disassemble_ZdaH_ZnH_ZmH_imm},
+    {"sqrdmlah_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnS_ZmS_imm},
+    {"sqrdmlsh_z_zzz", &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
+    {"sqrdmlsh_z_zzzi_d", &Disassembler::Disassemble_ZdaD_ZnD_ZmD_imm},
+    {"sqrdmlsh_z_zzzi_h", &Disassembler::Disassemble_ZdaH_ZnH_ZmH_imm},
+    {"sqrdmlsh_z_zzzi_s", &Disassembler::Disassemble_ZdaS_ZnS_ZmS_imm},
+    {"sqrdmulh_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"sqrdmulh_z_zzi_d", &Disassembler::Disassemble_ZdD_ZnD_ZmD_imm},
+    {"sqrdmulh_z_zzi_h", &Disassembler::Disassemble_ZdH_ZnH_ZmH_imm},
+    {"sqrdmulh_z_zzi_s", &Disassembler::Disassemble_ZdS_ZnS_ZmS_imm},
+    {"sqrshl_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sqrshlr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sqrshrnb_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"sqrshrnt_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"sqrshrunb_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"sqrshrunt_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"sqshl_z_p_zi", &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
+    {"sqshl_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sqshlr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sqshlu_z_p_zi", &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
+    {"sqshrnb_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"sqshrnt_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"sqshrunb_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"sqshrunt_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"sqsub_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sqsubr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sqxtnb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb},
+    {"sqxtnt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb},
+    {"sqxtunb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb},
+    {"sqxtunt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb},
+    {"srhadd_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"sri_z_zzi", &Disassembler::VisitSVEBitwiseShiftUnpredicated},
+    {"srshl_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"srshlr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"srshr_z_p_zi", &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
+    {"srsra_z_zi", &Disassembler::VisitSVEBitwiseShiftUnpredicated},
+    {"sshllb_z_zi", &Disassembler::DisassembleSVEShiftLeftImm},
+    {"sshllt_z_zi", &Disassembler::DisassembleSVEShiftLeftImm},
+    {"ssra_z_zi", &Disassembler::VisitSVEBitwiseShiftUnpredicated},
+    {"ssublb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"ssublbt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"ssublt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"ssubltb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"ssubwb_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
+    {"ssubwt_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
+    {"stnt1b_z_p_ar_d_64_unscaled", &Disassembler::Disassemble_ZtD_Pg_ZnD_Xm},
+    {"stnt1b_z_p_ar_s_x32_unscaled",
+      &Disassembler::Disassemble_ZtS_Pg_ZnS_Xm},
+    {"stnt1d_z_p_ar_d_64_unscaled", &Disassembler::Disassemble_ZtD_Pg_ZnD_Xm},
+    {"stnt1h_z_p_ar_d_64_unscaled", &Disassembler::Disassemble_ZtD_Pg_ZnD_Xm},
+    {"stnt1h_z_p_ar_s_x32_unscaled",
+      &Disassembler::Disassemble_ZtS_Pg_ZnS_Xm},
+    {"stnt1w_z_p_ar_d_64_unscaled", &Disassembler::Disassemble_ZtD_Pg_ZnD_Xm},
+    {"stnt1w_z_p_ar_s_x32_unscaled",
+      &Disassembler::Disassemble_ZtS_Pg_ZnS_Xm},
+    {"subhnb_z_zz", &Disassembler::DisassembleSVEAddSubHigh},
+    {"subhnt_z_zz", &Disassembler::DisassembleSVEAddSubHigh},
+    {"suqadd_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"tbl_z_zz_2", &Disassembler::Disassemble_ZdT_Zn1T_Zn2T_ZmT},
+    {"tbx_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"uaba_z_zzz", &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
+    {"uabalb_z_zzz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"uabalt_z_zzz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"uabdlb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"uabdlt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"uadalp_z_p_z", &Disassembler::Disassemble_ZdaT_PgM_ZnTb},
+    {"uaddlb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"uaddlt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"uaddwb_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
+    {"uaddwt_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
+    {"uhadd_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uhsub_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uhsubr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"umaxp_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uminp_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"umlalb_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"umlalb_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"umlalb_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"umlalt_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"umlalt_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"umlalt_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"umlslb_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"umlslb_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"umlslb_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"umlslt_z_zzz", &Disassembler::Disassemble_ZdaT_ZnTb_ZmTb},
+    {"umlslt_z_zzzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"umlslt_z_zzzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"umulh_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmT},
+    {"umullb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"umullb_z_zzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"umullb_z_zzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"umullt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"umullt_z_zzi_d", &Disassembler::Disassemble_ZdD_ZnS_ZmS_imm},
+    {"umullt_z_zzi_s", &Disassembler::Disassemble_ZdS_ZnH_ZmH_imm},
+    {"uqadd_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uqrshl_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uqrshlr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uqrshrnb_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"uqrshrnt_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"uqshl_z_p_zi", &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
+    {"uqshl_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uqshlr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uqshrnb_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"uqshrnt_z_zi", &Disassembler::DisassembleSVEShiftRightImm},
+    {"uqsub_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uqsubr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"uqxtnb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb},
+    {"uqxtnt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb},
+    {"urecpe_z_p_z", &Disassembler::Disassemble_ZdS_PgM_ZnS},
+    {"urhadd_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"urshl_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"urshlr_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"urshr_z_p_zi", &Disassembler::VisitSVEBitwiseShiftByImm_Predicated},
+    {"ursqrte_z_p_z", &Disassembler::Disassemble_ZdS_PgM_ZnS},
+    {"ursra_z_zi", &Disassembler::VisitSVEBitwiseShiftUnpredicated},
+    {"ushllb_z_zi", &Disassembler::DisassembleSVEShiftLeftImm},
+    {"ushllt_z_zi", &Disassembler::DisassembleSVEShiftLeftImm},
+    {"usqadd_z_p_zz", &Disassembler::Disassemble_ZdnT_PgM_ZdnT_ZmT},
+    {"usra_z_zi", &Disassembler::VisitSVEBitwiseShiftUnpredicated},
+    {"usublb_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"usublt_z_zz", &Disassembler::Disassemble_ZdT_ZnTb_ZmTb},
+    {"usubwb_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
+    {"usubwt_z_zz", &Disassembler::Disassemble_ZdT_ZnT_ZmTb},
+    {"whilege_p_p_rr", &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
+    {"whilegt_p_p_rr", &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
+    {"whilehi_p_p_rr", &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
+    {"whilehs_p_p_rr", &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
+    {"whilerw_p_rr", &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
+    {"whilewr_p_rr", &Disassembler::VisitSVEIntCompareScalarCountAndLimit},
+    {"xar_z_zzi", &Disassembler::Disassemble_ZdnT_ZdnT_ZmT_const},
+    {"fmmla_z_zzz_s", &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
+    {"fmmla_z_zzz_d", &Disassembler::Disassemble_ZdaT_ZnT_ZmT},
+    {"smmla_z_zzz", &Disassembler::Disassemble_ZdaS_ZnB_ZmB},
+    {"ummla_z_zzz", &Disassembler::Disassemble_ZdaS_ZnB_ZmB},
+    {"usmmla_z_zzz", &Disassembler::Disassemble_ZdaS_ZnB_ZmB},
+    {"usdot_z_zzz_s", &Disassembler::Disassemble_ZdaS_ZnB_ZmB},
+    {"smmla_asimdsame2_g", &Disassembler::Disassemble_Vd4S_Vn16B_Vm16B},
+    {"ummla_asimdsame2_g", &Disassembler::Disassemble_Vd4S_Vn16B_Vm16B},
+    {"usmmla_asimdsame2_g", &Disassembler::Disassemble_Vd4S_Vn16B_Vm16B},
+    {"ld1row_z_p_bi_u32",
+      &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusImm},
+    {"ld1row_z_p_br_contiguous",
+      &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusScalar},
+    {"ld1rod_z_p_bi_u64",
+      &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusImm},
+    {"ld1rod_z_p_br_contiguous",
+      &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusScalar},
+    {"ld1rob_z_p_bi_u8",
+      &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusImm},
+    {"ld1rob_z_p_br_contiguous",
+      &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusScalar},
+    {"ld1roh_z_p_bi_u16",
+      &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusImm},
+    {"ld1roh_z_p_br_contiguous",
+      &Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusScalar},
+    {"usdot_z_zzzi_s", &Disassembler::VisitSVEMulIndex},
+    {"sudot_z_zzzi_s", &Disassembler::VisitSVEMulIndex},
+    {"usdot_asimdsame2_d", &Disassembler::VisitNEON3SameExtra},
+};
 
 const Disassembler::FormToVisitorFnMap *Disassembler::GetFormToVisitorFnMap() {
   return &FORM_TO_VISITOR;
@@ -710,33 +681,45 @@ void Disassembler::VisitAddSubImmediate(const Instruction *instr) {
   bool stack_op =
       (rd_is_zr || RnIsZROrSP(instr)) && (instr->GetImmAddSub() == 0) ? true
                                                                       : false;
-  const char *mnemonic = mnemonic_.c_str();
+  const char *mnemonic = "";
   const char *form = "'Rds, 'Rns, 'IAddSub";
   const char *form_cmp = "'Rns, 'IAddSub";
   const char *form_mov = "'Rds, 'Rns";
 
-  switch (form_hash_) {
-    case "add_32_addsub_imm"_h:
-    case "add_64_addsub_imm"_h:
+  switch (instr->Mask(AddSubImmediateMask)) {
+    case ADD_w_imm:
+    case ADD_x_imm: {
+      mnemonic = "add";
       if (stack_op) {
         mnemonic = "mov";
         form = form_mov;
       }
       break;
-    case "adds_32s_addsub_imm"_h:
-    case "adds_64s_addsub_imm"_h:
+    }
+    case ADDS_w_imm:
+    case ADDS_x_imm: {
+      mnemonic = "adds";
       if (rd_is_zr) {
         mnemonic = "cmn";
         form = form_cmp;
       }
       break;
-    case "subs_32s_addsub_imm"_h:
-    case "subs_64s_addsub_imm"_h:
+    }
+    case SUB_w_imm:
+    case SUB_x_imm:
+      mnemonic = "sub";
+      break;
+    case SUBS_w_imm:
+    case SUBS_x_imm: {
+      mnemonic = "subs";
       if (rd_is_zr) {
         mnemonic = "cmp";
         form = form_cmp;
       }
       break;
+    }
+    default:
+      VIXL_UNREACHABLE();
   }
   Format(instr, mnemonic, form);
 }
@@ -745,28 +728,37 @@ void Disassembler::VisitAddSubImmediate(const Instruction *instr) {
 void Disassembler::VisitAddSubShifted(const Instruction *instr) {
   bool rd_is_zr = RdIsZROrSP(instr);
   bool rn_is_zr = RnIsZROrSP(instr);
-  const char *mnemonic = mnemonic_.c_str();
+  const char *mnemonic = "";
   const char *form = "'Rd, 'Rn, 'Rm'NDP";
   const char *form_cmp = "'Rn, 'Rm'NDP";
   const char *form_neg = "'Rd, 'Rm'NDP";
 
-  switch (form_hash_) {
-    case "adds_32_addsub_shift"_h:
-    case "adds_64_addsub_shift"_h:
+  switch (instr->Mask(AddSubShiftedMask)) {
+    case ADD_w_shift:
+    case ADD_x_shift:
+      mnemonic = "add";
+      break;
+    case ADDS_w_shift:
+    case ADDS_x_shift: {
+      mnemonic = "adds";
       if (rd_is_zr) {
         mnemonic = "cmn";
         form = form_cmp;
       }
       break;
-    case "sub_32_addsub_shift"_h:
-    case "sub_64_addsub_shift"_h:
+    }
+    case SUB_w_shift:
+    case SUB_x_shift: {
+      mnemonic = "sub";
       if (rn_is_zr) {
         mnemonic = "neg";
         form = form_neg;
       }
       break;
-    case "subs_32_addsub_shift"_h:
-    case "subs_64_addsub_shift"_h:
+    }
+    case SUBS_w_shift:
+    case SUBS_x_shift: {
+      mnemonic = "subs";
       if (rd_is_zr) {
         mnemonic = "cmp";
         form = form_cmp;
@@ -774,6 +766,10 @@ void Disassembler::VisitAddSubShifted(const Instruction *instr) {
         mnemonic = "negs";
         form = form_neg;
       }
+      break;
+    }
+    default:
+      VIXL_UNREACHABLE();
   }
   Format(instr, mnemonic, form);
 }
@@ -863,12 +859,40 @@ void Disassembler::VisitAddSubWithCarry(const Instruction *instr) {
 
 
 void Disassembler::VisitRotateRightIntoFlags(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Xn, 'IRr, 'INzcv");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(RotateRightIntoFlags)";
+
+  switch (instr->Mask(RotateRightIntoFlagsMask)) {
+    case RMIF:
+      mnemonic = "rmif";
+      form = "'Xn, 'IRr, 'INzcv";
+      break;
+    default:
+      VIXL_UNREACHABLE();
+  }
+
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitEvaluateIntoFlags(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Wn");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(EvaluateIntoFlags)";
+
+  switch (instr->Mask(EvaluateIntoFlagsMask)) {
+    case SETF8:
+      mnemonic = "setf8";
+      form = "'Wn";
+      break;
+    case SETF16:
+      mnemonic = "setf16";
+      form = "'Wn";
+      break;
+    default:
+      VIXL_UNREACHABLE();
+  }
+
+  Format(instr, mnemonic, form);
 }
 
 
@@ -951,32 +975,60 @@ bool Disassembler::IsMovzMovnImm(unsigned reg_size, uint64_t value) {
 void Disassembler::VisitLogicalShifted(const Instruction *instr) {
   bool rd_is_zr = RdIsZROrSP(instr);
   bool rn_is_zr = RnIsZROrSP(instr);
-  const char *mnemonic = mnemonic_.c_str();
+  const char *mnemonic = "";
   const char *form = "'Rd, 'Rn, 'Rm'NLo";
 
-  switch (form_hash_) {
-    case "ands_32_log_shift"_h:
-    case "ands_64_log_shift"_h:
+  switch (instr->Mask(LogicalShiftedMask)) {
+    case AND_w:
+    case AND_x:
+      mnemonic = "and";
+      break;
+    case BIC_w:
+    case BIC_x:
+      mnemonic = "bic";
+      break;
+    case EOR_w:
+    case EOR_x:
+      mnemonic = "eor";
+      break;
+    case EON_w:
+    case EON_x:
+      mnemonic = "eon";
+      break;
+    case BICS_w:
+    case BICS_x:
+      mnemonic = "bics";
+      break;
+    case ANDS_w:
+    case ANDS_x: {
+      mnemonic = "ands";
       if (rd_is_zr) {
         mnemonic = "tst";
         form = "'Rn, 'Rm'NLo";
       }
       break;
-    case "orr_32_log_shift"_h:
-    case "orr_64_log_shift"_h:
+    }
+    case ORR_w:
+    case ORR_x: {
+      mnemonic = "orr";
       if (rn_is_zr && (instr->GetImmDPShift() == 0) &&
           (instr->GetShiftDP() == LSL)) {
         mnemonic = "mov";
         form = "'Rd, 'Rm";
       }
       break;
-    case "orn_32_log_shift"_h:
-    case "orn_64_log_shift"_h:
+    }
+    case ORN_w:
+    case ORN_x: {
+      mnemonic = "orn";
       if (rn_is_zr) {
         mnemonic = "mvn";
         form = "'Rd, 'Rm'NLo";
       }
       break;
+    }
+    default:
+      VIXL_UNREACHABLE();
   }
 
   Format(instr, mnemonic, form);
@@ -984,12 +1036,42 @@ void Disassembler::VisitLogicalShifted(const Instruction *instr) {
 
 
 void Disassembler::VisitConditionalCompareRegister(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Rn, 'Rm, 'INzcv, 'Cond");
+  const char *mnemonic = "";
+  const char *form = "'Rn, 'Rm, 'INzcv, 'Cond";
+
+  switch (instr->Mask(ConditionalCompareRegisterMask)) {
+    case CCMN_w:
+    case CCMN_x:
+      mnemonic = "ccmn";
+      break;
+    case CCMP_w:
+    case CCMP_x:
+      mnemonic = "ccmp";
+      break;
+    default:
+      VIXL_UNREACHABLE();
+  }
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitConditionalCompareImmediate(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Rn, 'IP, 'INzcv, 'Cond");
+  const char *mnemonic = "";
+  const char *form = "'Rn, 'IP, 'INzcv, 'Cond";
+
+  switch (instr->Mask(ConditionalCompareImmediateMask)) {
+    case CCMN_w_imm:
+    case CCMN_x_imm:
+      mnemonic = "ccmn";
+      break;
+    case CCMP_w_imm:
+    case CCMP_x_imm:
+      mnemonic = "ccmp";
+      break;
+    default:
+      VIXL_UNREACHABLE();
+  }
+  Format(instr, mnemonic, form);
 }
 
 
@@ -1180,102 +1262,174 @@ void Disassembler::VisitPCRelAddressing(const Instruction *instr) {
 
 
 void Disassembler::VisitConditionalBranch(const Instruction *instr) {
-  // We can't use the mnemonic directly here, as there's no space between it and
-  // the condition. Assert that we have the correct mnemonic, then use "b"
-  // explicitly for formatting the output.
-  VIXL_ASSERT(form_hash_ == "b_only_condbranch"_h);
-  Format(instr, "b.'CBrn", "'TImmCond");
+  switch (instr->Mask(ConditionalBranchMask)) {
+    case B_cond:
+      Format(instr, "b.'CBrn", "'TImmCond");
+      break;
+    default:
+      VIXL_UNREACHABLE();
+  }
 }
 
 
 void Disassembler::VisitUnconditionalBranchToRegister(
     const Instruction *instr) {
+  const char *mnemonic = mnemonic_.c_str();
   const char *form = "'Xn";
 
   switch (form_hash_) {
-    case "ret_64r_branch_reg"_h:
+    case Hash("ret_64r_branch_reg"):
       if (instr->GetRn() == kLinkRegCode) {
         form = "";
       }
       break;
-    case "retaa_64e_branch_reg"_h:
-    case "retab_64e_branch_reg"_h:
+    case Hash("retaa_64e_branch_reg"):
+    case Hash("retab_64e_branch_reg"):
       form = "";
       break;
-    case "braa_64p_branch_reg"_h:
-    case "brab_64p_branch_reg"_h:
-    case "blraa_64p_branch_reg"_h:
-    case "blrab_64p_branch_reg"_h:
+    case Hash("braa_64p_branch_reg"):
+    case Hash("brab_64p_branch_reg"):
+    case Hash("blraa_64p_branch_reg"):
+    case Hash("blrab_64p_branch_reg"):
       form = "'Xn, 'Xds";
       break;
   }
 
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitUnconditionalBranch(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'TImmUncn");
+  const char *mnemonic = "";
+  const char *form = "'TImmUncn";
+
+  switch (instr->Mask(UnconditionalBranchMask)) {
+    case B:
+      mnemonic = "b";
+      break;
+    case BL:
+      mnemonic = "bl";
+      break;
+    default:
+      VIXL_UNREACHABLE();
+  }
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitDataProcessing1Source(const Instruction *instr) {
+  const char *mnemonic = "";
   const char *form = "'Rd, 'Rn";
 
-  switch (form_hash_) {
-    case "pacia_64p_dp_1src"_h:
-    case "pacda_64p_dp_1src"_h:
-    case "autia_64p_dp_1src"_h:
-    case "autda_64p_dp_1src"_h:
-    case "pacib_64p_dp_1src"_h:
-    case "pacdb_64p_dp_1src"_h:
-    case "autib_64p_dp_1src"_h:
-    case "autdb_64p_dp_1src"_h:
-      form = "'Xd, 'Xns";
-      break;
-    case "paciza_64z_dp_1src"_h:
-    case "pacdza_64z_dp_1src"_h:
-    case "autiza_64z_dp_1src"_h:
-    case "autdza_64z_dp_1src"_h:
-    case "pacizb_64z_dp_1src"_h:
-    case "pacdzb_64z_dp_1src"_h:
-    case "autizb_64z_dp_1src"_h:
-    case "autdzb_64z_dp_1src"_h:
-    case "xpacd_64z_dp_1src"_h:
-    case "xpaci_64z_dp_1src"_h:
+  switch (instr->Mask(DataProcessing1SourceMask)) {
+#define FORMAT(A, B) \
+  case A##_w:        \
+  case A##_x:        \
+    mnemonic = B;    \
+    break;
+    FORMAT(RBIT, "rbit");
+    FORMAT(REV16, "rev16");
+    FORMAT(REV, "rev");
+    FORMAT(CLZ, "clz");
+    FORMAT(CLS, "cls");
+#undef FORMAT
+
+#define PAUTH_VARIATIONS(V) \
+  V(PACI, "paci")           \
+  V(PACD, "pacd")           \
+  V(AUTI, "auti")           \
+  V(AUTD, "autd")
+#define PAUTH_CASE(NAME, MN) \
+  case NAME##A:              \
+    mnemonic = MN "a";       \
+    form = "'Xd, 'Xns";      \
+    break;                   \
+  case NAME##ZA:             \
+    mnemonic = MN "za";      \
+    form = "'Xd";            \
+    break;                   \
+  case NAME##B:              \
+    mnemonic = MN "b";       \
+    form = "'Xd, 'Xns";      \
+    break;                   \
+  case NAME##ZB:             \
+    mnemonic = MN "zb";      \
+    form = "'Xd";            \
+    break;
+
+    PAUTH_VARIATIONS(PAUTH_CASE)
+#undef PAUTH_CASE
+
+    case XPACI:
+      mnemonic = "xpaci";
       form = "'Xd";
       break;
+    case XPACD:
+      mnemonic = "xpacd";
+      form = "'Xd";
+      break;
+    case REV32_x:
+      mnemonic = "rev32";
+      break;
+    default:
+      VIXL_UNREACHABLE();
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitDataProcessing2Source(const Instruction *instr) {
-  std::string mnemonic = mnemonic_;
+  const char *mnemonic = "unimplemented";
   const char *form = "'Rd, 'Rn, 'Rm";
+  const char *form_wwx = "'Wd, 'Wn, 'Xm";
 
-  switch (form_hash_) {
-    case "asrv_32_dp_2src"_h:
-    case "asrv_64_dp_2src"_h:
-    case "lslv_32_dp_2src"_h:
-    case "lslv_64_dp_2src"_h:
-    case "lsrv_32_dp_2src"_h:
-    case "lsrv_64_dp_2src"_h:
-    case "rorv_32_dp_2src"_h:
-    case "rorv_64_dp_2src"_h:
-      // Drop the last 'v' character.
-      VIXL_ASSERT(mnemonic[3] == 'v');
-      mnemonic.pop_back();
-      break;
-    case "pacga_64p_dp_2src"_h:
+  switch (instr->Mask(DataProcessing2SourceMask)) {
+#define FORMAT(A, B) \
+  case A##_w:        \
+  case A##_x:        \
+    mnemonic = B;    \
+    break;
+    FORMAT(UDIV, "udiv");
+    FORMAT(SDIV, "sdiv");
+    FORMAT(LSLV, "lsl");
+    FORMAT(LSRV, "lsr");
+    FORMAT(ASRV, "asr");
+    FORMAT(RORV, "ror");
+#undef FORMAT
+    case PACGA:
+      mnemonic = "pacga";
       form = "'Xd, 'Xn, 'Xms";
       break;
-    case "crc32x_64c_dp_2src"_h:
-    case "crc32cx_64c_dp_2src"_h:
-      form = "'Wd, 'Wn, 'Xm";
+    case CRC32B:
+      mnemonic = "crc32b";
       break;
+    case CRC32H:
+      mnemonic = "crc32h";
+      break;
+    case CRC32W:
+      mnemonic = "crc32w";
+      break;
+    case CRC32X:
+      mnemonic = "crc32x";
+      form = form_wwx;
+      break;
+    case CRC32CB:
+      mnemonic = "crc32cb";
+      break;
+    case CRC32CH:
+      mnemonic = "crc32ch";
+      break;
+    case CRC32CW:
+      mnemonic = "crc32cw";
+      break;
+    case CRC32CX:
+      mnemonic = "crc32cx";
+      form = form_wwx;
+      break;
+    default:
+      form = "(DataProcessing2Source)";
   }
-  Format(instr, mnemonic.c_str(), form);
+  Format(instr, mnemonic, form);
 }
 
 
@@ -1359,16 +1513,44 @@ void Disassembler::VisitDataProcessing3Source(const Instruction *instr) {
 
 
 void Disassembler::VisitCompareBranch(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Rt, 'TImmCmpa");
+  const char *mnemonic = "";
+  const char *form = "'Rt, 'TImmCmpa";
+
+  switch (instr->Mask(CompareBranchMask)) {
+    case CBZ_w:
+    case CBZ_x:
+      mnemonic = "cbz";
+      break;
+    case CBNZ_w:
+    case CBNZ_x:
+      mnemonic = "cbnz";
+      break;
+    default:
+      VIXL_UNREACHABLE();
+  }
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitTestBranch(const Instruction *instr) {
+  const char *mnemonic = "";
   // If the top bit of the immediate is clear, the tested register is
   // disassembled as Wt, otherwise Xt. As the top bit of the immediate is
   // encoded in bit 31 of the instruction, we can reuse the Rt form, which
   // uses bit 31 (normally "sf") to choose the register size.
-  FormatWithDecodedMnemonic(instr, "'Rt, 'It, 'TImmTest");
+  const char *form = "'Rt, 'It, 'TImmTest";
+
+  switch (instr->Mask(TestBranchMask)) {
+    case TBZ:
+      mnemonic = "tbz";
+      break;
+    case TBNZ:
+      mnemonic = "tbnz";
+      break;
+    default:
+      VIXL_UNREACHABLE();
+  }
+  Format(instr, mnemonic, form);
 }
 
 
@@ -1413,94 +1595,138 @@ void Disassembler::VisitMoveWideImmediate(const Instruction *instr) {
 }
 
 
-#define LOAD_STORE_LIST(V) \
-  V(STRB_w, "'Wt")         \
-  V(STRH_w, "'Wt")         \
-  V(STR_w, "'Wt")          \
-  V(STR_x, "'Xt")          \
-  V(LDRB_w, "'Wt")         \
-  V(LDRH_w, "'Wt")         \
-  V(LDR_w, "'Wt")          \
-  V(LDR_x, "'Xt")          \
-  V(LDRSB_x, "'Xt")        \
-  V(LDRSH_x, "'Xt")        \
-  V(LDRSW_x, "'Xt")        \
-  V(LDRSB_w, "'Wt")        \
-  V(LDRSH_w, "'Wt")        \
-  V(STR_b, "'Bt")          \
-  V(STR_h, "'Ht")          \
-  V(STR_s, "'St")          \
-  V(STR_d, "'Dt")          \
-  V(LDR_b, "'Bt")          \
-  V(LDR_h, "'Ht")          \
-  V(LDR_s, "'St")          \
-  V(LDR_d, "'Dt")          \
-  V(STR_q, "'Qt")          \
-  V(LDR_q, "'Qt")
+#define LOAD_STORE_LIST(V)   \
+  V(STRB_w, "strb", "'Wt")   \
+  V(STRH_w, "strh", "'Wt")   \
+  V(STR_w, "str", "'Wt")     \
+  V(STR_x, "str", "'Xt")     \
+  V(LDRB_w, "ldrb", "'Wt")   \
+  V(LDRH_w, "ldrh", "'Wt")   \
+  V(LDR_w, "ldr", "'Wt")     \
+  V(LDR_x, "ldr", "'Xt")     \
+  V(LDRSB_x, "ldrsb", "'Xt") \
+  V(LDRSH_x, "ldrsh", "'Xt") \
+  V(LDRSW_x, "ldrsw", "'Xt") \
+  V(LDRSB_w, "ldrsb", "'Wt") \
+  V(LDRSH_w, "ldrsh", "'Wt") \
+  V(STR_b, "str", "'Bt")     \
+  V(STR_h, "str", "'Ht")     \
+  V(STR_s, "str", "'St")     \
+  V(STR_d, "str", "'Dt")     \
+  V(LDR_b, "ldr", "'Bt")     \
+  V(LDR_h, "ldr", "'Ht")     \
+  V(LDR_s, "ldr", "'St")     \
+  V(LDR_d, "ldr", "'Dt")     \
+  V(STR_q, "str", "'Qt")     \
+  V(LDR_q, "ldr", "'Qt")
 
 void Disassembler::VisitLoadStorePreIndex(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "(LoadStorePreIndex)";
-  const char *suffix = ", ['Xns'ILSi]!";
 
   switch (instr->Mask(LoadStorePreIndexMask)) {
-#define LS_PREINDEX(A, B) \
-  case A##_pre:           \
-    form = B;             \
+#define LS_PREINDEX(A, B, C)   \
+  case A##_pre:                \
+    mnemonic = B;              \
+    form = C ", ['Xns'ILSi]!"; \
     break;
     LOAD_STORE_LIST(LS_PREINDEX)
 #undef LS_PREINDEX
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitLoadStorePostIndex(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "(LoadStorePostIndex)";
-  const char *suffix = ", ['Xns]'ILSi";
 
   switch (instr->Mask(LoadStorePostIndexMask)) {
-#define LS_POSTINDEX(A, B) \
-  case A##_post:           \
-    form = B;              \
+#define LS_POSTINDEX(A, B, C) \
+  case A##_post:              \
+    mnemonic = B;             \
+    form = C ", ['Xns]'ILSi"; \
     break;
     LOAD_STORE_LIST(LS_POSTINDEX)
 #undef LS_POSTINDEX
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitLoadStoreUnsignedOffset(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "(LoadStoreUnsignedOffset)";
-  const char *suffix = ", ['Xns'ILU]";
 
   switch (instr->Mask(LoadStoreUnsignedOffsetMask)) {
-#define LS_UNSIGNEDOFFSET(A, B) \
-  case A##_unsigned:            \
-    form = B;                   \
+#define LS_UNSIGNEDOFFSET(A, B, C) \
+  case A##_unsigned:               \
+    mnemonic = B;                  \
+    form = C ", ['Xns'ILU]";       \
     break;
     LOAD_STORE_LIST(LS_UNSIGNEDOFFSET)
 #undef LS_UNSIGNEDOFFSET
     case PRFM_unsigned:
-      form = "'prefOp";
+      mnemonic = "prfm";
+      form = "'prefOp, ['Xns'ILU]";
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitLoadStoreRCpcUnscaledOffset(const Instruction *instr) {
-  const char *mnemonic = mnemonic_.c_str();
+  const char *mnemonic;
   const char *form = "'Wt, ['Xns'ILS]";
   const char *form_x = "'Xt, ['Xns'ILS]";
 
-  switch (form_hash_) {
-    case "ldapursb_64_ldapstl_unscaled"_h:
-    case "ldapursh_64_ldapstl_unscaled"_h:
-    case "ldapursw_64_ldapstl_unscaled"_h:
-    case "ldapur_64_ldapstl_unscaled"_h:
-    case "stlur_64_ldapstl_unscaled"_h:
+  switch (instr->Mask(LoadStoreRCpcUnscaledOffsetMask)) {
+    case STLURB:
+      mnemonic = "stlurb";
+      break;
+    case LDAPURB:
+      mnemonic = "ldapurb";
+      break;
+    case LDAPURSB_w:
+      mnemonic = "ldapursb";
+      break;
+    case LDAPURSB_x:
+      mnemonic = "ldapursb";
       form = form_x;
       break;
+    case STLURH:
+      mnemonic = "stlurh";
+      break;
+    case LDAPURH:
+      mnemonic = "ldapurh";
+      break;
+    case LDAPURSH_w:
+      mnemonic = "ldapursh";
+      break;
+    case LDAPURSH_x:
+      mnemonic = "ldapursh";
+      form = form_x;
+      break;
+    case STLUR_w:
+      mnemonic = "stlur";
+      break;
+    case LDAPUR_w:
+      mnemonic = "ldapur";
+      break;
+    case LDAPURSW:
+      mnemonic = "ldapursw";
+      form = form_x;
+      break;
+    case STLUR_x:
+      mnemonic = "stlur";
+      form = form_x;
+      break;
+    case LDAPUR_x:
+      mnemonic = "ldapur";
+      form = form_x;
+      break;
+    default:
+      mnemonic = "unimplemented";
+      form = "(LoadStoreRCpcUnscaledOffset)";
   }
 
   Format(instr, mnemonic, form);
@@ -1508,233 +1734,365 @@ void Disassembler::VisitLoadStoreRCpcUnscaledOffset(const Instruction *instr) {
 
 
 void Disassembler::VisitLoadStoreRegisterOffset(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "(LoadStoreRegisterOffset)";
-  const char *suffix = ", ['Xns, 'Offsetreg]";
 
   switch (instr->Mask(LoadStoreRegisterOffsetMask)) {
-#define LS_REGISTEROFFSET(A, B) \
-  case A##_reg:                 \
-    form = B;                   \
+#define LS_REGISTEROFFSET(A, B, C)   \
+  case A##_reg:                      \
+    mnemonic = B;                    \
+    form = C ", ['Xns, 'Offsetreg]"; \
     break;
     LOAD_STORE_LIST(LS_REGISTEROFFSET)
 #undef LS_REGISTEROFFSET
     case PRFM_reg:
-      form = "'prefOp";
+      mnemonic = "prfm";
+      form = "'prefOp, ['Xns, 'Offsetreg]";
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitLoadStoreUnscaledOffset(const Instruction *instr) {
-  const char *form = "'Wt";
-  const char *suffix = ", ['Xns'ILS]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Wt, ['Xns'ILS]";
+  const char *form_x = "'Xt, ['Xns'ILS]";
+  const char *form_b = "'Bt, ['Xns'ILS]";
+  const char *form_h = "'Ht, ['Xns'ILS]";
+  const char *form_s = "'St, ['Xns'ILS]";
+  const char *form_d = "'Dt, ['Xns'ILS]";
+  const char *form_q = "'Qt, ['Xns'ILS]";
+  const char *form_prefetch = "'prefOp, ['Xns'ILS]";
 
-  switch (form_hash_) {
-    case "ldur_64_ldst_unscaled"_h:
-    case "ldursb_64_ldst_unscaled"_h:
-    case "ldursh_64_ldst_unscaled"_h:
-    case "ldursw_64_ldst_unscaled"_h:
-    case "stur_64_ldst_unscaled"_h:
-      form = "'Xt";
+  switch (instr->Mask(LoadStoreUnscaledOffsetMask)) {
+    case STURB_w:
+      mnemonic = "sturb";
       break;
-    case "ldur_b_ldst_unscaled"_h:
-    case "stur_b_ldst_unscaled"_h:
-      form = "'Bt";
+    case STURH_w:
+      mnemonic = "sturh";
       break;
-    case "ldur_h_ldst_unscaled"_h:
-    case "stur_h_ldst_unscaled"_h:
-      form = "'Ht";
+    case STUR_w:
+      mnemonic = "stur";
       break;
-    case "ldur_s_ldst_unscaled"_h:
-    case "stur_s_ldst_unscaled"_h:
-      form = "'St";
+    case STUR_x:
+      mnemonic = "stur";
+      form = form_x;
       break;
-    case "ldur_d_ldst_unscaled"_h:
-    case "stur_d_ldst_unscaled"_h:
-      form = "'Dt";
+    case STUR_b:
+      mnemonic = "stur";
+      form = form_b;
       break;
-    case "ldur_q_ldst_unscaled"_h:
-    case "stur_q_ldst_unscaled"_h:
-      form = "'Qt";
+    case STUR_h:
+      mnemonic = "stur";
+      form = form_h;
       break;
-    case "prfum_p_ldst_unscaled"_h:
-      form = "'prefOp";
+    case STUR_s:
+      mnemonic = "stur";
+      form = form_s;
       break;
+    case STUR_d:
+      mnemonic = "stur";
+      form = form_d;
+      break;
+    case STUR_q:
+      mnemonic = "stur";
+      form = form_q;
+      break;
+    case LDURB_w:
+      mnemonic = "ldurb";
+      break;
+    case LDURH_w:
+      mnemonic = "ldurh";
+      break;
+    case LDUR_w:
+      mnemonic = "ldur";
+      break;
+    case LDUR_x:
+      mnemonic = "ldur";
+      form = form_x;
+      break;
+    case LDUR_b:
+      mnemonic = "ldur";
+      form = form_b;
+      break;
+    case LDUR_h:
+      mnemonic = "ldur";
+      form = form_h;
+      break;
+    case LDUR_s:
+      mnemonic = "ldur";
+      form = form_s;
+      break;
+    case LDUR_d:
+      mnemonic = "ldur";
+      form = form_d;
+      break;
+    case LDUR_q:
+      mnemonic = "ldur";
+      form = form_q;
+      break;
+    case LDURSB_x:
+      form = form_x;
+      VIXL_FALLTHROUGH();
+    case LDURSB_w:
+      mnemonic = "ldursb";
+      break;
+    case LDURSH_x:
+      form = form_x;
+      VIXL_FALLTHROUGH();
+    case LDURSH_w:
+      mnemonic = "ldursh";
+      break;
+    case LDURSW_x:
+      mnemonic = "ldursw";
+      form = form_x;
+      break;
+    case PRFUM:
+      mnemonic = "prfum";
+      form = form_prefetch;
+      break;
+    default:
+      form = "(LoadStoreUnscaledOffset)";
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitLoadLiteral(const Instruction *instr) {
-  const char *form = "'Wt";
-  const char *suffix = ", 'ILLiteral 'LValue";
+  const char *mnemonic = "ldr";
+  const char *form = "(LoadLiteral)";
 
-  switch (form_hash_) {
-    case "ldr_64_loadlit"_h:
-    case "ldrsw_64_loadlit"_h:
-      form = "'Xt";
+  switch (instr->Mask(LoadLiteralMask)) {
+    case LDR_w_lit:
+      form = "'Wt, 'ILLiteral 'LValue";
       break;
-    case "ldr_s_loadlit"_h:
-      form = "'St";
+    case LDR_x_lit:
+      form = "'Xt, 'ILLiteral 'LValue";
       break;
-    case "ldr_d_loadlit"_h:
-      form = "'Dt";
+    case LDR_s_lit:
+      form = "'St, 'ILLiteral 'LValue";
       break;
-    case "ldr_q_loadlit"_h:
-      form = "'Qt";
+    case LDR_d_lit:
+      form = "'Dt, 'ILLiteral 'LValue";
       break;
-    case "prfm_p_loadlit"_h:
-      form = "'prefOp";
+    case LDR_q_lit:
+      form = "'Qt, 'ILLiteral 'LValue";
       break;
+    case LDRSW_x_lit: {
+      mnemonic = "ldrsw";
+      form = "'Xt, 'ILLiteral 'LValue";
+      break;
+    }
+    case PRFM_lit: {
+      mnemonic = "prfm";
+      form = "'prefOp, 'ILLiteral 'LValue";
+      break;
+    }
+    default:
+      mnemonic = "unimplemented";
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 
-#define LOAD_STORE_PAIR_LIST(V) \
-  V(STP_w, "'Wt, 'Wt2", "2")    \
-  V(LDP_w, "'Wt, 'Wt2", "2")    \
-  V(LDPSW_x, "'Xt, 'Xt2", "2")  \
-  V(STP_x, "'Xt, 'Xt2", "3")    \
-  V(LDP_x, "'Xt, 'Xt2", "3")    \
-  V(STP_s, "'St, 'St2", "2")    \
-  V(LDP_s, "'St, 'St2", "2")    \
-  V(STP_d, "'Dt, 'Dt2", "3")    \
-  V(LDP_d, "'Dt, 'Dt2", "3")    \
-  V(LDP_q, "'Qt, 'Qt2", "4")    \
-  V(STP_q, "'Qt, 'Qt2", "4")
+#define LOAD_STORE_PAIR_LIST(V)         \
+  V(STP_w, "stp", "'Wt, 'Wt2", "2")     \
+  V(LDP_w, "ldp", "'Wt, 'Wt2", "2")     \
+  V(LDPSW_x, "ldpsw", "'Xt, 'Xt2", "2") \
+  V(STP_x, "stp", "'Xt, 'Xt2", "3")     \
+  V(LDP_x, "ldp", "'Xt, 'Xt2", "3")     \
+  V(STP_s, "stp", "'St, 'St2", "2")     \
+  V(LDP_s, "ldp", "'St, 'St2", "2")     \
+  V(STP_d, "stp", "'Dt, 'Dt2", "3")     \
+  V(LDP_d, "ldp", "'Dt, 'Dt2", "3")     \
+  V(LDP_q, "ldp", "'Qt, 'Qt2", "4")     \
+  V(STP_q, "stp", "'Qt, 'Qt2", "4")
 
 void Disassembler::VisitLoadStorePairPostIndex(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "(LoadStorePairPostIndex)";
 
   switch (instr->Mask(LoadStorePairPostIndexMask)) {
-#define LSP_POSTINDEX(A, B, C)     \
+#define LSP_POSTINDEX(A, B, C, D)  \
   case A##_post:                   \
-    form = B ", ['Xns]'ILP" C "i"; \
+    mnemonic = B;                  \
+    form = C ", ['Xns]'ILP" D "i"; \
     break;
     LOAD_STORE_PAIR_LIST(LSP_POSTINDEX)
 #undef LSP_POSTINDEX
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitLoadStorePairPreIndex(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "(LoadStorePairPreIndex)";
 
   switch (instr->Mask(LoadStorePairPreIndexMask)) {
-#define LSP_PREINDEX(A, B, C)       \
+#define LSP_PREINDEX(A, B, C, D)    \
   case A##_pre:                     \
-    form = B ", ['Xns'ILP" C "i]!"; \
+    mnemonic = B;                   \
+    form = C ", ['Xns'ILP" D "i]!"; \
     break;
     LOAD_STORE_PAIR_LIST(LSP_PREINDEX)
 #undef LSP_PREINDEX
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitLoadStorePairOffset(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "(LoadStorePairOffset)";
 
   switch (instr->Mask(LoadStorePairOffsetMask)) {
-#define LSP_OFFSET(A, B, C)       \
+#define LSP_OFFSET(A, B, C, D)    \
   case A##_off:                   \
-    form = B ", ['Xns'ILP" C "]"; \
+    mnemonic = B;                 \
+    form = C ", ['Xns'ILP" D "]"; \
     break;
     LOAD_STORE_PAIR_LIST(LSP_OFFSET)
 #undef LSP_OFFSET
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitLoadStorePairNonTemporal(const Instruction *instr) {
-  const char *form = "'Wt, 'Wt2, ['Xns'ILP2]";
+  const char *mnemonic = "unimplemented";
+  const char *form;
 
-  switch (form_hash_) {
-    case "ldnp_64_ldstnapair_offs"_h:
-    case "stnp_64_ldstnapair_offs"_h:
+  switch (instr->Mask(LoadStorePairNonTemporalMask)) {
+    case STNP_w:
+      mnemonic = "stnp";
+      form = "'Wt, 'Wt2, ['Xns'ILP2]";
+      break;
+    case LDNP_w:
+      mnemonic = "ldnp";
+      form = "'Wt, 'Wt2, ['Xns'ILP2]";
+      break;
+    case STNP_x:
+      mnemonic = "stnp";
       form = "'Xt, 'Xt2, ['Xns'ILP3]";
       break;
-    case "ldnp_s_ldstnapair_offs"_h:
-    case "stnp_s_ldstnapair_offs"_h:
+    case LDNP_x:
+      mnemonic = "ldnp";
+      form = "'Xt, 'Xt2, ['Xns'ILP3]";
+      break;
+    case STNP_s:
+      mnemonic = "stnp";
       form = "'St, 'St2, ['Xns'ILP2]";
       break;
-    case "ldnp_d_ldstnapair_offs"_h:
-    case "stnp_d_ldstnapair_offs"_h:
+    case LDNP_s:
+      mnemonic = "ldnp";
+      form = "'St, 'St2, ['Xns'ILP2]";
+      break;
+    case STNP_d:
+      mnemonic = "stnp";
       form = "'Dt, 'Dt2, ['Xns'ILP3]";
       break;
-    case "ldnp_q_ldstnapair_offs"_h:
-    case "stnp_q_ldstnapair_offs"_h:
+    case LDNP_d:
+      mnemonic = "ldnp";
+      form = "'Dt, 'Dt2, ['Xns'ILP3]";
+      break;
+    case STNP_q:
+      mnemonic = "stnp";
       form = "'Qt, 'Qt2, ['Xns'ILP4]";
       break;
+    case LDNP_q:
+      mnemonic = "ldnp";
+      form = "'Qt, 'Qt2, ['Xns'ILP4]";
+      break;
+    default:
+      form = "(LoadStorePairNonTemporal)";
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 // clang-format off
-#define LOAD_STORE_EXCLUSIVE_LIST(V)   \
-  V(STXRB_w,  "'Ws, 'Wt")              \
-  V(STXRH_w,  "'Ws, 'Wt")              \
-  V(STXR_w,   "'Ws, 'Wt")              \
-  V(STXR_x,   "'Ws, 'Xt")              \
-  V(LDXR_x,   "'Xt")                   \
-  V(STXP_w,   "'Ws, 'Wt, 'Wt2")        \
-  V(STXP_x,   "'Ws, 'Xt, 'Xt2")        \
-  V(LDXP_w,   "'Wt, 'Wt2")             \
-  V(LDXP_x,   "'Xt, 'Xt2")             \
-  V(STLXRB_w, "'Ws, 'Wt")              \
-  V(STLXRH_w, "'Ws, 'Wt")              \
-  V(STLXR_w,  "'Ws, 'Wt")              \
-  V(STLXR_x,  "'Ws, 'Xt")              \
-  V(LDAXR_x,  "'Xt")                   \
-  V(STLXP_w,  "'Ws, 'Wt, 'Wt2")        \
-  V(STLXP_x,  "'Ws, 'Xt, 'Xt2")        \
-  V(LDAXP_w,  "'Wt, 'Wt2")             \
-  V(LDAXP_x,  "'Xt, 'Xt2")             \
-  V(STLR_x,   "'Xt")                   \
-  V(LDAR_x,   "'Xt")                   \
-  V(STLLR_x,  "'Xt")                   \
-  V(LDLAR_x,  "'Xt")                   \
-  V(CAS_w,    "'Ws, 'Wt")              \
-  V(CAS_x,    "'Xs, 'Xt")              \
-  V(CASA_w,   "'Ws, 'Wt")              \
-  V(CASA_x,   "'Xs, 'Xt")              \
-  V(CASL_w,   "'Ws, 'Wt")              \
-  V(CASL_x,   "'Xs, 'Xt")              \
-  V(CASAL_w,  "'Ws, 'Wt")              \
-  V(CASAL_x,  "'Xs, 'Xt")              \
-  V(CASB,     "'Ws, 'Wt")              \
-  V(CASAB,    "'Ws, 'Wt")              \
-  V(CASLB,    "'Ws, 'Wt")              \
-  V(CASALB,   "'Ws, 'Wt")              \
-  V(CASH,     "'Ws, 'Wt")              \
-  V(CASAH,    "'Ws, 'Wt")              \
-  V(CASLH,    "'Ws, 'Wt")              \
-  V(CASALH,   "'Ws, 'Wt")              \
-  V(CASP_w,   "'Ws, 'Ws+, 'Wt, 'Wt+")  \
-  V(CASP_x,   "'Xs, 'Xs+, 'Xt, 'Xt+")  \
-  V(CASPA_w,  "'Ws, 'Ws+, 'Wt, 'Wt+")  \
-  V(CASPA_x,  "'Xs, 'Xs+, 'Xt, 'Xt+")  \
-  V(CASPL_w,  "'Ws, 'Ws+, 'Wt, 'Wt+")  \
-  V(CASPL_x,  "'Xs, 'Xs+, 'Xt, 'Xt+")  \
-  V(CASPAL_w, "'Ws, 'Ws+, 'Wt, 'Wt+")  \
-  V(CASPAL_x, "'Xs, 'Xs+, 'Xt, 'Xt+")
+#define LOAD_STORE_EXCLUSIVE_LIST(V)                  \
+  V(STXRB_w,  "stxrb",  "'Ws, 'Wt")                   \
+  V(STXRH_w,  "stxrh",  "'Ws, 'Wt")                   \
+  V(STXR_w,   "stxr",   "'Ws, 'Wt")                   \
+  V(STXR_x,   "stxr",   "'Ws, 'Xt")                   \
+  V(LDXRB_w,  "ldxrb",  "'Wt")                        \
+  V(LDXRH_w,  "ldxrh",  "'Wt")                        \
+  V(LDXR_w,   "ldxr",   "'Wt")                        \
+  V(LDXR_x,   "ldxr",   "'Xt")                        \
+  V(STXP_w,   "stxp",   "'Ws, 'Wt, 'Wt2")             \
+  V(STXP_x,   "stxp",   "'Ws, 'Xt, 'Xt2")             \
+  V(LDXP_w,   "ldxp",   "'Wt, 'Wt2")                  \
+  V(LDXP_x,   "ldxp",   "'Xt, 'Xt2")                  \
+  V(STLXRB_w, "stlxrb", "'Ws, 'Wt")                   \
+  V(STLXRH_w, "stlxrh", "'Ws, 'Wt")                   \
+  V(STLXR_w,  "stlxr",  "'Ws, 'Wt")                   \
+  V(STLXR_x,  "stlxr",  "'Ws, 'Xt")                   \
+  V(LDAXRB_w, "ldaxrb", "'Wt")                        \
+  V(LDAXRH_w, "ldaxrh", "'Wt")                        \
+  V(LDAXR_w,  "ldaxr",  "'Wt")                        \
+  V(LDAXR_x,  "ldaxr",  "'Xt")                        \
+  V(STLXP_w,  "stlxp",  "'Ws, 'Wt, 'Wt2")             \
+  V(STLXP_x,  "stlxp",  "'Ws, 'Xt, 'Xt2")             \
+  V(LDAXP_w,  "ldaxp",  "'Wt, 'Wt2")                  \
+  V(LDAXP_x,  "ldaxp",  "'Xt, 'Xt2")                  \
+  V(STLRB_w,  "stlrb",  "'Wt")                        \
+  V(STLRH_w,  "stlrh",  "'Wt")                        \
+  V(STLR_w,   "stlr",   "'Wt")                        \
+  V(STLR_x,   "stlr",   "'Xt")                        \
+  V(LDARB_w,  "ldarb",  "'Wt")                        \
+  V(LDARH_w,  "ldarh",  "'Wt")                        \
+  V(LDAR_w,   "ldar",   "'Wt")                        \
+  V(LDAR_x,   "ldar",   "'Xt")                        \
+  V(STLLRB,   "stllrb", "'Wt")                        \
+  V(STLLRH,   "stllrh", "'Wt")                        \
+  V(STLLR_w,  "stllr",  "'Wt")                        \
+  V(STLLR_x,  "stllr",  "'Xt")                        \
+  V(LDLARB,   "ldlarb", "'Wt")                        \
+  V(LDLARH,   "ldlarh", "'Wt")                        \
+  V(LDLAR_w,  "ldlar",  "'Wt")                        \
+  V(LDLAR_x,  "ldlar",  "'Xt")                        \
+  V(CAS_w,    "cas",    "'Ws, 'Wt")                   \
+  V(CAS_x,    "cas",    "'Xs, 'Xt")                   \
+  V(CASA_w,   "casa",   "'Ws, 'Wt")                   \
+  V(CASA_x,   "casa",   "'Xs, 'Xt")                   \
+  V(CASL_w,   "casl",   "'Ws, 'Wt")                   \
+  V(CASL_x,   "casl",   "'Xs, 'Xt")                   \
+  V(CASAL_w,  "casal",  "'Ws, 'Wt")                   \
+  V(CASAL_x,  "casal",  "'Xs, 'Xt")                   \
+  V(CASB,     "casb",   "'Ws, 'Wt")                   \
+  V(CASAB,    "casab",  "'Ws, 'Wt")                   \
+  V(CASLB,    "caslb",  "'Ws, 'Wt")                   \
+  V(CASALB,   "casalb", "'Ws, 'Wt")                   \
+  V(CASH,     "cash",   "'Ws, 'Wt")                   \
+  V(CASAH,    "casah",  "'Ws, 'Wt")                   \
+  V(CASLH,    "caslh",  "'Ws, 'Wt")                   \
+  V(CASALH,   "casalh", "'Ws, 'Wt")                   \
+  V(CASP_w,   "casp",   "'Ws, 'Ws+, 'Wt, 'Wt+")       \
+  V(CASP_x,   "casp",   "'Xs, 'Xs+, 'Xt, 'Xt+")       \
+  V(CASPA_w,  "caspa",  "'Ws, 'Ws+, 'Wt, 'Wt+")       \
+  V(CASPA_x,  "caspa",  "'Xs, 'Xs+, 'Xt, 'Xt+")       \
+  V(CASPL_w,  "caspl",  "'Ws, 'Ws+, 'Wt, 'Wt+")       \
+  V(CASPL_x,  "caspl",  "'Xs, 'Xs+, 'Xt, 'Xt+")       \
+  V(CASPAL_w, "caspal", "'Ws, 'Ws+, 'Wt, 'Wt+")       \
+  V(CASPAL_x, "caspal", "'Xs, 'Xs+, 'Xt, 'Xt+")
 // clang-format on
 
 
 void Disassembler::VisitLoadStoreExclusive(const Instruction *instr) {
-  const char *form = "'Wt";
-  const char *suffix = ", ['Xns]";
+  const char *mnemonic = "unimplemented";
+  const char *form;
 
   switch (instr->Mask(LoadStoreExclusiveMask)) {
-#define LSX(A, B) \
-  case A:         \
-    form = B;     \
+#define LSX(A, B, C)     \
+  case A:                \
+    mnemonic = B;        \
+    form = C ", ['Xns]"; \
     break;
     LOAD_STORE_EXCLUSIVE_LIST(LSX)
 #undef LSX
+    default:
+      form = "(LoadStoreExclusive)";
   }
 
   switch (instr->Mask(LoadStoreExclusiveMask)) {
@@ -1747,183 +2105,588 @@ void Disassembler::VisitLoadStoreExclusive(const Instruction *instr) {
     case CASPAL_w:
     case CASPAL_x:
       if ((instr->GetRs() % 2 == 1) || (instr->GetRt() % 2 == 1)) {
-        VisitUnallocated(instr);
-        return;
+        mnemonic = "unallocated";
+        form = "(LoadStoreExclusive)";
       }
       break;
   }
 
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitLoadStorePAC(const Instruction *instr) {
-  const char *form = "'Xt, ['Xns'ILA]";
-  const char *suffix = "";
-  switch (form_hash_) {
-    case "ldraa_64w_ldst_pac"_h:
-    case "ldrab_64w_ldst_pac"_h:
-      suffix = "!";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(LoadStorePAC)";
+
+  switch (instr->Mask(LoadStorePACMask)) {
+    case LDRAA:
+      mnemonic = "ldraa";
+      form = "'Xt, ['Xns'ILA]";
+      break;
+    case LDRAB:
+      mnemonic = "ldrab";
+      form = "'Xt, ['Xns'ILA]";
+      break;
+    case LDRAA_pre:
+      mnemonic = "ldraa";
+      form = "'Xt, ['Xns'ILA]!";
+      break;
+    case LDRAB_pre:
+      mnemonic = "ldrab";
+      form = "'Xt, ['Xns'ILA]!";
       break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+
+  Format(instr, mnemonic, form);
 }
 
+#define ATOMIC_MEMORY_SIMPLE_LIST(V) \
+  V(LDADD, "add")                    \
+  V(LDCLR, "clr")                    \
+  V(LDEOR, "eor")                    \
+  V(LDSET, "set")                    \
+  V(LDSMAX, "smax")                  \
+  V(LDSMIN, "smin")                  \
+  V(LDUMAX, "umax")                  \
+  V(LDUMIN, "umin")
+
 void Disassembler::VisitAtomicMemory(const Instruction *instr) {
-  bool is_x = (instr->ExtractBits(31, 30) == 3);
-  const char *form = is_x ? "'Xs, 'Xt" : "'Ws, 'Wt";
-  const char *suffix = ", ['Xns]";
+  const int kMaxAtomicOpMnemonicLength = 16;
+  const char *mnemonic;
+  const char *form = "'Ws, 'Wt, ['Xns]";
 
-  std::string mnemonic = mnemonic_;
+  switch (instr->Mask(AtomicMemoryMask)) {
+#define AMS(A, MN)             \
+  case A##B:                   \
+    mnemonic = MN "b";         \
+    break;                     \
+  case A##AB:                  \
+    mnemonic = MN "ab";        \
+    break;                     \
+  case A##LB:                  \
+    mnemonic = MN "lb";        \
+    break;                     \
+  case A##ALB:                 \
+    mnemonic = MN "alb";       \
+    break;                     \
+  case A##H:                   \
+    mnemonic = MN "h";         \
+    break;                     \
+  case A##AH:                  \
+    mnemonic = MN "ah";        \
+    break;                     \
+  case A##LH:                  \
+    mnemonic = MN "lh";        \
+    break;                     \
+  case A##ALH:                 \
+    mnemonic = MN "alh";       \
+    break;                     \
+  case A##_w:                  \
+    mnemonic = MN;             \
+    break;                     \
+  case A##A_w:                 \
+    mnemonic = MN "a";         \
+    break;                     \
+  case A##L_w:                 \
+    mnemonic = MN "l";         \
+    break;                     \
+  case A##AL_w:                \
+    mnemonic = MN "al";        \
+    break;                     \
+  case A##_x:                  \
+    mnemonic = MN;             \
+    form = "'Xs, 'Xt, ['Xns]"; \
+    break;                     \
+  case A##A_x:                 \
+    mnemonic = MN "a";         \
+    form = "'Xs, 'Xt, ['Xns]"; \
+    break;                     \
+  case A##L_x:                 \
+    mnemonic = MN "l";         \
+    form = "'Xs, 'Xt, ['Xns]"; \
+    break;                     \
+  case A##AL_x:                \
+    mnemonic = MN "al";        \
+    form = "'Xs, 'Xt, ['Xns]"; \
+    break;
+    ATOMIC_MEMORY_SIMPLE_LIST(AMS)
 
-  switch (form_hash_) {
-    case "ldaprb_32l_memop"_h:
-    case "ldaprh_32l_memop"_h:
-    case "ldapr_32l_memop"_h:
-      form = "'Wt";
+    // SWP has the same semantics as ldadd etc but without the store aliases.
+    AMS(SWP, "swp")
+#undef AMS
+
+    case LDAPRB:
+      mnemonic = "ldaprb";
+      form = "'Wt, ['Xns]";
       break;
-    case "ldapr_64l_memop"_h:
-      form = "'Xt";
+    case LDAPRH:
+      mnemonic = "ldaprh";
+      form = "'Wt, ['Xns]";
+      break;
+    case LDAPR_w:
+      mnemonic = "ldapr";
+      form = "'Wt, ['Xns]";
+      break;
+    case LDAPR_x:
+      mnemonic = "ldapr";
+      form = "'Xt, ['Xns]";
       break;
     default:
-      // Zero register implies a store instruction.
-      if (instr->GetRt() == kZeroRegCode) {
-        mnemonic.replace(0, 2, "st");
-        form = is_x ? "'Xs" : "'Ws";
-      }
+      mnemonic = "unimplemented";
+      form = "(AtomicMemory)";
   }
-  Format(instr, mnemonic.c_str(), form, suffix);
+
+  const char *prefix = "";
+  switch (instr->Mask(AtomicMemoryMask)) {
+#define AMS(A, MN)                   \
+  case A##AB:                        \
+  case A##ALB:                       \
+  case A##AH:                        \
+  case A##ALH:                       \
+  case A##A_w:                       \
+  case A##AL_w:                      \
+  case A##A_x:                       \
+  case A##AL_x:                      \
+    prefix = "ld";                   \
+    break;                           \
+  case A##B:                         \
+  case A##LB:                        \
+  case A##H:                         \
+  case A##LH:                        \
+  case A##_w:                        \
+  case A##L_w: {                     \
+    prefix = "ld";                   \
+    unsigned rt = instr->GetRt();    \
+    if (Register(rt, 32).IsZero()) { \
+      prefix = "st";                 \
+      form = "'Ws, ['Xns]";          \
+    }                                \
+    break;                           \
+  }                                  \
+  case A##_x:                        \
+  case A##L_x: {                     \
+    prefix = "ld";                   \
+    unsigned rt = instr->GetRt();    \
+    if (Register(rt, 64).IsZero()) { \
+      prefix = "st";                 \
+      form = "'Xs, ['Xns]";          \
+    }                                \
+    break;                           \
+  }
+    ATOMIC_MEMORY_SIMPLE_LIST(AMS)
+#undef AMS
+  }
+
+  char buffer[kMaxAtomicOpMnemonicLength];
+  if (strlen(prefix) > 0) {
+    snprintf(buffer, kMaxAtomicOpMnemonicLength, "%s%s", prefix, mnemonic);
+    mnemonic = buffer;
+  }
+
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitFPCompare(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "'Fn, 'Fm";
-  switch (form_hash_) {
-    case "fcmpe_dz_floatcmp"_h:
-    case "fcmpe_hz_floatcmp"_h:
-    case "fcmpe_sz_floatcmp"_h:
-    case "fcmp_dz_floatcmp"_h:
-    case "fcmp_hz_floatcmp"_h:
-    case "fcmp_sz_floatcmp"_h:
-      form = "'Fn, #0.0";
+  const char *form_zero = "'Fn, #0.0";
+
+  switch (instr->Mask(FPCompareMask)) {
+    case FCMP_h_zero:
+    case FCMP_s_zero:
+    case FCMP_d_zero:
+      form = form_zero;
+      VIXL_FALLTHROUGH();
+    case FCMP_h:
+    case FCMP_s:
+    case FCMP_d:
+      mnemonic = "fcmp";
+      break;
+    case FCMPE_h_zero:
+    case FCMPE_s_zero:
+    case FCMPE_d_zero:
+      form = form_zero;
+      VIXL_FALLTHROUGH();
+    case FCMPE_h:
+    case FCMPE_s:
+    case FCMPE_d:
+      mnemonic = "fcmpe";
+      break;
+    default:
+      form = "(FPCompare)";
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitFPConditionalCompare(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Fn, 'Fm, 'INzcv, 'Cond");
+  const char *mnemonic = "unmplemented";
+  const char *form = "'Fn, 'Fm, 'INzcv, 'Cond";
+
+  switch (instr->Mask(FPConditionalCompareMask)) {
+    case FCCMP_h:
+    case FCCMP_s:
+    case FCCMP_d:
+      mnemonic = "fccmp";
+      break;
+    case FCCMPE_h:
+    case FCCMPE_s:
+    case FCCMPE_d:
+      mnemonic = "fccmpe";
+      break;
+    default:
+      form = "(FPConditionalCompare)";
+  }
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitFPConditionalSelect(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Fd, 'Fn, 'Fm, 'Cond");
+  const char *mnemonic = "";
+  const char *form = "'Fd, 'Fn, 'Fm, 'Cond";
+
+  switch (instr->Mask(FPConditionalSelectMask)) {
+    case FCSEL_h:
+    case FCSEL_s:
+    case FCSEL_d:
+      mnemonic = "fcsel";
+      break;
+    default:
+      VIXL_UNREACHABLE();
+  }
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitFPDataProcessing1Source(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "'Fd, 'Fn";
-  switch (form_hash_) {
-    case "fcvt_ds_floatdp1"_h:
+
+  switch (instr->Mask(FPDataProcessing1SourceMask)) {
+#define FORMAT(A, B) \
+  case A##_h:        \
+  case A##_s:        \
+  case A##_d:        \
+    mnemonic = B;    \
+    break;
+    FORMAT(FMOV, "fmov");
+    FORMAT(FABS, "fabs");
+    FORMAT(FNEG, "fneg");
+    FORMAT(FSQRT, "fsqrt");
+    FORMAT(FRINTN, "frintn");
+    FORMAT(FRINTP, "frintp");
+    FORMAT(FRINTM, "frintm");
+    FORMAT(FRINTZ, "frintz");
+    FORMAT(FRINTA, "frinta");
+    FORMAT(FRINTX, "frintx");
+    FORMAT(FRINTI, "frinti");
+#undef FORMAT
+#define FORMAT(A, B) \
+  case A##_s:        \
+  case A##_d:        \
+    mnemonic = B;    \
+    break;
+    FORMAT(FRINT32X, "frint32x");
+    FORMAT(FRINT32Z, "frint32z");
+    FORMAT(FRINT64X, "frint64x");
+    FORMAT(FRINT64Z, "frint64z");
+#undef FORMAT
+    case FCVT_ds:
+      mnemonic = "fcvt";
       form = "'Dd, 'Sn";
       break;
-    case "fcvt_sd_floatdp1"_h:
+    case FCVT_sd:
+      mnemonic = "fcvt";
       form = "'Sd, 'Dn";
       break;
-    case "fcvt_hs_floatdp1"_h:
+    case FCVT_hs:
+      mnemonic = "fcvt";
       form = "'Hd, 'Sn";
       break;
-    case "fcvt_sh_floatdp1"_h:
+    case FCVT_sh:
+      mnemonic = "fcvt";
       form = "'Sd, 'Hn";
       break;
-    case "fcvt_dh_floatdp1"_h:
+    case FCVT_dh:
+      mnemonic = "fcvt";
       form = "'Dd, 'Hn";
       break;
-    case "fcvt_hd_floatdp1"_h:
+    case FCVT_hd:
+      mnemonic = "fcvt";
       form = "'Hd, 'Dn";
       break;
+    default:
+      form = "(FPDataProcessing1Source)";
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitFPDataProcessing2Source(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Fd, 'Fn, 'Fm");
+  const char *mnemonic = "";
+  const char *form = "'Fd, 'Fn, 'Fm";
+
+  switch (instr->Mask(FPDataProcessing2SourceMask)) {
+#define FORMAT(A, B) \
+  case A##_h:        \
+  case A##_s:        \
+  case A##_d:        \
+    mnemonic = B;    \
+    break;
+    FORMAT(FADD, "fadd");
+    FORMAT(FSUB, "fsub");
+    FORMAT(FMUL, "fmul");
+    FORMAT(FDIV, "fdiv");
+    FORMAT(FMAX, "fmax");
+    FORMAT(FMIN, "fmin");
+    FORMAT(FMAXNM, "fmaxnm");
+    FORMAT(FMINNM, "fminnm");
+    FORMAT(FNMUL, "fnmul");
+#undef FORMAT
+    default:
+      VIXL_UNREACHABLE();
+  }
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitFPDataProcessing3Source(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Fd, 'Fn, 'Fm, 'Fa");
+  const char *mnemonic = "";
+  const char *form = "'Fd, 'Fn, 'Fm, 'Fa";
+
+  switch (instr->Mask(FPDataProcessing3SourceMask)) {
+#define FORMAT(A, B) \
+  case A##_h:        \
+  case A##_s:        \
+  case A##_d:        \
+    mnemonic = B;    \
+    break;
+    FORMAT(FMADD, "fmadd");
+    FORMAT(FMSUB, "fmsub");
+    FORMAT(FNMADD, "fnmadd");
+    FORMAT(FNMSUB, "fnmsub");
+#undef FORMAT
+    default:
+      VIXL_UNREACHABLE();
+  }
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitFPImmediate(const Instruction *instr) {
-  const char *form = "'Hd";
-  const char *suffix = ", 'IFP";
-  switch (form_hash_) {
-    case "fmov_s_floatimm"_h:
-      form = "'Sd";
+  const char *mnemonic = "";
+  const char *form = "(FPImmediate)";
+  switch (instr->Mask(FPImmediateMask)) {
+    case FMOV_h_imm:
+      mnemonic = "fmov";
+      form = "'Hd, 'IFP";
       break;
-    case "fmov_d_floatimm"_h:
-      form = "'Dd";
+    case FMOV_s_imm:
+      mnemonic = "fmov";
+      form = "'Sd, 'IFP";
       break;
+    case FMOV_d_imm:
+      mnemonic = "fmov";
+      form = "'Dd, 'IFP";
+      break;
+    default:
+      VIXL_UNREACHABLE();
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitFPIntegerConvert(const Instruction *instr) {
-  const char *form = "'Rd, 'Fn";
-  switch (form_hash_) {
-    case "fmov_h32_float2int"_h:
-    case "fmov_h64_float2int"_h:
-    case "fmov_s32_float2int"_h:
-    case "fmov_d64_float2int"_h:
-    case "scvtf_d32_float2int"_h:
-    case "scvtf_d64_float2int"_h:
-    case "scvtf_h32_float2int"_h:
-    case "scvtf_h64_float2int"_h:
-    case "scvtf_s32_float2int"_h:
-    case "scvtf_s64_float2int"_h:
-    case "ucvtf_d32_float2int"_h:
-    case "ucvtf_d64_float2int"_h:
-    case "ucvtf_h32_float2int"_h:
-    case "ucvtf_h64_float2int"_h:
-    case "ucvtf_s32_float2int"_h:
-    case "ucvtf_s64_float2int"_h:
-      form = "'Fd, 'Rn";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(FPIntegerConvert)";
+  const char *form_rf = "'Rd, 'Fn";
+  const char *form_fr = "'Fd, 'Rn";
+
+  switch (instr->Mask(FPIntegerConvertMask)) {
+    case FMOV_wh:
+    case FMOV_xh:
+    case FMOV_ws:
+    case FMOV_xd:
+      mnemonic = "fmov";
+      form = form_rf;
       break;
-    case "fmov_v64i_float2int"_h:
+    case FMOV_hw:
+    case FMOV_hx:
+    case FMOV_sw:
+    case FMOV_dx:
+      mnemonic = "fmov";
+      form = form_fr;
+      break;
+    case FMOV_d1_x:
+      mnemonic = "fmov";
       form = "'Vd.D[1], 'Rn";
       break;
-    case "fmov_64vx_float2int"_h:
+    case FMOV_x_d1:
+      mnemonic = "fmov";
       form = "'Rd, 'Vn.D[1]";
       break;
+    case FCVTAS_wh:
+    case FCVTAS_xh:
+    case FCVTAS_ws:
+    case FCVTAS_xs:
+    case FCVTAS_wd:
+    case FCVTAS_xd:
+      mnemonic = "fcvtas";
+      form = form_rf;
+      break;
+    case FCVTAU_wh:
+    case FCVTAU_xh:
+    case FCVTAU_ws:
+    case FCVTAU_xs:
+    case FCVTAU_wd:
+    case FCVTAU_xd:
+      mnemonic = "fcvtau";
+      form = form_rf;
+      break;
+    case FCVTMS_wh:
+    case FCVTMS_xh:
+    case FCVTMS_ws:
+    case FCVTMS_xs:
+    case FCVTMS_wd:
+    case FCVTMS_xd:
+      mnemonic = "fcvtms";
+      form = form_rf;
+      break;
+    case FCVTMU_wh:
+    case FCVTMU_xh:
+    case FCVTMU_ws:
+    case FCVTMU_xs:
+    case FCVTMU_wd:
+    case FCVTMU_xd:
+      mnemonic = "fcvtmu";
+      form = form_rf;
+      break;
+    case FCVTNS_wh:
+    case FCVTNS_xh:
+    case FCVTNS_ws:
+    case FCVTNS_xs:
+    case FCVTNS_wd:
+    case FCVTNS_xd:
+      mnemonic = "fcvtns";
+      form = form_rf;
+      break;
+    case FCVTNU_wh:
+    case FCVTNU_xh:
+    case FCVTNU_ws:
+    case FCVTNU_xs:
+    case FCVTNU_wd:
+    case FCVTNU_xd:
+      mnemonic = "fcvtnu";
+      form = form_rf;
+      break;
+    case FCVTZU_wh:
+    case FCVTZU_xh:
+    case FCVTZU_ws:
+    case FCVTZU_xs:
+    case FCVTZU_wd:
+    case FCVTZU_xd:
+      mnemonic = "fcvtzu";
+      form = form_rf;
+      break;
+    case FCVTZS_wh:
+    case FCVTZS_xh:
+    case FCVTZS_ws:
+    case FCVTZS_xs:
+    case FCVTZS_wd:
+    case FCVTZS_xd:
+      mnemonic = "fcvtzs";
+      form = form_rf;
+      break;
+    case FCVTPU_wh:
+    case FCVTPU_xh:
+    case FCVTPU_xs:
+    case FCVTPU_wd:
+    case FCVTPU_ws:
+    case FCVTPU_xd:
+      mnemonic = "fcvtpu";
+      form = form_rf;
+      break;
+    case FCVTPS_wh:
+    case FCVTPS_xh:
+    case FCVTPS_ws:
+    case FCVTPS_xs:
+    case FCVTPS_wd:
+    case FCVTPS_xd:
+      mnemonic = "fcvtps";
+      form = form_rf;
+      break;
+    case SCVTF_hw:
+    case SCVTF_hx:
+    case SCVTF_sw:
+    case SCVTF_sx:
+    case SCVTF_dw:
+    case SCVTF_dx:
+      mnemonic = "scvtf";
+      form = form_fr;
+      break;
+    case UCVTF_hw:
+    case UCVTF_hx:
+    case UCVTF_sw:
+    case UCVTF_sx:
+    case UCVTF_dw:
+    case UCVTF_dx:
+      mnemonic = "ucvtf";
+      form = form_fr;
+      break;
+    case FJCVTZS:
+      mnemonic = "fjcvtzs";
+      form = form_rf;
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 
 void Disassembler::VisitFPFixedPointConvert(const Instruction *instr) {
-  const char *form = "'Rd, 'Fn";
-  const char *suffix = ", 'IFPFBits";
+  const char *mnemonic = "";
+  const char *form = "'Rd, 'Fn, 'IFPFBits";
+  const char *form_fr = "'Fd, 'Rn, 'IFPFBits";
 
-  switch (form_hash_) {
-    case "scvtf_d32_float2fix"_h:
-    case "scvtf_d64_float2fix"_h:
-    case "scvtf_h32_float2fix"_h:
-    case "scvtf_h64_float2fix"_h:
-    case "scvtf_s32_float2fix"_h:
-    case "scvtf_s64_float2fix"_h:
-    case "ucvtf_d32_float2fix"_h:
-    case "ucvtf_d64_float2fix"_h:
-    case "ucvtf_h32_float2fix"_h:
-    case "ucvtf_h64_float2fix"_h:
-    case "ucvtf_s32_float2fix"_h:
-    case "ucvtf_s64_float2fix"_h:
-      form = "'Fd, 'Rn";
+  switch (instr->Mask(FPFixedPointConvertMask)) {
+    case FCVTZS_wh_fixed:
+    case FCVTZS_xh_fixed:
+    case FCVTZS_ws_fixed:
+    case FCVTZS_xs_fixed:
+    case FCVTZS_wd_fixed:
+    case FCVTZS_xd_fixed:
+      mnemonic = "fcvtzs";
       break;
+    case FCVTZU_wh_fixed:
+    case FCVTZU_xh_fixed:
+    case FCVTZU_ws_fixed:
+    case FCVTZU_xs_fixed:
+    case FCVTZU_wd_fixed:
+    case FCVTZU_xd_fixed:
+      mnemonic = "fcvtzu";
+      break;
+    case SCVTF_hw_fixed:
+    case SCVTF_hx_fixed:
+    case SCVTF_sw_fixed:
+    case SCVTF_sx_fixed:
+    case SCVTF_dw_fixed:
+    case SCVTF_dx_fixed:
+      mnemonic = "scvtf";
+      form = form_fr;
+      break;
+    case UCVTF_hw_fixed:
+    case UCVTF_hx_fixed:
+    case UCVTF_sw_fixed:
+    case UCVTF_sx_fixed:
+    case UCVTF_dw_fixed:
+    case UCVTF_dx_fixed:
+      mnemonic = "ucvtf";
+      form = form_fr;
+      break;
+    default:
+      VIXL_UNREACHABLE();
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::DisassembleNoArgs(const Instruction *instr) {
@@ -1936,17 +2699,17 @@ void Disassembler::VisitSystem(const Instruction *instr) {
   const char *suffix = NULL;
 
   switch (form_hash_) {
-    case "clrex_bn_barriers"_h:
+    case Hash("clrex_bn_barriers"):
       form = (instr->GetCRm() == 0xf) ? "" : "'IX";
       break;
-    case "mrs_rs_systemmove"_h:
+    case Hash("mrs_rs_systemmove"):
       form = "'Xt, 'IY";
       break;
-    case "msr_si_pstate"_h:
-    case "msr_sr_systemmove"_h:
+    case Hash("msr_si_pstate"):
+    case Hash("msr_sr_systemmove"):
       form = "'IY, 'Xt";
       break;
-    case "bti_hb_hints"_h:
+    case Hash("bti_hb_hints"):
       switch (instr->ExtractBits(7, 6)) {
         case 0:
           form = "";
@@ -1962,14 +2725,14 @@ void Disassembler::VisitSystem(const Instruction *instr) {
           break;
       }
       break;
-    case "hint_hm_hints"_h:
+    case Hash("hint_hm_hints"):
       form = "'IH";
       break;
-    case "dmb_bo_barriers"_h:
-    case "dsb_bo_barriers"_h:
+    case Hash("dmb_bo_barriers"):
+    case Hash("dsb_bo_barriers"):
       form = "'M";
       break;
-    case "sys_cr_systeminstrs"_h:
+    case Hash("sys_cr_systeminstrs"):
       mnemonic = "dc";
       suffix = ", 'Xt";
       switch (instr->GetSysOp()) {
@@ -2097,10 +2860,10 @@ void Disassembler::DisassembleNEON2RegFPConvert(const Instruction *instr) {
 
   VectorFormat vform_dst = nfd.GetVectorFormat(0);
   switch (form_hash_) {
-    case "fcvtl_asimdmisc_l"_h:
+    case Hash("fcvtl_asimdmisc_l"):
       nfd.SetFormatMaps(&map_cvt_ta, &map_cvt_tb);
       break;
-    case "fcvtxn_asimdmisc_n"_h:
+    case Hash("fcvtxn_asimdmisc_n"):
       if ((vform_dst != kFormat2S) && (vform_dst != kFormat4S)) {
         mnemonic = NULL;
       }
@@ -2120,7 +2883,7 @@ void Disassembler::DisassembleNEON2RegLogical(const Instruction *instr) {
   const char *mnemonic = mnemonic_.c_str();
   const char *form = "'Vd.%s, 'Vn.%s";
   NEONFormatDecoder nfd(instr, NEONFormatDecoder::LogicalFormatMap());
-  if (form_hash_ == "not_asimdmisc_r"_h) {
+  if (form_hash_ == Hash("not_asimdmisc_r")) {
     mnemonic = "mvn";
   }
   Format(instr, mnemonic, nfd.Substitute(form));
@@ -2134,7 +2897,7 @@ void Disassembler::DisassembleNEON2RegExtract(const Instruction *instr) {
                         NEONFormatDecoder::IntegerFormatMap(),
                         NEONFormatDecoder::LongIntegerFormatMap());
 
-  if (form_hash_ == "shll_asimdmisc_s"_h) {
+  if (form_hash_ == Hash("shll_asimdmisc_s")) {
     nfd.SetFormatMaps(nfd.LongIntegerFormatMap(), nfd.IntegerFormatMap());
     switch (instr->GetNEONSize()) {
       case 0:
@@ -2160,27 +2923,27 @@ void Disassembler::VisitNEON2RegMisc(const Instruction *instr) {
   if (vform_dst != kFormatUndefined) {
     uint32_t ls_dst = LaneSizeInBitsFromFormat(vform_dst);
     switch (form_hash_) {
-      case "cnt_asimdmisc_r"_h:
-      case "rev16_asimdmisc_r"_h:
+      case Hash("cnt_asimdmisc_r"):
+      case Hash("rev16_asimdmisc_r"):
         if (ls_dst != kBRegSize) {
           mnemonic = NULL;
         }
         break;
-      case "rev32_asimdmisc_r"_h:
+      case Hash("rev32_asimdmisc_r"):
         if ((ls_dst == kDRegSize) || (ls_dst == kSRegSize)) {
           mnemonic = NULL;
         }
         break;
-      case "urecpe_asimdmisc_r"_h:
-      case "ursqrte_asimdmisc_r"_h:
+      case Hash("urecpe_asimdmisc_r"):
+      case Hash("ursqrte_asimdmisc_r"):
         // For urecpe and ursqrte, only S-sized elements are supported. The MSB
         // of the size field is always set by the instruction (0b1x) so we need
         // only check and discard D-sized elements here.
         VIXL_ASSERT((ls_dst == kSRegSize) || (ls_dst == kDRegSize));
         VIXL_FALLTHROUGH();
-      case "clz_asimdmisc_r"_h:
-      case "cls_asimdmisc_r"_h:
-      case "rev64_asimdmisc_r"_h:
+      case Hash("clz_asimdmisc_r"):
+      case Hash("cls_asimdmisc_r"):
+      case Hash("rev64_asimdmisc_r"):
         if (ls_dst == kDRegSize) {
           mnemonic = NULL;
         }
@@ -2197,11 +2960,11 @@ void Disassembler::VisitNEON2RegMiscFP16(const Instruction *instr) {
   const char *suffix = NULL;
 
   switch (form_hash_) {
-    case "fcmeq_asimdmiscfp16_fz"_h:
-    case "fcmge_asimdmiscfp16_fz"_h:
-    case "fcmgt_asimdmiscfp16_fz"_h:
-    case "fcmle_asimdmiscfp16_fz"_h:
-    case "fcmlt_asimdmiscfp16_fz"_h:
+    case Hash("fcmeq_asimdmiscfp16_fz"):
+    case Hash("fcmge_asimdmiscfp16_fz"):
+    case Hash("fcmgt_asimdmiscfp16_fz"):
+    case Hash("fcmle_asimdmiscfp16_fz"):
+    case Hash("fcmlt_asimdmiscfp16_fz"):
       suffix = ", #0.0";
   }
   Format(instr, mnemonic, form, suffix);
@@ -2213,13 +2976,13 @@ void Disassembler::DisassembleNEON3SameLogical(const Instruction *instr) {
   NEONFormatDecoder nfd(instr, NEONFormatDecoder::LogicalFormatMap());
 
   switch (form_hash_) {
-    case "orr_asimdsame_only"_h:
+    case Hash("orr_asimdsame_only"):
       if (instr->GetRm() == instr->GetRn()) {
         mnemonic = "mov";
         form = "'Vd.%s, 'Vn.%s";
       }
       break;
-    case "pmul_asimdsame_only"_h:
+    case Hash("pmul_asimdsame_only"):
       if (instr->GetNEONSize() != 0) {
         mnemonic = NULL;
       }
@@ -2228,7 +2991,9 @@ void Disassembler::DisassembleNEON3SameLogical(const Instruction *instr) {
 }
 
 void Disassembler::DisassembleNEON3SameFHM(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Vd.'?30:42s, 'Vn.'?30:42h, 'Vm.'?30:42h");
+  const char *mnemonic = mnemonic_.c_str();
+  const char *form = "'Vd.'?30:42s, 'Vn.'?30:42h, 'Vm.'?30:42h";
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::DisassembleNEON3SameNoD(const Instruction *instr) {
@@ -2254,8 +3019,8 @@ void Disassembler::VisitNEON3Same(const Instruction *instr) {
   if (vform_dst != kFormatUndefined) {
     uint32_t ls_dst = LaneSizeInBitsFromFormat(vform_dst);
     switch (form_hash_) {
-      case "sqdmulh_asimdsame_only"_h:
-      case "sqrdmulh_asimdsame_only"_h:
+      case Hash("sqdmulh_asimdsame_only"):
+      case Hash("sqrdmulh_asimdsame_only"):
         if ((ls_dst == kBRegSize) || (ls_dst == kDRegSize)) {
           mnemonic = NULL;
         }
@@ -2283,16 +3048,16 @@ void Disassembler::VisitNEON3SameExtra(const Instruction *instr) {
   NEONFormatDecoder nfd(instr);
 
   switch (form_hash_) {
-    case "fcmla_asimdsame2_c"_h:
+    case Hash("fcmla_asimdsame2_c"):
       suffix = ", #'u1211*90";
       break;
-    case "fcadd_asimdsame2_c"_h:
+    case Hash("fcadd_asimdsame2_c"):
       // Bit 10 is always set, so this gives 90 * 1 or 3.
       suffix = ", #'u1212:1010*90";
       break;
-    case "sdot_asimdsame2_d"_h:
-    case "udot_asimdsame2_d"_h:
-    case "usdot_asimdsame2_d"_h:
+    case Hash("sdot_asimdsame2_d"):
+    case Hash("udot_asimdsame2_d"):
+    case Hash("usdot_asimdsame2_d"):
       nfd.SetFormatMap(1, &map_usdot);
       nfd.SetFormatMap(2, &map_usdot);
       break;
@@ -2313,27 +3078,27 @@ void Disassembler::VisitNEON3Different(const Instruction *instr) {
   nfd.SetFormatMap(0, nfd.LongIntegerFormatMap());
 
   switch (form_hash_) {
-    case "saddw_asimddiff_w"_h:
-    case "ssubw_asimddiff_w"_h:
-    case "uaddw_asimddiff_w"_h:
-    case "usubw_asimddiff_w"_h:
+    case Hash("saddw_asimddiff_w"):
+    case Hash("ssubw_asimddiff_w"):
+    case Hash("uaddw_asimddiff_w"):
+    case Hash("usubw_asimddiff_w"):
       nfd.SetFormatMap(1, nfd.LongIntegerFormatMap());
       break;
-    case "addhn_asimddiff_n"_h:
-    case "raddhn_asimddiff_n"_h:
-    case "rsubhn_asimddiff_n"_h:
-    case "subhn_asimddiff_n"_h:
+    case Hash("addhn_asimddiff_n"):
+    case Hash("raddhn_asimddiff_n"):
+    case Hash("rsubhn_asimddiff_n"):
+    case Hash("subhn_asimddiff_n"):
       nfd.SetFormatMaps(nfd.LongIntegerFormatMap());
       nfd.SetFormatMap(0, nfd.IntegerFormatMap());
       break;
-    case "pmull_asimddiff_l"_h:
+    case Hash("pmull_asimddiff_l"):
       if (nfd.GetVectorFormat(0) != kFormat8H) {
         mnemonic = NULL;
       }
       break;
-    case "sqdmlal_asimddiff_l"_h:
-    case "sqdmlsl_asimddiff_l"_h:
-    case "sqdmull_asimddiff_l"_h:
+    case Hash("sqdmlal_asimddiff_l"):
+    case Hash("sqdmlsl_asimddiff_l"):
+    case Hash("sqdmull_asimddiff_l"):
       if (nfd.GetVectorFormat(0) == kFormat8H) {
         mnemonic = NULL;
       }
@@ -2352,7 +3117,9 @@ void Disassembler::DisassembleNEONFPAcrossLanes(const Instruction *instr) {
 }
 
 void Disassembler::DisassembleNEONFP16AcrossLanes(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Hd, 'Vn.'?30:84h");
+  const char *mnemonic = mnemonic_.c_str();
+  const char *form = "'Hd, 'Vn.'?30:84h";
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitNEONAcrossLanes(const Instruction *instr) {
@@ -2364,8 +3131,8 @@ void Disassembler::VisitNEONAcrossLanes(const Instruction *instr) {
                         NEONFormatDecoder::IntegerFormatMap());
 
   switch (form_hash_) {
-    case "saddlv_asimdall_only"_h:
-    case "uaddlv_asimdall_only"_h:
+    case Hash("saddlv_asimdall_only"):
+    case Hash("uaddlv_asimdall_only"):
       nfd.SetFormatMap(0, nfd.LongScalarFormatMap());
   }
 
@@ -2419,15 +3186,13 @@ void Disassembler::DisassembleNEONFPMulByElement(const Instruction *instr) {
 }
 
 void Disassembler::DisassembleNEONHalfFPMulByElement(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "'Vd.'?30:84h, 'Vn.'?30:84h, "
-                            "'Ve.h['IVByElemIndex]");
+  const char *form = "'Vd.'?30:84h, 'Vn.'?30:84h, 'Ve.h['IVByElemIndex]";
+  Format(instr, mnemonic_.c_str(), form);
 }
 
 void Disassembler::DisassembleNEONFPMulByElementLong(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "'Vd.'?30:42s, 'Vn.'?30:42h, "
-                            "'Ve.h['IVByElemIndexFHM]");
+  const char *form = "'Vd.'?30:42s, 'Vn.'?30:42h, 'Ve.h['IVByElemIndexFHM]";
+  Format(instr, mnemonic_.c_str(), form);
 }
 
 void Disassembler::DisassembleNEONComplexMulByElement(
@@ -2453,12 +3218,12 @@ void Disassembler::VisitNEONCopy(const Instruction *instr) {
                         NEONFormatDecoder::TriangularScalarFormatMap());
 
   switch (form_hash_) {
-    case "ins_asimdins_iv_v"_h:
+    case Hash("ins_asimdins_iv_v"):
       mnemonic = "mov";
       nfd.SetFormatMap(0, nfd.TriangularScalarFormatMap());
       form = "'Vd.%s['IVInsIndex1], 'Vn.%s['IVInsIndex2]";
       break;
-    case "ins_asimdins_ir_r"_h:
+    case Hash("ins_asimdins_ir_r"):
       mnemonic = "mov";
       nfd.SetFormatMap(0, nfd.TriangularScalarFormatMap());
       if (nfd.GetVectorFormat() == kFormatD) {
@@ -2467,8 +3232,8 @@ void Disassembler::VisitNEONCopy(const Instruction *instr) {
         form = "'Vd.%s['IVInsIndex1], 'Wn";
       }
       break;
-    case "umov_asimdins_w_w"_h:
-    case "umov_asimdins_x_x"_h:
+    case Hash("umov_asimdins_w_w"):
+    case Hash("umov_asimdins_x_x"):
       if (instr->Mask(NEON_Q) || ((instr->GetImmNEON5() & 7) == 4)) {
         mnemonic = "mov";
       }
@@ -2479,8 +3244,8 @@ void Disassembler::VisitNEONCopy(const Instruction *instr) {
         form = "'Wd, 'Vn.%s['IVInsIndex1]";
       }
       break;
-    case "smov_asimdins_w_w"_h:
-    case "smov_asimdins_x_x"_h: {
+    case Hash("smov_asimdins_w_w"):
+    case Hash("smov_asimdins_x_x"): {
       nfd.SetFormatMap(0, nfd.TriangularScalarFormatMap());
       VectorFormat vform = nfd.GetVectorFormat();
       if ((vform == kFormatD) ||
@@ -2490,10 +3255,10 @@ void Disassembler::VisitNEONCopy(const Instruction *instr) {
       form = "'R30d, 'Vn.%s['IVInsIndex1]";
       break;
     }
-    case "dup_asimdins_dv_v"_h:
+    case Hash("dup_asimdins_dv_v"):
       form = "'Vd.%s, 'Vn.%s['IVInsIndex1]";
       break;
-    case "dup_asimdins_dr_r"_h:
+    case Hash("dup_asimdins_dr_r"):
       if (nfd.GetVectorFormat() == kFormat2D) {
         form = "'Vd.%s, 'Xn";
       } else {
@@ -3046,40 +3811,40 @@ void Disassembler::VisitNEONModifiedImmediate(const Instruction *instr) {
   NEONFormatDecoder nfd(instr, NEONFormatDecoder::LogicalFormatMap());
 
   switch (form_hash_) {
-    case "movi_asimdimm_n_b"_h:
+    case Hash("movi_asimdimm_n_b"):
       form = "'Vt.%s, 'IVMIImm8";
       break;
-    case "bic_asimdimm_l_hl"_h:
-    case "movi_asimdimm_l_hl"_h:
-    case "mvni_asimdimm_l_hl"_h:
-    case "orr_asimdimm_l_hl"_h:
+    case Hash("bic_asimdimm_l_hl"):
+    case Hash("movi_asimdimm_l_hl"):
+    case Hash("mvni_asimdimm_l_hl"):
+    case Hash("orr_asimdimm_l_hl"):
       nfd.SetFormatMap(0, &map_h);
       break;
-    case "movi_asimdimm_m_sm"_h:
-    case "mvni_asimdimm_m_sm"_h:
+    case Hash("movi_asimdimm_m_sm"):
+    case Hash("mvni_asimdimm_m_sm"):
       form = "'Vt.%s, 'IVMIImm8, msl 'IVMIShiftAmt2";
       VIXL_FALLTHROUGH();
-    case "bic_asimdimm_l_sl"_h:
-    case "movi_asimdimm_l_sl"_h:
-    case "mvni_asimdimm_l_sl"_h:
-    case "orr_asimdimm_l_sl"_h:
+    case Hash("bic_asimdimm_l_sl"):
+    case Hash("movi_asimdimm_l_sl"):
+    case Hash("mvni_asimdimm_l_sl"):
+    case Hash("orr_asimdimm_l_sl"):
       nfd.SetFormatMap(0, &map_s);
       break;
-    case "movi_asimdimm_d_ds"_h:
+    case Hash("movi_asimdimm_d_ds"):
       form = "'Dd, 'IVMIImm";
       break;
-    case "movi_asimdimm_d2_d"_h:
+    case Hash("movi_asimdimm_d2_d"):
       form = "'Vt.2d, 'IVMIImm";
       break;
-    case "fmov_asimdimm_h_h"_h:
+    case Hash("fmov_asimdimm_h_h"):
       form = "'Vt.%s, 'IFPNeon";
       nfd.SetFormatMap(0, &map_h);
       break;
-    case "fmov_asimdimm_s_s"_h:
+    case Hash("fmov_asimdimm_s_s"):
       form = "'Vt.%s, 'IFPNeon";
       nfd.SetFormatMap(0, &map_s);
       break;
-    case "fmov_asimdimm_d2_d"_h:
+    case Hash("fmov_asimdimm_d2_d"):
       form = "'Vt.2d, 'IFPNeon";
       break;
   }
@@ -3096,8 +3861,8 @@ void Disassembler::DisassembleNEONScalar2RegMiscOnlyD(
     mnemonic = NULL;
   }
   switch (form_hash_) {
-    case "abs_asisdmisc_r"_h:
-    case "neg_asisdmisc_r"_h:
+    case Hash("abs_asisdmisc_r"):
+    case Hash("neg_asisdmisc_r"):
       suffix = NULL;
   }
   Format(instr, mnemonic, form, suffix);
@@ -3109,14 +3874,14 @@ void Disassembler::DisassembleNEONFPScalar2RegMisc(const Instruction *instr) {
   const char *suffix = NULL;
   NEONFormatDecoder nfd(instr, NEONFormatDecoder::FPScalarFormatMap());
   switch (form_hash_) {
-    case "fcmeq_asisdmisc_fz"_h:
-    case "fcmge_asisdmisc_fz"_h:
-    case "fcmgt_asisdmisc_fz"_h:
-    case "fcmle_asisdmisc_fz"_h:
-    case "fcmlt_asisdmisc_fz"_h:
+    case Hash("fcmeq_asisdmisc_fz"):
+    case Hash("fcmge_asisdmisc_fz"):
+    case Hash("fcmgt_asisdmisc_fz"):
+    case Hash("fcmle_asisdmisc_fz"):
+    case Hash("fcmlt_asisdmisc_fz"):
       suffix = ", #0.0";
       break;
-    case "fcvtxn_asisdmisc_n"_h:
+    case Hash("fcvtxn_asisdmisc_n"):
       if (nfd.GetVectorFormat(0) == kFormatS) {  // Source format.
         mnemonic = NULL;
       }
@@ -3130,9 +3895,9 @@ void Disassembler::VisitNEONScalar2RegMisc(const Instruction *instr) {
   const char *form = "%sd, %sn";
   NEONFormatDecoder nfd(instr, NEONFormatDecoder::ScalarFormatMap());
   switch (form_hash_) {
-    case "sqxtn_asisdmisc_n"_h:
-    case "sqxtun_asisdmisc_n"_h:
-    case "uqxtn_asisdmisc_n"_h:
+    case Hash("sqxtn_asisdmisc_n"):
+    case Hash("sqxtun_asisdmisc_n"):
+    case Hash("uqxtn_asisdmisc_n"):
       nfd.SetFormatMap(1, nfd.LongScalarFormatMap());
   }
   Format(instr, mnemonic, nfd.SubstitutePlaceholders(form));
@@ -3144,11 +3909,11 @@ void Disassembler::VisitNEONScalar2RegMiscFP16(const Instruction *instr) {
   const char *suffix = NULL;
 
   switch (form_hash_) {
-    case "fcmeq_asisdmiscfp16_fz"_h:
-    case "fcmge_asisdmiscfp16_fz"_h:
-    case "fcmgt_asisdmiscfp16_fz"_h:
-    case "fcmle_asisdmiscfp16_fz"_h:
-    case "fcmlt_asisdmiscfp16_fz"_h:
+    case Hash("fcmeq_asisdmiscfp16_fz"):
+    case Hash("fcmge_asisdmiscfp16_fz"):
+    case Hash("fcmgt_asisdmiscfp16_fz"):
+    case Hash("fcmle_asisdmiscfp16_fz"):
+    case Hash("fcmlt_asisdmiscfp16_fz"):
       suffix = ", #0.0";
   }
   Format(instr, mnemonic, form, suffix);
@@ -3189,16 +3954,16 @@ void Disassembler::VisitNEONScalar3Same(const Instruction *instr) {
   NEONFormatDecoder nfd(instr, NEONFormatDecoder::ScalarFormatMap());
   VectorFormat vform = nfd.GetVectorFormat(0);
   switch (form_hash_) {
-    case "srshl_asisdsame_only"_h:
-    case "urshl_asisdsame_only"_h:
-    case "sshl_asisdsame_only"_h:
-    case "ushl_asisdsame_only"_h:
+    case Hash("srshl_asisdsame_only"):
+    case Hash("urshl_asisdsame_only"):
+    case Hash("sshl_asisdsame_only"):
+    case Hash("ushl_asisdsame_only"):
       if (vform != kFormatD) {
         mnemonic = NULL;
       }
       break;
-    case "sqdmulh_asisdsame_only"_h:
-    case "sqrdmulh_asisdsame_only"_h:
+    case Hash("sqdmulh_asisdsame_only"):
+    case Hash("sqrdmulh_asisdsame_only"):
       if ((vform == kFormatB) || (vform == kFormatD)) {
         mnemonic = NULL;
       }
@@ -3207,7 +3972,9 @@ void Disassembler::VisitNEONScalar3Same(const Instruction *instr) {
 }
 
 void Disassembler::VisitNEONScalar3SameFP16(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Hd, 'Hn, 'Hm");
+  const char *mnemonic = mnemonic_.c_str();
+  const char *form = "'Hd, 'Hn, 'Hm";
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitNEONScalar3SameExtra(const Instruction *instr) {
@@ -3272,7 +4039,7 @@ void Disassembler::VisitNEONScalarCopy(const Instruction *instr) {
 
 void Disassembler::VisitNEONScalarPairwise(const Instruction *instr) {
   const char *mnemonic = mnemonic_.c_str();
-  if (form_hash_ == "addp_asisdpair_only"_h) {
+  if (form_hash_ == Hash("addp_asisdpair_only")) {
     // All pairwise operations except ADDP use bit U to differentiate FP16
     // from FP32/FP64 variations.
     if (instr->GetNEONSize() != 3) {
@@ -3304,8 +4071,8 @@ void Disassembler::DisassembleNEONScalarShiftImmOnlyD(
   }
 
   switch (form_hash_) {
-    case "shl_asisdshf_r"_h:
-    case "sli_asisdshf_r"_h:
+    case Hash("shl_asisdshf_r"):
+    case Hash("sli_asisdshf_r"):
       suffix = "'IsL";
   }
 
@@ -3338,9 +4105,9 @@ void Disassembler::VisitNEONScalarShiftImmediate(const Instruction *instr) {
   // clang-format on
   NEONFormatDecoder nfd(instr, &map);
   switch (form_hash_) {
-    case "sqshlu_asisdshf_r"_h:
-    case "sqshl_asisdshf_r"_h:
-    case "uqshl_asisdshf_r"_h:
+    case Hash("sqshlu_asisdshf_r"):
+    case Hash("sqshl_asisdshf_r"):
+    case Hash("uqshl_asisdshf_r"):
       suffix = "'IsL";
       break;
     default:
@@ -3362,9 +4129,9 @@ void Disassembler::DisassembleNEONShiftLeftLongImm(const Instruction *instr) {
 
   if (instr->GetImmNEONImmb() == 0 &&
       CountSetBits(instr->GetImmNEONImmh(), 32) == 1) {  // xtl variant.
-    VIXL_ASSERT((form_hash_ == "sshll_asimdshf_l"_h) ||
-                (form_hash_ == "ushll_asimdshf_l"_h));
-    mnemonic = (form_hash_ == "sshll_asimdshf_l"_h) ? "sxtl" : "uxtl";
+    VIXL_ASSERT((form_hash_ == Hash("sshll_asimdshf_l")) ||
+                (form_hash_ == Hash("ushll_asimdshf_l")));
+    mnemonic = (form_hash_ == Hash("sshll_asimdshf_l")) ? "sxtl" : "uxtl";
     suffix = NULL;
   }
   Format(instr, nfd.Mnemonic(mnemonic), nfd.Substitute(form), suffix);
@@ -3379,10 +4146,10 @@ void Disassembler::DisassembleNEONShiftRightImm(const Instruction *instr) {
   if (vform_dst != kFormatUndefined) {
     uint32_t ls_dst = LaneSizeInBitsFromFormat(vform_dst);
     switch (form_hash_) {
-      case "scvtf_asimdshf_c"_h:
-      case "ucvtf_asimdshf_c"_h:
-      case "fcvtzs_asimdshf_c"_h:
-      case "fcvtzu_asimdshf_c"_h:
+      case Hash("scvtf_asimdshf_c"):
+      case Hash("ucvtf_asimdshf_c"):
+      case Hash("fcvtzs_asimdshf_c"):
+      case Hash("fcvtzu_asimdshf_c"):
         if (ls_dst == kBRegSize) {
           mnemonic = NULL;
         }
@@ -3423,16 +4190,16 @@ void Disassembler::VisitNEONTable(const Instruction *instr) {
   NEONFormatDecoder nfd(instr, NEONFormatDecoder::LogicalFormatMap());
 
   switch (form_hash_) {
-    case "tbl_asimdtbl_l2_2"_h:
-    case "tbx_asimdtbl_l2_2"_h:
+    case Hash("tbl_asimdtbl_l2_2"):
+    case Hash("tbx_asimdtbl_l2_2"):
       form = form_2v;
       break;
-    case "tbl_asimdtbl_l3_3"_h:
-    case "tbx_asimdtbl_l3_3"_h:
+    case Hash("tbl_asimdtbl_l3_3"):
+    case Hash("tbx_asimdtbl_l3_3"):
       form = form_3v;
       break;
-    case "tbl_asimdtbl_l4_4"_h:
-    case "tbx_asimdtbl_l4_4"_h:
+    case Hash("tbl_asimdtbl_l4_4"):
+    case Hash("tbx_asimdtbl_l4_4"):
       form = form_4v;
       break;
   }
@@ -3452,51 +4219,160 @@ void Disassembler::VisitNEONTable(const Instruction *instr) {
 
 
 void Disassembler::VisitNEONPerm(const Instruction *instr) {
+  const char *mnemonic = mnemonic_.c_str();
+  const char *form = "'Vd.%s, 'Vn.%s, 'Vm.%s";
   NEONFormatDecoder nfd(instr);
-  FormatWithDecodedMnemonic(instr, nfd.Substitute("'Vd.%s, 'Vn.%s, 'Vm.%s"));
+  Format(instr, mnemonic, nfd.Substitute(form));
 }
 
 void Disassembler::Disassemble_Vd4S_Vn16B_Vm16B(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Vd.4s, 'Vn.16b, 'Vm.16b");
+  const char *form = "'Vd.4s, 'Vn.16b, 'Vm.16b";
+  Format(instr, mnemonic_.c_str(), form);
 }
 
 void Disassembler::
     VisitSVE32BitGatherLoadHalfwords_ScalarPlus32BitScaledOffsets(
         const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "{'Zt.s}, 'Pgl/z, ['Xns, 'Zm.s, '?22:suxtw #1]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.s}, 'Pgl/z, ['Xns, 'Zm.s, '?22:suxtw #1]";
+
+  switch (instr->Mask(
+      SVE32BitGatherLoadHalfwords_ScalarPlus32BitScaledOffsetsMask)) {
+    case LD1H_z_p_bz_s_x32_scaled:
+      mnemonic = "ld1h";
+      break;
+    case LD1SH_z_p_bz_s_x32_scaled:
+      mnemonic = "ld1sh";
+      break;
+    case LDFF1H_z_p_bz_s_x32_scaled:
+      mnemonic = "ldff1h";
+      break;
+    case LDFF1SH_z_p_bz_s_x32_scaled:
+      mnemonic = "ldff1sh";
+      break;
+    default:
+      form = "(SVE32BitGatherLoadHalfwords_ScalarPlus32BitScaledOffsets)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE32BitGatherLoadWords_ScalarPlus32BitScaledOffsets(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "{'Zt.s}, 'Pgl/z, ['Xns, 'Zm.s, '?22:suxtw #2]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.s}, 'Pgl/z, ['Xns, 'Zm.s, '?22:suxtw #2]";
+
+  switch (
+      instr->Mask(SVE32BitGatherLoadWords_ScalarPlus32BitScaledOffsetsMask)) {
+    case LD1W_z_p_bz_s_x32_scaled:
+      mnemonic = "ld1w";
+      break;
+    case LDFF1W_z_p_bz_s_x32_scaled:
+      mnemonic = "ldff1w";
+      break;
+    default:
+      form = "(SVE32BitGatherLoadWords_ScalarPlus32BitScaledOffsets)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE32BitGatherLoad_ScalarPlus32BitUnscaledOffsets(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "{'Zt.s}, 'Pgl/z, ['Xns, 'Zm.s, '?22:suxtw]");
+  const char *form = "{'Zt.s}, 'Pgl/z, ['Xns, 'Zm.s, '?22:suxtw]";
+
+  const char *mnemonic = "unimplemented";
+  switch (instr->Mask(SVE32BitGatherLoad_ScalarPlus32BitUnscaledOffsetsMask)) {
+    case LD1B_z_p_bz_s_x32_unscaled:
+      mnemonic = "ld1b";
+      break;
+    case LD1H_z_p_bz_s_x32_unscaled:
+      mnemonic = "ld1h";
+      break;
+    case LD1SB_z_p_bz_s_x32_unscaled:
+      mnemonic = "ld1sb";
+      break;
+    case LD1SH_z_p_bz_s_x32_unscaled:
+      mnemonic = "ld1sh";
+      break;
+    case LD1W_z_p_bz_s_x32_unscaled:
+      mnemonic = "ld1w";
+      break;
+    case LDFF1B_z_p_bz_s_x32_unscaled:
+      mnemonic = "ldff1b";
+      break;
+    case LDFF1H_z_p_bz_s_x32_unscaled:
+      mnemonic = "ldff1h";
+      break;
+    case LDFF1SB_z_p_bz_s_x32_unscaled:
+      mnemonic = "ldff1sb";
+      break;
+    case LDFF1SH_z_p_bz_s_x32_unscaled:
+      mnemonic = "ldff1sh";
+      break;
+    case LDFF1W_z_p_bz_s_x32_unscaled:
+      mnemonic = "ldff1w";
+      break;
+    default:
+      form = "(SVE32BitGatherLoad_ScalarPlus32BitUnscaledOffsets)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE32BitGatherLoad_VectorPlusImm(
     const Instruction *instr) {
   const char *form = "{'Zt.s}, 'Pgl/z, ['Zn.s]";
-  const char *form_imm = "{'Zt.s}, 'Pgl/z, ['Zn.s, #'u2016]";
+  const char *form_imm_b = "{'Zt.s}, 'Pgl/z, ['Zn.s, #'u2016]";
   const char *form_imm_h = "{'Zt.s}, 'Pgl/z, ['Zn.s, #'u2016*2]";
   const char *form_imm_w = "{'Zt.s}, 'Pgl/z, ['Zn.s, #'u2016*4]";
+  const char *form_imm;
 
-  const char *mnemonic = mnemonic_.c_str();
-  switch (form_hash_) {
-    case "ld1h_z_p_ai_s"_h:
-    case "ld1sh_z_p_ai_s"_h:
-    case "ldff1h_z_p_ai_s"_h:
-    case "ldff1sh_z_p_ai_s"_h:
+  const char *mnemonic = "unimplemented";
+  switch (instr->Mask(SVE32BitGatherLoad_VectorPlusImmMask)) {
+    case LD1B_z_p_ai_s:
+      mnemonic = "ld1b";
+      form_imm = form_imm_b;
+      break;
+    case LD1H_z_p_ai_s:
+      mnemonic = "ld1h";
       form_imm = form_imm_h;
       break;
-    case "ld1w_z_p_ai_s"_h:
-    case "ldff1w_z_p_ai_s"_h:
+    case LD1SB_z_p_ai_s:
+      mnemonic = "ld1sb";
+      form_imm = form_imm_b;
+      break;
+    case LD1SH_z_p_ai_s:
+      mnemonic = "ld1sh";
+      form_imm = form_imm_h;
+      break;
+    case LD1W_z_p_ai_s:
+      mnemonic = "ld1w";
       form_imm = form_imm_w;
+      break;
+    case LDFF1B_z_p_ai_s:
+      mnemonic = "ldff1b";
+      form_imm = form_imm_b;
+      break;
+    case LDFF1H_z_p_ai_s:
+      mnemonic = "ldff1h";
+      form_imm = form_imm_h;
+      break;
+    case LDFF1SB_z_p_ai_s:
+      mnemonic = "ldff1sb";
+      form_imm = form_imm_b;
+      break;
+    case LDFF1SH_z_p_ai_s:
+      mnemonic = "ldff1sh";
+      form_imm = form_imm_h;
+      break;
+    case LDFF1W_z_p_ai_s:
+      mnemonic = "ldff1w";
+      form_imm = form_imm_w;
+      break;
+    default:
+      form = "(SVE32BitGatherLoad_VectorPlusImm)";
+      form_imm = form;
       break;
   }
   if (instr->ExtractBits(20, 16) != 0) form = form_imm;
@@ -3537,21 +4413,70 @@ void Disassembler::VisitSVE32BitGatherPrefetch_ScalarPlus32BitScaledOffsets(
 
 void Disassembler::VisitSVE32BitGatherPrefetch_VectorPlusImm(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = (instr->ExtractBits(20, 16) != 0)
                          ? "'prefSVEOp, 'Pgl, ['Zn.s, #'u2016]"
                          : "'prefSVEOp, 'Pgl, ['Zn.s]";
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVE32BitGatherPrefetch_VectorPlusImmMask)) {
+    case PRFB_i_p_ai_s:
+      mnemonic = "prfb";
+      break;
+    case PRFD_i_p_ai_s:
+      mnemonic = "prfd";
+      break;
+    case PRFH_i_p_ai_s:
+      mnemonic = "prfh";
+      break;
+    case PRFW_i_p_ai_s:
+      mnemonic = "prfw";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE32BitScatterStore_ScalarPlus32BitScaledOffsets(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "{'Zt.s}, 'Pgl, ['Xns, 'Zm.s, '?14:suxtw #'u2423]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.s}, 'Pgl, ['Xns, 'Zm.s, '?14:suxtw #'u2423]";
+
+  switch (instr->Mask(SVE32BitScatterStore_ScalarPlus32BitScaledOffsetsMask)) {
+    case ST1H_z_p_bz_s_x32_scaled:
+      mnemonic = "st1h";
+      break;
+    case ST1W_z_p_bz_s_x32_scaled:
+      mnemonic = "st1w";
+      break;
+    default:
+      form = "(SVE32BitScatterStore_ScalarPlus32BitScaledOffsets)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE32BitScatterStore_ScalarPlus32BitUnscaledOffsets(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "{'Zt.s}, 'Pgl, ['Xns, 'Zm.s, '?14:suxtw]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.s}, 'Pgl, ['Xns, 'Zm.s, '?14:suxtw]";
+
+  switch (
+      instr->Mask(SVE32BitScatterStore_ScalarPlus32BitUnscaledOffsetsMask)) {
+    case ST1B_z_p_bz_s_x32_unscaled:
+      mnemonic = "st1b";
+      break;
+    case ST1H_z_p_bz_s_x32_unscaled:
+      mnemonic = "st1h";
+      break;
+    case ST1W_z_p_bz_s_x32_unscaled:
+      mnemonic = "st1w";
+      break;
+    default:
+      form = "(SVE32BitScatterStore_ScalarPlus32BitUnscaledOffsets)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE32BitScatterStore_VectorPlusImm(
@@ -3584,27 +4509,200 @@ void Disassembler::VisitSVE32BitScatterStore_VectorPlusImm(
 
 void Disassembler::VisitSVE64BitGatherLoad_ScalarPlus32BitUnpackedScaledOffsets(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "{'Zt.d}, 'Pgl/z, ['Xns, 'Zm.d, '?22:suxtw "
-                            "#'u2423]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.d}, 'Pgl/z, ['Xns, 'Zm.d, '?22:suxtw #'u2423]";
+
+  switch (instr->Mask(
+      SVE64BitGatherLoad_ScalarPlus32BitUnpackedScaledOffsetsMask)) {
+    case LD1D_z_p_bz_d_x32_scaled:
+      mnemonic = "ld1d";
+      break;
+    case LD1H_z_p_bz_d_x32_scaled:
+      mnemonic = "ld1h";
+      break;
+    case LD1SH_z_p_bz_d_x32_scaled:
+      mnemonic = "ld1sh";
+      break;
+    case LD1SW_z_p_bz_d_x32_scaled:
+      mnemonic = "ld1sw";
+      break;
+    case LD1W_z_p_bz_d_x32_scaled:
+      mnemonic = "ld1w";
+      break;
+    case LDFF1D_z_p_bz_d_x32_scaled:
+      mnemonic = "ldff1d";
+      break;
+    case LDFF1H_z_p_bz_d_x32_scaled:
+      mnemonic = "ldff1h";
+      break;
+    case LDFF1SH_z_p_bz_d_x32_scaled:
+      mnemonic = "ldff1sh";
+      break;
+    case LDFF1SW_z_p_bz_d_x32_scaled:
+      mnemonic = "ldff1sw";
+      break;
+    case LDFF1W_z_p_bz_d_x32_scaled:
+      mnemonic = "ldff1w";
+      break;
+    default:
+      form = "(SVE64BitGatherLoad_ScalarPlus32BitUnpackedScaledOffsetsMask)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE64BitGatherLoad_ScalarPlus64BitScaledOffsets(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "{'Zt.d}, 'Pgl/z, ['Xns, 'Zm.d, lsl #'u2423]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.d}, 'Pgl/z, ['Xns, 'Zm.d, lsl #'u2423]";
+
+  switch (instr->Mask(SVE64BitGatherLoad_ScalarPlus64BitScaledOffsetsMask)) {
+    case LD1D_z_p_bz_d_64_scaled:
+      mnemonic = "ld1d";
+      break;
+    case LD1H_z_p_bz_d_64_scaled:
+      mnemonic = "ld1h";
+      break;
+    case LD1SH_z_p_bz_d_64_scaled:
+      mnemonic = "ld1sh";
+      break;
+    case LD1SW_z_p_bz_d_64_scaled:
+      mnemonic = "ld1sw";
+      break;
+    case LD1W_z_p_bz_d_64_scaled:
+      mnemonic = "ld1w";
+      break;
+    case LDFF1D_z_p_bz_d_64_scaled:
+      mnemonic = "ldff1d";
+      break;
+    case LDFF1H_z_p_bz_d_64_scaled:
+      mnemonic = "ldff1h";
+      break;
+    case LDFF1SH_z_p_bz_d_64_scaled:
+      mnemonic = "ldff1sh";
+      break;
+    case LDFF1SW_z_p_bz_d_64_scaled:
+      mnemonic = "ldff1sw";
+      break;
+    case LDFF1W_z_p_bz_d_64_scaled:
+      mnemonic = "ldff1w";
+      break;
+    default:
+      form = "(SVE64BitGatherLoad_ScalarPlus64BitScaledOffsetsMask)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE64BitGatherLoad_ScalarPlus64BitUnscaledOffsets(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "{'Zt.d}, 'Pgl/z, ['Xns, 'Zm.d]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.d}, 'Pgl/z, ['Xns, 'Zm.d]";
+
+  switch (instr->Mask(SVE64BitGatherLoad_ScalarPlus64BitUnscaledOffsetsMask)) {
+    case LD1B_z_p_bz_d_64_unscaled:
+      mnemonic = "ld1b";
+      break;
+    case LD1D_z_p_bz_d_64_unscaled:
+      mnemonic = "ld1d";
+      break;
+    case LD1H_z_p_bz_d_64_unscaled:
+      mnemonic = "ld1h";
+      break;
+    case LD1SB_z_p_bz_d_64_unscaled:
+      mnemonic = "ld1sb";
+      break;
+    case LD1SH_z_p_bz_d_64_unscaled:
+      mnemonic = "ld1sh";
+      break;
+    case LD1SW_z_p_bz_d_64_unscaled:
+      mnemonic = "ld1sw";
+      break;
+    case LD1W_z_p_bz_d_64_unscaled:
+      mnemonic = "ld1w";
+      break;
+    case LDFF1B_z_p_bz_d_64_unscaled:
+      mnemonic = "ldff1b";
+      break;
+    case LDFF1D_z_p_bz_d_64_unscaled:
+      mnemonic = "ldff1d";
+      break;
+    case LDFF1H_z_p_bz_d_64_unscaled:
+      mnemonic = "ldff1h";
+      break;
+    case LDFF1SB_z_p_bz_d_64_unscaled:
+      mnemonic = "ldff1sb";
+      break;
+    case LDFF1SH_z_p_bz_d_64_unscaled:
+      mnemonic = "ldff1sh";
+      break;
+    case LDFF1SW_z_p_bz_d_64_unscaled:
+      mnemonic = "ldff1sw";
+      break;
+    case LDFF1W_z_p_bz_d_64_unscaled:
+      mnemonic = "ldff1w";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::
     VisitSVE64BitGatherLoad_ScalarPlusUnpacked32BitUnscaledOffsets(
         const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "{'Zt.d}, 'Pgl/z, ['Xns, 'Zm.d, '?22:suxtw]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.d}, 'Pgl/z, ['Xns, 'Zm.d, '?22:suxtw]";
+
+  switch (instr->Mask(
+      SVE64BitGatherLoad_ScalarPlusUnpacked32BitUnscaledOffsetsMask)) {
+    case LD1B_z_p_bz_d_x32_unscaled:
+      mnemonic = "ld1b";
+      break;
+    case LD1D_z_p_bz_d_x32_unscaled:
+      mnemonic = "ld1d";
+      break;
+    case LD1H_z_p_bz_d_x32_unscaled:
+      mnemonic = "ld1h";
+      break;
+    case LD1SB_z_p_bz_d_x32_unscaled:
+      mnemonic = "ld1sb";
+      break;
+    case LD1SH_z_p_bz_d_x32_unscaled:
+      mnemonic = "ld1sh";
+      break;
+    case LD1SW_z_p_bz_d_x32_unscaled:
+      mnemonic = "ld1sw";
+      break;
+    case LD1W_z_p_bz_d_x32_unscaled:
+      mnemonic = "ld1w";
+      break;
+    case LDFF1B_z_p_bz_d_x32_unscaled:
+      mnemonic = "ldff1b";
+      break;
+    case LDFF1D_z_p_bz_d_x32_unscaled:
+      mnemonic = "ldff1d";
+      break;
+    case LDFF1H_z_p_bz_d_x32_unscaled:
+      mnemonic = "ldff1h";
+      break;
+    case LDFF1SB_z_p_bz_d_x32_unscaled:
+      mnemonic = "ldff1sb";
+      break;
+    case LDFF1SH_z_p_bz_d_x32_unscaled:
+      mnemonic = "ldff1sh";
+      break;
+    case LDFF1SW_z_p_bz_d_x32_unscaled:
+      mnemonic = "ldff1sw";
+      break;
+    case LDFF1W_z_p_bz_d_x32_unscaled:
+      mnemonic = "ldff1w";
+      break;
+    default:
+      form = "(SVE64BitGatherLoad_ScalarPlusUnpacked32BitUnscaledOffsetsMask)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE64BitGatherLoad_VectorPlusImm(
@@ -3626,116 +4724,322 @@ void Disassembler::VisitSVE64BitGatherLoad_VectorPlusImm(
     }
   }
 
-  FormatWithDecodedMnemonic(instr, form);
+  const char *mnemonic = "unimplemented";
+  switch (instr->Mask(SVE64BitGatherLoad_VectorPlusImmMask)) {
+    case LD1B_z_p_ai_d:
+      mnemonic = "ld1b";
+      break;
+    case LD1D_z_p_ai_d:
+      mnemonic = "ld1d";
+      break;
+    case LD1H_z_p_ai_d:
+      mnemonic = "ld1h";
+      break;
+    case LD1SB_z_p_ai_d:
+      mnemonic = "ld1sb";
+      break;
+    case LD1SH_z_p_ai_d:
+      mnemonic = "ld1sh";
+      break;
+    case LD1SW_z_p_ai_d:
+      mnemonic = "ld1sw";
+      break;
+    case LD1W_z_p_ai_d:
+      mnemonic = "ld1w";
+      break;
+    case LDFF1B_z_p_ai_d:
+      mnemonic = "ldff1b";
+      break;
+    case LDFF1D_z_p_ai_d:
+      mnemonic = "ldff1d";
+      break;
+    case LDFF1H_z_p_ai_d:
+      mnemonic = "ldff1h";
+      break;
+    case LDFF1SB_z_p_ai_d:
+      mnemonic = "ldff1sb";
+      break;
+    case LDFF1SH_z_p_ai_d:
+      mnemonic = "ldff1sh";
+      break;
+    case LDFF1SW_z_p_ai_d:
+      mnemonic = "ldff1sw";
+      break;
+    case LDFF1W_z_p_ai_d:
+      mnemonic = "ldff1w";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE64BitGatherPrefetch_ScalarPlus64BitScaledOffsets(
     const Instruction *instr) {
-  const char *form = "'prefSVEOp, 'Pgl, ['Xns, 'Zm.d";
-  const char *suffix = "]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVE64BitGatherPrefetch_ScalarPlus64BitScaledOffsets)";
 
-  switch (form_hash_) {
-    case "prfh_i_p_bz_d_64_scaled"_h:
-      suffix = ", lsl #1]";
+  switch (
+      instr->Mask(SVE64BitGatherPrefetch_ScalarPlus64BitScaledOffsetsMask)) {
+    case PRFB_i_p_bz_d_64_scaled:
+      mnemonic = "prfb";
+      form = "'prefSVEOp, 'Pgl, ['Xns, 'Zm.d]";
       break;
-    case "prfs_i_p_bz_d_64_scaled"_h:
-      suffix = ", lsl #2]";
+    case PRFD_i_p_bz_d_64_scaled:
+      mnemonic = "prfd";
+      form = "'prefSVEOp, 'Pgl, ['Xns, 'Zm.d, lsl #3]";
       break;
-    case "prfd_i_p_bz_d_64_scaled"_h:
-      suffix = ", lsl #3]";
+    case PRFH_i_p_bz_d_64_scaled:
+      mnemonic = "prfh";
+      form = "'prefSVEOp, 'Pgl, ['Xns, 'Zm.d, lsl #1]";
+      break;
+    case PRFW_i_p_bz_d_64_scaled:
+      mnemonic = "prfw";
+      form = "'prefSVEOp, 'Pgl, ['Xns, 'Zm.d, lsl #2]";
+      break;
+    default:
       break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::
     VisitSVE64BitGatherPrefetch_ScalarPlusUnpacked32BitScaledOffsets(
         const Instruction *instr) {
-  const char *form = "'prefSVEOp, 'Pgl, ['Xns, 'Zm.d, '?22:suxtw ";
-  const char *suffix = "]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "'prefSVEOp, 'Pgl, ['Xns, 'Zm.d, '?22:suxtw";
+  const char *suffix = NULL;
 
-  switch (form_hash_) {
-    case "prfh_i_p_bz_d_x32_scaled"_h:
-      suffix = "#1]";
+  switch (instr->Mask(
+      SVE64BitGatherPrefetch_ScalarPlusUnpacked32BitScaledOffsetsMask)) {
+    case PRFB_i_p_bz_d_x32_scaled:
+      mnemonic = "prfb";
+      suffix = " ]";
       break;
-    case "prfs_i_p_bz_d_x32_scaled"_h:
-      suffix = "#2]";
+    case PRFD_i_p_bz_d_x32_scaled:
+      mnemonic = "prfd";
+      suffix = " #3]";
       break;
-    case "prfd_i_p_bz_d_x32_scaled"_h:
-      suffix = "#3]";
+    case PRFH_i_p_bz_d_x32_scaled:
+      mnemonic = "prfh";
+      suffix = " #1]";
+      break;
+    case PRFW_i_p_bz_d_x32_scaled:
+      mnemonic = "prfw";
+      suffix = " #2]";
+      break;
+    default:
+      form = "(SVE64BitGatherPrefetch_ScalarPlusUnpacked32BitScaledOffsets)";
       break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVE64BitGatherPrefetch_VectorPlusImm(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = (instr->ExtractBits(20, 16) != 0)
                          ? "'prefSVEOp, 'Pgl, ['Zn.d, #'u2016]"
                          : "'prefSVEOp, 'Pgl, ['Zn.d]";
 
-  FormatWithDecodedMnemonic(instr, form);
+  switch (instr->Mask(SVE64BitGatherPrefetch_VectorPlusImmMask)) {
+    case PRFB_i_p_ai_d:
+      mnemonic = "prfb";
+      break;
+    case PRFD_i_p_ai_d:
+      mnemonic = "prfd";
+      break;
+    case PRFH_i_p_ai_d:
+      mnemonic = "prfh";
+      break;
+    case PRFW_i_p_ai_d:
+      mnemonic = "prfw";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE64BitScatterStore_ScalarPlus64BitScaledOffsets(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "{'Zt.d}, 'Pgl, ['Xns, 'Zm.d, lsl #'u2423]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.d}, 'Pgl, ['Xns, 'Zm.d, lsl #'u2423]";
+
+  switch (instr->Mask(SVE64BitScatterStore_ScalarPlus64BitScaledOffsetsMask)) {
+    case ST1D_z_p_bz_d_64_scaled:
+      mnemonic = "st1d";
+      break;
+    case ST1H_z_p_bz_d_64_scaled:
+      mnemonic = "st1h";
+      break;
+    case ST1W_z_p_bz_d_64_scaled:
+      mnemonic = "st1w";
+      break;
+    default:
+      form = "(SVE64BitScatterStore_ScalarPlus64BitScaledOffsets)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE64BitScatterStore_ScalarPlus64BitUnscaledOffsets(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "{'Zt.d}, 'Pgl, ['Xns, 'Zm.d]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.d}, 'Pgl, ['Xns, 'Zm.d]";
+
+  switch (
+      instr->Mask(SVE64BitScatterStore_ScalarPlus64BitUnscaledOffsetsMask)) {
+    case ST1B_z_p_bz_d_64_unscaled:
+      mnemonic = "st1b";
+      break;
+    case ST1D_z_p_bz_d_64_unscaled:
+      mnemonic = "st1d";
+      break;
+    case ST1H_z_p_bz_d_64_unscaled:
+      mnemonic = "st1h";
+      break;
+    case ST1W_z_p_bz_d_64_unscaled:
+      mnemonic = "st1w";
+      break;
+    default:
+      form = "(SVE64BitScatterStore_ScalarPlus64BitUnscaledOffset)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::
     VisitSVE64BitScatterStore_ScalarPlusUnpacked32BitScaledOffsets(
         const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr,
-                            "{'Zt.d}, 'Pgl, ['Xns, 'Zm.d, '?14:suxtw #'u2423]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.d}, 'Pgl, ['Xns, 'Zm.d, '?14:suxtw #'u2423]";
+
+  switch (instr->Mask(
+      SVE64BitScatterStore_ScalarPlusUnpacked32BitScaledOffsetsMask)) {
+    case ST1D_z_p_bz_d_x32_scaled:
+      mnemonic = "st1d";
+      break;
+    case ST1H_z_p_bz_d_x32_scaled:
+      mnemonic = "st1h";
+      break;
+    case ST1W_z_p_bz_d_x32_scaled:
+      mnemonic = "st1w";
+      break;
+    default:
+      form = "(SVE64BitScatterStore_ScalarPlusUnpacked32BitScaledOffsets)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::
     VisitSVE64BitScatterStore_ScalarPlusUnpacked32BitUnscaledOffsets(
         const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "{'Zt.d}, 'Pgl, ['Xns, 'Zm.d, '?14:suxtw]");
+  const char *mnemonic = "unimplemented";
+  const char *form = "{'Zt.d}, 'Pgl, ['Xns, 'Zm.d, '?14:suxtw]";
+
+  switch (instr->Mask(
+      SVE64BitScatterStore_ScalarPlusUnpacked32BitUnscaledOffsetsMask)) {
+    case ST1B_z_p_bz_d_x32_unscaled:
+      mnemonic = "st1b";
+      break;
+    case ST1D_z_p_bz_d_x32_unscaled:
+      mnemonic = "st1d";
+      break;
+    case ST1H_z_p_bz_d_x32_unscaled:
+      mnemonic = "st1h";
+      break;
+    case ST1W_z_p_bz_d_x32_unscaled:
+      mnemonic = "st1w";
+      break;
+    default:
+      form = "(SVE64BitScatterStore_ScalarPlusUnpacked32BitUnscaledOffsets)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVE64BitScatterStore_VectorPlusImm(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "{'Zt.d}, 'Pgl, ['Zn.d";
-  const char *suffix = "]";
+  const char *suffix = NULL;
 
-  if (instr->ExtractBits(20, 16) != 0) {
-    switch (form_hash_) {
-      case "st1b_z_p_ai_d"_h:
-        suffix = ", #'u2016]";
-        break;
-      case "st1h_z_p_ai_d"_h:
-        suffix = ", #'u2016*2]";
-        break;
-      case "st1w_z_p_ai_d"_h:
-        suffix = ", #'u2016*4]";
-        break;
-      case "st1d_z_p_ai_d"_h:
-        suffix = ", #'u2016*8]";
-        break;
-    }
+  bool is_zero = instr->ExtractBits(20, 16) == 0;
+
+  switch (instr->Mask(SVE64BitScatterStore_VectorPlusImmMask)) {
+    case ST1B_z_p_ai_d:
+      mnemonic = "st1b";
+      suffix = is_zero ? "]" : ", #'u2016]";
+      break;
+    case ST1D_z_p_ai_d:
+      mnemonic = "st1d";
+      suffix = is_zero ? "]" : ", #'u2016*8]";
+      break;
+    case ST1H_z_p_ai_d:
+      mnemonic = "st1h";
+      suffix = is_zero ? "]" : ", #'u2016*2]";
+      break;
+    case ST1W_z_p_ai_d:
+      mnemonic = "st1w";
+      suffix = is_zero ? "]" : ", #'u2016*4]";
+      break;
+    default:
+      form = "(SVE64BitScatterStore_VectorPlusImm)";
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVEBitwiseLogicalWithImm_Unpredicated(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'tl, 'Zd.'tl, 'ITriSvel";
+
   if (instr->GetSVEImmLogical() == 0) {
     // The immediate encoded in the instruction is not in the expected format.
     Format(instr, "unallocated", "(SVEBitwiseImm)");
-  } else {
-    FormatWithDecodedMnemonic(instr, "'Zd.'tl, 'Zd.'tl, 'ITriSvel");
+    return;
   }
+
+  switch (instr->Mask(SVEBitwiseLogicalWithImm_UnpredicatedMask)) {
+    case AND_z_zi:
+      mnemonic = "and";
+      break;
+    case EOR_z_zi:
+      mnemonic = "eor";
+      break;
+    case ORR_z_zi:
+      mnemonic = "orr";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEBitwiseLogical_Predicated(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t";
+
+  switch (instr->Mask(SVEBitwiseLogical_PredicatedMask)) {
+    case AND_z_p_zz:
+      mnemonic = "and";
+      break;
+    case BIC_z_p_zz:
+      mnemonic = "bic";
+      break;
+    case EOR_z_p_zz:
+      mnemonic = "eor";
+      break;
+    case ORR_z_p_zz:
+      mnemonic = "orr";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEBitwiseShiftByImm_Predicated(
@@ -3750,17 +5054,17 @@ void Disassembler::VisitSVEBitwiseShiftByImm_Predicated(
     form = "(SVEBitwiseShiftByImm_Predicated)";
   } else {
     switch (form_hash_) {
-      case "lsl_z_p_zi"_h:
-      case "sqshl_z_p_zi"_h:
-      case "sqshlu_z_p_zi"_h:
-      case "uqshl_z_p_zi"_h:
+      case Hash("lsl_z_p_zi"):
+      case Hash("sqshl_z_p_zi"):
+      case Hash("sqshlu_z_p_zi"):
+      case Hash("uqshl_z_p_zi"):
         suffix = "'ITriSvep";
         break;
-      case "asrd_z_p_zi"_h:
-      case "asr_z_p_zi"_h:
-      case "lsr_z_p_zi"_h:
-      case "srshr_z_p_zi"_h:
-      case "urshr_z_p_zi"_h:
+      case Hash("asrd_z_p_zi"):
+      case Hash("asr_z_p_zi"):
+      case Hash("lsr_z_p_zi"):
+      case Hash("srshr_z_p_zi"):
+      case Hash("urshr_z_p_zi"):
         suffix = "'ITriSveq";
         break;
       default:
@@ -3774,16 +5078,59 @@ void Disassembler::VisitSVEBitwiseShiftByImm_Predicated(
 
 void Disassembler::VisitSVEBitwiseShiftByVector_Predicated(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t";
+
+  switch (instr->Mask(SVEBitwiseShiftByVector_PredicatedMask)) {
+    case ASRR_z_p_zz:
+      mnemonic = "asrr";
+      break;
+    case ASR_z_p_zz:
+      mnemonic = "asr";
+      break;
+    case LSLR_z_p_zz:
+      mnemonic = "lslr";
+      break;
+    case LSL_z_p_zz:
+      mnemonic = "lsl";
+      break;
+    case LSRR_z_p_zz:
+      mnemonic = "lsrr";
+      break;
+    case LSR_z_p_zz:
+      mnemonic = "lsr";
+      break;
+    default:
+      form = "(SVEBitwiseShiftByVector_Predicated)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEBitwiseShiftByWideElements_Predicated(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.d";
+
   if (instr->GetSVESize() == kDRegSizeInBytesLog2) {
-    Format(instr, "unallocated", "(SVEBitwiseShiftByWideElements_Predicated)");
+    form = "(SVEBitwiseShiftByWideElements_Predicated)";
   } else {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.d");
+    switch (instr->Mask(SVEBitwiseShiftByWideElements_PredicatedMask)) {
+      case ASR_z_p_zw:
+        mnemonic = "asr";
+        break;
+      case LSL_z_p_zw:
+        mnemonic = "lsl";
+        break;
+      case LSR_z_p_zw:
+        mnemonic = "lsr";
+        break;
+      default:
+        form = "(SVEBitwiseShiftByWideElements_Predicated)";
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 static bool SVEMoveMaskPreferred(uint64_t value, int lane_bytes_log2) {
@@ -3978,145 +5325,304 @@ void Disassembler::VisitSVEBroadcastIntImm_Unpredicated(
 }
 
 void Disassembler::VisitSVECompressActiveElements(const Instruction *instr) {
-  // The top bit of size is always set for compact, so 't can only be
-  // substituted with types S and D.
-  if (instr->ExtractBit(23) == 1) {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl, 'Zn.'t");
-  } else {
-    VisitUnallocated(instr);
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVECompressActiveElements)";
+
+  switch (instr->Mask(SVECompressActiveElementsMask)) {
+    case COMPACT_z_p_z:
+      // The top bit of size is always set for compact, so 't can only be
+      // substituted with types S and D.
+      VIXL_ASSERT(instr->ExtractBit(23) == 1);
+      mnemonic = "compact";
+      form = "'Zd.'t, 'Pgl, 'Zn.'t";
+      break;
+    default:
+      break;
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEConditionallyBroadcastElementToVector(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl, 'Zd.'t, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl, 'Zd.'t, 'Zn.'t";
+
+  switch (instr->Mask(SVEConditionallyBroadcastElementToVectorMask)) {
+    case CLASTA_z_p_zz:
+      mnemonic = "clasta";
+      break;
+    case CLASTB_z_p_zz:
+      mnemonic = "clastb";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEConditionallyExtractElementToGeneralRegister(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "'Wd, 'Pgl, 'Wd, 'Zn.'t";
 
   if (instr->GetSVESize() == kDRegSizeInBytesLog2) {
     form = "'Xd, p'u1210, 'Xd, 'Zn.'t";
   }
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVEConditionallyExtractElementToGeneralRegisterMask)) {
+    case CLASTA_r_p_z:
+      mnemonic = "clasta";
+      break;
+    case CLASTB_r_p_z:
+      mnemonic = "clastb";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEConditionallyExtractElementToSIMDFPScalar(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'t'u0400, 'Pgl, 't'u0400, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'t'u0400, 'Pgl, 't'u0400, 'Zn.'t";
+
+  switch (instr->Mask(SVEConditionallyExtractElementToSIMDFPScalarMask)) {
+    case CLASTA_v_p_z:
+      mnemonic = "clasta";
+      break;
+    case CLASTB_v_p_z:
+      mnemonic = "clastb";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEConditionallyTerminateScalars(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = (instr->ExtractBit(22) == 0) ? "'Wn, 'Wm" : "'Xn, 'Xm";
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVEConditionallyTerminateScalarsMask)) {
+    case CTERMEQ_rr:
+      mnemonic = "ctermeq";
+      break;
+    case CTERMNE_rr:
+      mnemonic = "ctermne";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEConstructivePrefix_Unpredicated(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd, 'Zn");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEConstructivePrefix_Unpredicated)";
+
+  switch (instr->Mask(SVEConstructivePrefix_UnpredicatedMask)) {
+    case MOVPRFX_z_z:
+      mnemonic = "movprfx";
+      form = "'Zd, 'Zn";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEContiguousFirstFaultLoad_ScalarPlusScalar(
     const Instruction *instr) {
-  const char *form = "{'Zt.'tlss}, 'Pgl/z, ['Xns";
-  const char *suffix = "]";
+  const char *mnemonic = "unimplemented";
 
-  if (instr->GetRm() != kZeroRegCode) {
-    switch (form_hash_) {
-      case "ldff1b_z_p_br_u8"_h:
-      case "ldff1b_z_p_br_u16"_h:
-      case "ldff1b_z_p_br_u32"_h:
-      case "ldff1b_z_p_br_u64"_h:
-      case "ldff1sb_z_p_br_s16"_h:
-      case "ldff1sb_z_p_br_s32"_h:
-      case "ldff1sb_z_p_br_s64"_h:
-        suffix = ", 'Xm]";
-        break;
-      case "ldff1h_z_p_br_u16"_h:
-      case "ldff1h_z_p_br_u32"_h:
-      case "ldff1h_z_p_br_u64"_h:
-      case "ldff1sh_z_p_br_s32"_h:
-      case "ldff1sh_z_p_br_s64"_h:
-        suffix = ", 'Xm, lsl #1]";
-        break;
-      case "ldff1w_z_p_br_u32"_h:
-      case "ldff1w_z_p_br_u64"_h:
-      case "ldff1sw_z_p_br_s64"_h:
-        suffix = ", 'Xm, lsl #2]";
-        break;
-      case "ldff1d_z_p_br_u64"_h:
-        suffix = ", 'Xm, lsl #3]";
-        break;
-    }
+  bool rm_is_zr = instr->GetRm() == kZeroRegCode;
+
+  const char *form = "{'Zt.'tlss}, 'Pgl/z, ['Xns";
+  const char *suffix = NULL;
+
+  switch (instr->Mask(SVEContiguousFirstFaultLoad_ScalarPlusScalarMask)) {
+    case LDFF1B_z_p_br_u16:
+    case LDFF1B_z_p_br_u32:
+    case LDFF1B_z_p_br_u64:
+    case LDFF1B_z_p_br_u8:
+      mnemonic = "ldff1b";
+      suffix = rm_is_zr ? "]" : ", 'Xm]";
+      break;
+    case LDFF1D_z_p_br_u64:
+      mnemonic = "ldff1d";
+      suffix = rm_is_zr ? "]" : ", 'Xm, lsl #3]";
+      break;
+    case LDFF1H_z_p_br_u16:
+    case LDFF1H_z_p_br_u32:
+    case LDFF1H_z_p_br_u64:
+      mnemonic = "ldff1h";
+      suffix = rm_is_zr ? "]" : ", 'Xm, lsl #1]";
+      break;
+    case LDFF1SB_z_p_br_s16:
+    case LDFF1SB_z_p_br_s32:
+    case LDFF1SB_z_p_br_s64:
+      mnemonic = "ldff1sb";
+      suffix = rm_is_zr ? "]" : ", 'Xm]";
+      break;
+    case LDFF1SH_z_p_br_s32:
+    case LDFF1SH_z_p_br_s64:
+      mnemonic = "ldff1sh";
+      suffix = rm_is_zr ? "]" : ", 'Xm, lsl #1]";
+      break;
+    case LDFF1SW_z_p_br_s64:
+      mnemonic = "ldff1sw";
+      suffix = rm_is_zr ? "]" : ", 'Xm, lsl #2]";
+      break;
+    case LDFF1W_z_p_br_u32:
+    case LDFF1W_z_p_br_u64:
+      mnemonic = "ldff1w";
+      suffix = rm_is_zr ? "]" : ", 'Xm, lsl #2]";
+      break;
+    default:
+      form = "(SVEContiguousFirstFaultLoad_ScalarPlusScalar)";
+      break;
   }
 
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVEContiguousNonFaultLoad_ScalarPlusImm(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "{'Zt.'tlss}, 'Pgl/z, ['Xns";
   const char *suffix =
       (instr->ExtractBits(19, 16) == 0) ? "]" : ", #'s1916, mul vl]";
-  FormatWithDecodedMnemonic(instr, form, suffix);
+
+  switch (instr->Mask(SVEContiguousNonFaultLoad_ScalarPlusImmMask)) {
+    case LDNF1B_z_p_bi_u16:
+    case LDNF1B_z_p_bi_u32:
+    case LDNF1B_z_p_bi_u64:
+    case LDNF1B_z_p_bi_u8:
+      mnemonic = "ldnf1b";
+      break;
+    case LDNF1D_z_p_bi_u64:
+      mnemonic = "ldnf1d";
+      break;
+    case LDNF1H_z_p_bi_u16:
+    case LDNF1H_z_p_bi_u32:
+    case LDNF1H_z_p_bi_u64:
+      mnemonic = "ldnf1h";
+      break;
+    case LDNF1SB_z_p_bi_s16:
+    case LDNF1SB_z_p_bi_s32:
+    case LDNF1SB_z_p_bi_s64:
+      mnemonic = "ldnf1sb";
+      break;
+    case LDNF1SH_z_p_bi_s32:
+    case LDNF1SH_z_p_bi_s64:
+      mnemonic = "ldnf1sh";
+      break;
+    case LDNF1SW_z_p_bi_s64:
+      mnemonic = "ldnf1sw";
+      break;
+    case LDNF1W_z_p_bi_u32:
+    case LDNF1W_z_p_bi_u64:
+      mnemonic = "ldnf1w";
+      break;
+    default:
+      form = "(SVEContiguousNonFaultLoad_ScalarPlusImm)";
+      suffix = NULL;
+      break;
+  }
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVEContiguousNonTemporalLoad_ScalarPlusImm(
     const Instruction *instr) {
-  const char *form = "{'Zt.b}, 'Pgl/z, ['Xns";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEContiguousNonTemporalLoad_ScalarPlusImm)";
+
   const char *suffix =
       (instr->ExtractBits(19, 16) == 0) ? "]" : ", #'s1916, mul vl]";
-  switch (form_hash_) {
-    case "ldnt1d_z_p_bi_contiguous"_h:
+  switch (instr->Mask(SVEContiguousNonTemporalLoad_ScalarPlusImmMask)) {
+    case LDNT1B_z_p_bi_contiguous:
+      mnemonic = "ldnt1b";
+      form = "{'Zt.b}, 'Pgl/z, ['Xns";
+      break;
+    case LDNT1D_z_p_bi_contiguous:
+      mnemonic = "ldnt1d";
       form = "{'Zt.d}, 'Pgl/z, ['Xns";
       break;
-    case "ldnt1h_z_p_bi_contiguous"_h:
+    case LDNT1H_z_p_bi_contiguous:
+      mnemonic = "ldnt1h";
       form = "{'Zt.h}, 'Pgl/z, ['Xns";
       break;
-    case "ldnt1w_z_p_bi_contiguous"_h:
+    case LDNT1W_z_p_bi_contiguous:
+      mnemonic = "ldnt1w";
       form = "{'Zt.s}, 'Pgl/z, ['Xns";
       break;
+    default:
+      suffix = NULL;
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVEContiguousNonTemporalLoad_ScalarPlusScalar(
     const Instruction *instr) {
-  const char *form = "{'Zt.b}, 'Pgl/z, ['Xns, 'Rm]";
-  switch (form_hash_) {
-    case "ldnt1d_z_p_br_contiguous"_h:
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEContiguousNonTemporalLoad_ScalarPlusScalar)";
+
+  switch (instr->Mask(SVEContiguousNonTemporalLoad_ScalarPlusScalarMask)) {
+    case LDNT1B_z_p_br_contiguous:
+      mnemonic = "ldnt1b";
+      form = "{'Zt.b}, 'Pgl/z, ['Xns, 'Rm]";
+      break;
+    case LDNT1D_z_p_br_contiguous:
+      mnemonic = "ldnt1d";
       form = "{'Zt.d}, 'Pgl/z, ['Xns, 'Rm, lsl #3]";
       break;
-    case "ldnt1h_z_p_br_contiguous"_h:
+    case LDNT1H_z_p_br_contiguous:
+      mnemonic = "ldnt1h";
       form = "{'Zt.h}, 'Pgl/z, ['Xns, 'Rm, lsl #1]";
       break;
-    case "ldnt1w_z_p_br_contiguous"_h:
+    case LDNT1W_z_p_br_contiguous:
+      mnemonic = "ldnt1w";
       form = "{'Zt.s}, 'Pgl/z, ['Xns, 'Rm, lsl #2]";
       break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEContiguousNonTemporalStore_ScalarPlusImm(
     const Instruction *instr) {
-  const char *form = "{'Zt.b}, 'Pgl, ['Xns";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEContiguousNonTemporalStore_ScalarPlusImm)";
+
   const char *suffix =
       (instr->ExtractBits(19, 16) == 0) ? "]" : ", #'s1916, mul vl]";
-
-  switch (form_hash_) {
-    case "stnt1d_z_p_bi_contiguous"_h:
+  switch (instr->Mask(SVEContiguousNonTemporalStore_ScalarPlusImmMask)) {
+    case STNT1B_z_p_bi_contiguous:
+      mnemonic = "stnt1b";
+      form = "{'Zt.b}, 'Pgl, ['Xns";
+      break;
+    case STNT1D_z_p_bi_contiguous:
+      mnemonic = "stnt1d";
       form = "{'Zt.d}, 'Pgl, ['Xns";
       break;
-    case "stnt1h_z_p_bi_contiguous"_h:
+    case STNT1H_z_p_bi_contiguous:
+      mnemonic = "stnt1h";
       form = "{'Zt.h}, 'Pgl, ['Xns";
       break;
-    case "stnt1w_z_p_bi_contiguous"_h:
+    case STNT1W_z_p_bi_contiguous:
+      mnemonic = "stnt1w";
       form = "{'Zt.s}, 'Pgl, ['Xns";
       break;
+    default:
+      suffix = NULL;
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVEContiguousNonTemporalStore_ScalarPlusScalar(
@@ -4149,10 +5655,28 @@ void Disassembler::VisitSVEContiguousNonTemporalStore_ScalarPlusScalar(
 
 void Disassembler::VisitSVEContiguousPrefetch_ScalarPlusImm(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = (instr->ExtractBits(21, 16) != 0)
                          ? "'prefSVEOp, 'Pgl, ['Xns, #'s2116, mul vl]"
                          : "'prefSVEOp, 'Pgl, ['Xns]";
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVEContiguousPrefetch_ScalarPlusImmMask)) {
+    case PRFB_i_p_bi_s:
+      mnemonic = "prfb";
+      break;
+    case PRFD_i_p_bi_s:
+      mnemonic = "prfd";
+      break;
+    case PRFH_i_p_bi_s:
+      mnemonic = "prfh";
+      break;
+    case PRFW_i_p_bi_s:
+      mnemonic = "prfw";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEContiguousPrefetch_ScalarPlusScalar(
@@ -4187,18 +5711,57 @@ void Disassembler::VisitSVEContiguousPrefetch_ScalarPlusScalar(
 
 void Disassembler::VisitSVEContiguousStore_ScalarPlusImm(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+
   // The 'size' field isn't in the usual place here.
   const char *form = "{'Zt.'tls}, 'Pgl, ['Xns, #'s1916, mul vl]";
   if (instr->ExtractBits(19, 16) == 0) {
     form = "{'Zt.'tls}, 'Pgl, ['Xns]";
   }
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVEContiguousStore_ScalarPlusImmMask)) {
+    case ST1B_z_p_bi:
+      mnemonic = "st1b";
+      break;
+    case ST1D_z_p_bi:
+      mnemonic = "st1d";
+      break;
+    case ST1H_z_p_bi:
+      mnemonic = "st1h";
+      break;
+    case ST1W_z_p_bi:
+      mnemonic = "st1w";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEContiguousStore_ScalarPlusScalar(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+
   // The 'size' field isn't in the usual place here.
-  FormatWithDecodedMnemonic(instr, "{'Zt.'tls}, 'Pgl, ['Xns, 'Xm'NSveS]");
+  const char *form = "{'Zt.'tls}, 'Pgl, ['Xns, 'Xm'NSveS]";
+
+  switch (instr->Mask(SVEContiguousStore_ScalarPlusScalarMask)) {
+    case ST1B_z_p_br:
+      mnemonic = "st1b";
+      break;
+    case ST1D_z_p_br:
+      mnemonic = "st1d";
+      break;
+    case ST1H_z_p_br:
+      mnemonic = "st1h";
+      break;
+    case ST1W_z_p_br:
+      mnemonic = "st1w";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVECopyFPImm_Predicated(const Instruction *instr) {
@@ -4277,168 +5840,393 @@ void Disassembler::VisitSVECopySIMDFPScalarRegisterToVector_Predicated(
 
 void Disassembler::VisitSVEExtractElementToGeneralRegister(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "'Wd, 'Pgl, 'Zn.'t";
+
   if (instr->GetSVESize() == kDRegSizeInBytesLog2) {
     form = "'Xd, p'u1210, 'Zn.'t";
   }
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVEExtractElementToGeneralRegisterMask)) {
+    case LASTA_r_p_z:
+      mnemonic = "lasta";
+      break;
+    case LASTB_r_p_z:
+      mnemonic = "lastb";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEExtractElementToSIMDFPScalarRegister(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'t'u0400, 'Pgl, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'t'u0400, 'Pgl, 'Zn.'t";
+
+  switch (instr->Mask(SVEExtractElementToSIMDFPScalarRegisterMask)) {
+    case LASTA_v_p_z:
+      mnemonic = "lasta";
+      break;
+    case LASTB_v_p_z:
+      mnemonic = "lastb";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFFRInitialise(const Instruction *instr) {
-  DisassembleNoArgs(instr);
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFFRInitialise)";
+
+  switch (instr->Mask(SVEFFRInitialiseMask)) {
+    case SETFFR_f:
+      mnemonic = "setffr";
+      form = " ";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFFRWriteFromPredicate(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pn.b");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFFRWriteFromPredicate)";
+
+  switch (instr->Mask(SVEFFRWriteFromPredicateMask)) {
+    case WRFFR_f_p:
+      mnemonic = "wrffr";
+      form = "'Pn.b";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPArithmeticWithImm_Predicated(
     const Instruction *instr) {
-  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, #";
-  const char *suffix00 = "0.0";
-  const char *suffix05 = "0.5";
-  const char *suffix10 = "1.0";
-  const char *suffix20 = "2.0";
+  const char *mnemonic = "unimplemented";
+  const char *form00 = "'Zd.'t, 'Pgl/m, 'Zd.'t, #0.0";
+  const char *form05 = "'Zd.'t, 'Pgl/m, 'Zd.'t, #0.5";
+  const char *form10 = "'Zd.'t, 'Pgl/m, 'Zd.'t, #1.0";
+  const char *form20 = "'Zd.'t, 'Pgl/m, 'Zd.'t, #2.0";
   int i1 = instr->ExtractBit(5);
-  const char *suffix = i1 ? suffix10 : suffix00;
+  const char *form = i1 ? form10 : form00;
 
   if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
-    return;
+    form = "(SVEFPArithmeticWithImm_Predicated)";
+  } else {
+    switch (instr->Mask(SVEFPArithmeticWithImm_PredicatedMask)) {
+      case FADD_z_p_zs:
+        mnemonic = "fadd";
+        form = i1 ? form10 : form05;
+        break;
+      case FMAXNM_z_p_zs:
+        mnemonic = "fmaxnm";
+        break;
+      case FMAX_z_p_zs:
+        mnemonic = "fmax";
+        break;
+      case FMINNM_z_p_zs:
+        mnemonic = "fminnm";
+        break;
+      case FMIN_z_p_zs:
+        mnemonic = "fmin";
+        break;
+      case FMUL_z_p_zs:
+        mnemonic = "fmul";
+        form = i1 ? form20 : form05;
+        break;
+      case FSUBR_z_p_zs:
+        mnemonic = "fsubr";
+        form = i1 ? form10 : form05;
+        break;
+      case FSUB_z_p_zs:
+        mnemonic = "fsub";
+        form = i1 ? form10 : form05;
+        break;
+      default:
+        form = "(SVEFPArithmeticWithImm_Predicated)";
+        break;
+    }
   }
-
-  switch (form_hash_) {
-    case "fadd_z_p_zs"_h:
-    case "fsubr_z_p_zs"_h:
-    case "fsub_z_p_zs"_h:
-      suffix = i1 ? suffix10 : suffix05;
-      break;
-    case "fmul_z_p_zs"_h:
-      suffix = i1 ? suffix20 : suffix05;
-      break;
-  }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPArithmetic_Predicated(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t";
+
   if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
+    form = "(SVEFPArithmetic_Predicated)";
   } else {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t");
+    switch (instr->Mask(SVEFPArithmetic_PredicatedMask)) {
+      case FABD_z_p_zz:
+        mnemonic = "fabd";
+        break;
+      case FADD_z_p_zz:
+        mnemonic = "fadd";
+        break;
+      case FDIVR_z_p_zz:
+        mnemonic = "fdivr";
+        break;
+      case FDIV_z_p_zz:
+        mnemonic = "fdiv";
+        break;
+      case FMAXNM_z_p_zz:
+        mnemonic = "fmaxnm";
+        break;
+      case FMAX_z_p_zz:
+        mnemonic = "fmax";
+        break;
+      case FMINNM_z_p_zz:
+        mnemonic = "fminnm";
+        break;
+      case FMIN_z_p_zz:
+        mnemonic = "fmin";
+        break;
+      case FMULX_z_p_zz:
+        mnemonic = "fmulx";
+        break;
+      case FMUL_z_p_zz:
+        mnemonic = "fmul";
+        break;
+      case FSCALE_z_p_zz:
+        mnemonic = "fscale";
+        break;
+      case FSUBR_z_p_zz:
+        mnemonic = "fsubr";
+        break;
+      case FSUB_z_p_zz:
+        mnemonic = "fsub";
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPConvertPrecision(const Instruction *instr) {
-  const char *form = NULL;
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPConvertPrecision)";
 
-  switch (form_hash_) {
-    case "fcvt_z_p_z_d2h"_h:
+  switch (instr->Mask(SVEFPConvertPrecisionMask)) {
+    case FCVT_z_p_z_d2h:
+      mnemonic = "fcvt";
       form = "'Zd.h, 'Pgl/m, 'Zn.d";
       break;
-    case "fcvt_z_p_z_d2s"_h:
+    case FCVT_z_p_z_d2s:
+      mnemonic = "fcvt";
       form = "'Zd.s, 'Pgl/m, 'Zn.d";
       break;
-    case "fcvt_z_p_z_h2d"_h:
+    case FCVT_z_p_z_h2d:
+      mnemonic = "fcvt";
       form = "'Zd.d, 'Pgl/m, 'Zn.h";
       break;
-    case "fcvt_z_p_z_h2s"_h:
+    case FCVT_z_p_z_h2s:
+      mnemonic = "fcvt";
       form = "'Zd.s, 'Pgl/m, 'Zn.h";
       break;
-    case "fcvt_z_p_z_s2d"_h:
+    case FCVT_z_p_z_s2d:
+      mnemonic = "fcvt";
       form = "'Zd.d, 'Pgl/m, 'Zn.s";
       break;
-    case "fcvt_z_p_z_s2h"_h:
+    case FCVT_z_p_z_s2h:
+      mnemonic = "fcvt";
       form = "'Zd.h, 'Pgl/m, 'Zn.s";
       break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPConvertToInt(const Instruction *instr) {
-  const char *form = NULL;
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPConvertToInt)";
 
-  switch (form_hash_) {
-    case "fcvtzs_z_p_z_d2w"_h:
-    case "fcvtzu_z_p_z_d2w"_h:
+  switch (instr->Mask(SVEFPConvertToIntMask)) {
+    case FCVTZS_z_p_z_d2w:
+      mnemonic = "fcvtzs";
       form = "'Zd.s, 'Pgl/m, 'Zn.d";
       break;
-    case "fcvtzs_z_p_z_d2x"_h:
-    case "fcvtzu_z_p_z_d2x"_h:
+    case FCVTZS_z_p_z_d2x:
+      mnemonic = "fcvtzs";
       form = "'Zd.d, 'Pgl/m, 'Zn.d";
       break;
-    case "fcvtzs_z_p_z_fp162h"_h:
-    case "fcvtzu_z_p_z_fp162h"_h:
+    case FCVTZS_z_p_z_fp162h:
+      mnemonic = "fcvtzs";
       form = "'Zd.h, 'Pgl/m, 'Zn.h";
       break;
-    case "fcvtzs_z_p_z_fp162w"_h:
-    case "fcvtzu_z_p_z_fp162w"_h:
+    case FCVTZS_z_p_z_fp162w:
+      mnemonic = "fcvtzs";
       form = "'Zd.s, 'Pgl/m, 'Zn.h";
       break;
-    case "fcvtzs_z_p_z_fp162x"_h:
-    case "fcvtzu_z_p_z_fp162x"_h:
+    case FCVTZS_z_p_z_fp162x:
+      mnemonic = "fcvtzs";
       form = "'Zd.d, 'Pgl/m, 'Zn.h";
       break;
-    case "fcvtzs_z_p_z_s2w"_h:
-    case "fcvtzu_z_p_z_s2w"_h:
+    case FCVTZS_z_p_z_s2w:
+      mnemonic = "fcvtzs";
       form = "'Zd.s, 'Pgl/m, 'Zn.s";
       break;
-    case "fcvtzs_z_p_z_s2x"_h:
-    case "fcvtzu_z_p_z_s2x"_h:
+    case FCVTZS_z_p_z_s2x:
+      mnemonic = "fcvtzs";
       form = "'Zd.d, 'Pgl/m, 'Zn.s";
       break;
+    case FCVTZU_z_p_z_d2w:
+      mnemonic = "fcvtzu";
+      form = "'Zd.s, 'Pgl/m, 'Zn.d";
+      break;
+    case FCVTZU_z_p_z_d2x:
+      mnemonic = "fcvtzu";
+      form = "'Zd.d, 'Pgl/m, 'Zn.d";
+      break;
+    case FCVTZU_z_p_z_fp162h:
+      mnemonic = "fcvtzu";
+      form = "'Zd.h, 'Pgl/m, 'Zn.h";
+      break;
+    case FCVTZU_z_p_z_fp162w:
+      mnemonic = "fcvtzu";
+      form = "'Zd.s, 'Pgl/m, 'Zn.h";
+      break;
+    case FCVTZU_z_p_z_fp162x:
+      mnemonic = "fcvtzu";
+      form = "'Zd.d, 'Pgl/m, 'Zn.h";
+      break;
+    case FCVTZU_z_p_z_s2w:
+      mnemonic = "fcvtzu";
+      form = "'Zd.s, 'Pgl/m, 'Zn.s";
+      break;
+    case FCVTZU_z_p_z_s2x:
+      mnemonic = "fcvtzu";
+      form = "'Zd.d, 'Pgl/m, 'Zn.s";
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPExponentialAccelerator(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPExponentialAccelerator)";
+
   unsigned size = instr->GetSVESize();
-  if ((size == kHRegSizeInBytesLog2) || (size == kSRegSizeInBytesLog2) ||
-      (size == kDRegSizeInBytesLog2)) {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zn.'t");
-  } else {
-    VisitUnallocated(instr);
+  switch (instr->Mask(SVEFPExponentialAcceleratorMask)) {
+    case FEXPA_z_z:
+      if ((size == kHRegSizeInBytesLog2) || (size == kSRegSizeInBytesLog2) ||
+          (size == kDRegSizeInBytesLog2)) {
+        mnemonic = "fexpa";
+        form = "'Zd.'t, 'Zn.'t";
+      }
+      break;
+    default:
+      break;
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPRoundToIntegralValue(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zn.'t";
+
   if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
+    form = "(SVEFPRoundToIntegralValue)";
   } else {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zn.'t");
+    switch (instr->Mask(SVEFPRoundToIntegralValueMask)) {
+      case FRINTA_z_p_z:
+        mnemonic = "frinta";
+        break;
+      case FRINTI_z_p_z:
+        mnemonic = "frinti";
+        break;
+      case FRINTM_z_p_z:
+        mnemonic = "frintm";
+        break;
+      case FRINTN_z_p_z:
+        mnemonic = "frintn";
+        break;
+      case FRINTP_z_p_z:
+        mnemonic = "frintp";
+        break;
+      case FRINTX_z_p_z:
+        mnemonic = "frintx";
+        break;
+      case FRINTZ_z_p_z:
+        mnemonic = "frintz";
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPTrigMulAddCoefficient(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPTrigMulAddCoefficient)";
+
   unsigned size = instr->GetSVESize();
-  if ((size == kHRegSizeInBytesLog2) || (size == kSRegSizeInBytesLog2) ||
-      (size == kDRegSizeInBytesLog2)) {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zd.'t, 'Zn.'t, #'u1816");
-  } else {
-    VisitUnallocated(instr);
+  switch (instr->Mask(SVEFPTrigMulAddCoefficientMask)) {
+    case FTMAD_z_zzi:
+      if ((size == kHRegSizeInBytesLog2) || (size == kSRegSizeInBytesLog2) ||
+          (size == kDRegSizeInBytesLog2)) {
+        mnemonic = "ftmad";
+        form = "'Zd.'t, 'Zd.'t, 'Zn.'t, #'u1816";
+      }
+      break;
+    default:
+      break;
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPTrigSelectCoefficient(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPTrigSelectCoefficient)";
+
   unsigned size = instr->GetSVESize();
-  if ((size == kHRegSizeInBytesLog2) || (size == kSRegSizeInBytesLog2) ||
-      (size == kDRegSizeInBytesLog2)) {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zn.'t, 'Zm.'t");
-  } else {
-    VisitUnallocated(instr);
+  switch (instr->Mask(SVEFPTrigSelectCoefficientMask)) {
+    case FTSSEL_z_zz:
+      if ((size == kHRegSizeInBytesLog2) || (size == kSRegSizeInBytesLog2) ||
+          (size == kDRegSizeInBytesLog2)) {
+        mnemonic = "ftssel";
+        form = "'Zd.'t, 'Zn.'t, 'Zm.'t";
+      }
+      break;
+    default:
+      break;
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPUnaryOp(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zn.'t";
+
   if (instr->GetSVESize() == kBRegSizeInBytesLog2) {
-    VisitUnallocated(instr);
+    form = "(SVEFPUnaryOp)";
   } else {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zn.'t");
+    switch (instr->Mask(SVEFPUnaryOpMask)) {
+      case FRECPX_z_p_z:
+        mnemonic = "frecpx";
+        break;
+      case FSQRT_z_p_z:
+        mnemonic = "fsqrt";
+        break;
+      default:
+        form = "(SVEFPUnaryOp)";
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 static const char *IncDecFormHelper(const Instruction *instr,
@@ -4459,125 +6247,381 @@ static const char *IncDecFormHelper(const Instruction *instr,
 
 void Disassembler::VisitSVEIncDecRegisterByElementCount(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form =
       IncDecFormHelper(instr, "'Xd, 'Ipc, mul #'u1916+1", "'Xd, 'Ipc", "'Xd");
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVEIncDecRegisterByElementCountMask)) {
+    case DECB_r_rs:
+      mnemonic = "decb";
+      break;
+    case DECD_r_rs:
+      mnemonic = "decd";
+      break;
+    case DECH_r_rs:
+      mnemonic = "dech";
+      break;
+    case DECW_r_rs:
+      mnemonic = "decw";
+      break;
+    case INCB_r_rs:
+      mnemonic = "incb";
+      break;
+    case INCD_r_rs:
+      mnemonic = "incd";
+      break;
+    case INCH_r_rs:
+      mnemonic = "inch";
+      break;
+    case INCW_r_rs:
+      mnemonic = "incw";
+      break;
+    default:
+      form = "(SVEIncDecRegisterByElementCount)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIncDecVectorByElementCount(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = IncDecFormHelper(instr,
                                       "'Zd.'t, 'Ipc, mul #'u1916+1",
                                       "'Zd.'t, 'Ipc",
                                       "'Zd.'t");
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVEIncDecVectorByElementCountMask)) {
+    case DECD_z_zs:
+      mnemonic = "decd";
+      break;
+    case DECH_z_zs:
+      mnemonic = "dech";
+      break;
+    case DECW_z_zs:
+      mnemonic = "decw";
+      break;
+    case INCD_z_zs:
+      mnemonic = "incd";
+      break;
+    case INCH_z_zs:
+      mnemonic = "inch";
+      break;
+    case INCW_z_zs:
+      mnemonic = "incw";
+      break;
+    default:
+      form = "(SVEIncDecVectorByElementCount)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEInsertGeneralRegister(const Instruction *instr) {
-  const char *form = "'Zd.'t, 'Wn";
-  if (instr->GetSVESize() == kDRegSizeInBytesLog2) {
-    form = "'Zd.'t, 'Xn";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEInsertGeneralRegister)";
+
+  switch (instr->Mask(SVEInsertGeneralRegisterMask)) {
+    case INSR_z_r:
+      mnemonic = "insr";
+      if (instr->GetSVESize() == kDRegSizeInBytesLog2) {
+        form = "'Zd.'t, 'Xn";
+      } else {
+        form = "'Zd.'t, 'Wn";
+      }
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEInsertSIMDFPScalarRegister(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Vnv");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEInsertSIMDFPScalarRegister)";
+
+  switch (instr->Mask(SVEInsertSIMDFPScalarRegisterMask)) {
+    case INSR_z_v:
+      mnemonic = "insr";
+      form = "'Zd.'t, 'Vnv";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntAddSubtractImm_Unpredicated(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = (instr->ExtractBit(13) == 0)
                          ? "'Zd.'t, 'Zd.'t, #'u1205"
                          : "'Zd.'t, 'Zd.'t, #'u1205, lsl #8";
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVEIntAddSubtractImm_UnpredicatedMask)) {
+    case ADD_z_zi:
+      mnemonic = "add";
+      break;
+    case SQADD_z_zi:
+      mnemonic = "sqadd";
+      break;
+    case SQSUB_z_zi:
+      mnemonic = "sqsub";
+      break;
+    case SUBR_z_zi:
+      mnemonic = "subr";
+      break;
+    case SUB_z_zi:
+      mnemonic = "sub";
+      break;
+    case UQADD_z_zi:
+      mnemonic = "uqadd";
+      break;
+    case UQSUB_z_zi:
+      mnemonic = "uqsub";
+      break;
+    default:
+      form = "(SVEIntAddSubtractImm_Unpredicated)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntAddSubtractVectors_Predicated(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t";
+
+  switch (instr->Mask(SVEIntAddSubtractVectors_PredicatedMask)) {
+    case ADD_z_p_zz:
+      mnemonic = "add";
+      break;
+    case SUBR_z_p_zz:
+      mnemonic = "subr";
+      break;
+    case SUB_z_p_zz:
+      mnemonic = "sub";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntCompareScalarCountAndLimit(
     const Instruction *instr) {
   const char *form =
       (instr->ExtractBit(12) == 0) ? "'Pd.'t, 'Wn, 'Wm" : "'Pd.'t, 'Xn, 'Xm";
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic_.c_str(), form);
 }
 
 void Disassembler::VisitSVEIntConvertToFP(const Instruction *instr) {
-  const char *form = NULL;
-  switch (form_hash_) {
-    case "scvtf_z_p_z_h2fp16"_h:
-    case "ucvtf_z_p_z_h2fp16"_h:
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEIntConvertToFP)";
+
+  switch (instr->Mask(SVEIntConvertToFPMask)) {
+    case SCVTF_z_p_z_h2fp16:
+      mnemonic = "scvtf";
       form = "'Zd.h, 'Pgl/m, 'Zn.h";
       break;
-    case "scvtf_z_p_z_w2d"_h:
-    case "ucvtf_z_p_z_w2d"_h:
+    case SCVTF_z_p_z_w2d:
+      mnemonic = "scvtf";
       form = "'Zd.d, 'Pgl/m, 'Zn.s";
       break;
-    case "scvtf_z_p_z_w2fp16"_h:
-    case "ucvtf_z_p_z_w2fp16"_h:
+    case SCVTF_z_p_z_w2fp16:
+      mnemonic = "scvtf";
       form = "'Zd.h, 'Pgl/m, 'Zn.s";
       break;
-    case "scvtf_z_p_z_w2s"_h:
-    case "ucvtf_z_p_z_w2s"_h:
+    case SCVTF_z_p_z_w2s:
+      mnemonic = "scvtf";
       form = "'Zd.s, 'Pgl/m, 'Zn.s";
       break;
-    case "scvtf_z_p_z_x2d"_h:
-    case "ucvtf_z_p_z_x2d"_h:
+    case SCVTF_z_p_z_x2d:
+      mnemonic = "scvtf";
       form = "'Zd.d, 'Pgl/m, 'Zn.d";
       break;
-    case "scvtf_z_p_z_x2fp16"_h:
-    case "ucvtf_z_p_z_x2fp16"_h:
+    case SCVTF_z_p_z_x2fp16:
+      mnemonic = "scvtf";
       form = "'Zd.h, 'Pgl/m, 'Zn.d";
       break;
-    case "scvtf_z_p_z_x2s"_h:
-    case "ucvtf_z_p_z_x2s"_h:
+    case SCVTF_z_p_z_x2s:
+      mnemonic = "scvtf";
       form = "'Zd.s, 'Pgl/m, 'Zn.d";
       break;
+    case UCVTF_z_p_z_h2fp16:
+      mnemonic = "ucvtf";
+      form = "'Zd.h, 'Pgl/m, 'Zn.h";
+      break;
+    case UCVTF_z_p_z_w2d:
+      mnemonic = "ucvtf";
+      form = "'Zd.d, 'Pgl/m, 'Zn.s";
+      break;
+    case UCVTF_z_p_z_w2fp16:
+      mnemonic = "ucvtf";
+      form = "'Zd.h, 'Pgl/m, 'Zn.s";
+      break;
+    case UCVTF_z_p_z_w2s:
+      mnemonic = "ucvtf";
+      form = "'Zd.s, 'Pgl/m, 'Zn.s";
+      break;
+    case UCVTF_z_p_z_x2d:
+      mnemonic = "ucvtf";
+      form = "'Zd.d, 'Pgl/m, 'Zn.d";
+      break;
+    case UCVTF_z_p_z_x2fp16:
+      mnemonic = "ucvtf";
+      form = "'Zd.h, 'Pgl/m, 'Zn.d";
+      break;
+    case UCVTF_z_p_z_x2s:
+      mnemonic = "ucvtf";
+      form = "'Zd.s, 'Pgl/m, 'Zn.d";
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntDivideVectors_Predicated(
     const Instruction *instr) {
-  unsigned size = instr->GetSVESize();
-  if ((size == kSRegSizeInBytesLog2) || (size == kDRegSizeInBytesLog2)) {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t");
-  } else {
-    VisitUnallocated(instr);
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t";
+
+  switch (instr->Mask(SVEIntDivideVectors_PredicatedMask)) {
+    case SDIVR_z_p_zz:
+      mnemonic = "sdivr";
+      break;
+    case SDIV_z_p_zz:
+      mnemonic = "sdiv";
+      break;
+    case UDIVR_z_p_zz:
+      mnemonic = "udivr";
+      break;
+    case UDIV_z_p_zz:
+      mnemonic = "udiv";
+      break;
+    default:
+      break;
   }
+
+  switch (instr->Mask(SVEIntDivideVectors_PredicatedMask)) {
+    case SDIVR_z_p_zz:
+    case SDIV_z_p_zz:
+    case UDIVR_z_p_zz:
+    case UDIV_z_p_zz:
+      switch (instr->GetSVESize()) {
+        case kBRegSizeInBytesLog2:
+        case kHRegSizeInBytesLog2:
+          mnemonic = "unimplemented";
+          form = "(SVEIntBinaryArithmeticPredicated)";
+          break;
+        case kSRegSizeInBytesLog2:
+        case kDRegSizeInBytesLog2:
+          // The default form works for these instructions.
+          break;
+        default:
+          // GetSVESize() should never return other values.
+          VIXL_UNREACHABLE();
+          break;
+      }
+  }
+
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntMinMaxDifference_Predicated(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t";
+
+  switch (instr->Mask(SVEIntMinMaxDifference_PredicatedMask)) {
+    case SABD_z_p_zz:
+      mnemonic = "sabd";
+      break;
+    case SMAX_z_p_zz:
+      mnemonic = "smax";
+      break;
+    case SMIN_z_p_zz:
+      mnemonic = "smin";
+      break;
+    case UABD_z_p_zz:
+      mnemonic = "uabd";
+      break;
+    case UMAX_z_p_zz:
+      mnemonic = "umax";
+      break;
+    case UMIN_z_p_zz:
+      mnemonic = "umin";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntMinMaxImm_Unpredicated(const Instruction *instr) {
-  const char *form = "'Zd.'t, 'Zd.'t, #";
-  const char *suffix = "'u1205";
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Zd.'t, #'u1205";
 
-  switch (form_hash_) {
-    case "smax_z_zi"_h:
-    case "smin_z_zi"_h:
-      suffix = "'s1205";
+  switch (instr->Mask(SVEIntMinMaxImm_UnpredicatedMask)) {
+    case SMAX_z_zi:
+      mnemonic = "smax";
+      form = "'Zd.'t, 'Zd.'t, #'s1205";
+      break;
+    case SMIN_z_zi:
+      mnemonic = "smin";
+      form = "'Zd.'t, 'Zd.'t, #'s1205";
+      break;
+    case UMAX_z_zi:
+      mnemonic = "umax";
+      break;
+    case UMIN_z_zi:
+      mnemonic = "umin";
+      break;
+    default:
       break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntMulImm_Unpredicated(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zd.'t, #'s1205");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEIntMulImm_Unpredicated)";
+
+  switch (instr->Mask(SVEIntMulImm_UnpredicatedMask)) {
+    case MUL_z_zi:
+      mnemonic = "mul";
+      form = "'Zd.'t, 'Zd.'t, #'s1205";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntMulVectors_Predicated(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t";
+
+  switch (instr->Mask(SVEIntMulVectors_PredicatedMask)) {
+    case MUL_z_p_zz:
+      mnemonic = "mul";
+      break;
+    case SMULH_z_p_zz:
+      mnemonic = "smulh";
+      break;
+    case UMULH_z_p_zz:
+      mnemonic = "umulh";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVELoadAndBroadcastElement(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "(SVELoadAndBroadcastElement)";
   const char *suffix_b = ", #'u2116]";
   const char *suffix_h = ", #'u2116*2]";
@@ -4585,52 +6629,88 @@ void Disassembler::VisitSVELoadAndBroadcastElement(const Instruction *instr) {
   const char *suffix_d = ", #'u2116*8]";
   const char *suffix = NULL;
 
-  switch (form_hash_) {
-    case "ld1rb_z_p_bi_u8"_h:
+  switch (instr->Mask(SVELoadAndBroadcastElementMask)) {
+    case LD1RB_z_p_bi_u16:
+      mnemonic = "ld1rb";
+      form = "{'Zt.h}, 'Pgl/z, ['Xns";
+      suffix = suffix_b;
+      break;
+    case LD1RB_z_p_bi_u32:
+      mnemonic = "ld1rb";
+      form = "{'Zt.s}, 'Pgl/z, ['Xns";
+      suffix = suffix_b;
+      break;
+    case LD1RB_z_p_bi_u64:
+      mnemonic = "ld1rb";
+      form = "{'Zt.d}, 'Pgl/z, ['Xns";
+      suffix = suffix_b;
+      break;
+    case LD1RB_z_p_bi_u8:
+      mnemonic = "ld1rb";
       form = "{'Zt.b}, 'Pgl/z, ['Xns";
       suffix = suffix_b;
       break;
-    case "ld1rb_z_p_bi_u16"_h:
-    case "ld1rsb_z_p_bi_s16"_h:
-      form = "{'Zt.h}, 'Pgl/z, ['Xns";
-      suffix = suffix_b;
-      break;
-    case "ld1rb_z_p_bi_u32"_h:
-    case "ld1rsb_z_p_bi_s32"_h:
-      form = "{'Zt.s}, 'Pgl/z, ['Xns";
-      suffix = suffix_b;
-      break;
-    case "ld1rb_z_p_bi_u64"_h:
-    case "ld1rsb_z_p_bi_s64"_h:
-      form = "{'Zt.d}, 'Pgl/z, ['Xns";
-      suffix = suffix_b;
-      break;
-    case "ld1rh_z_p_bi_u16"_h:
-      form = "{'Zt.h}, 'Pgl/z, ['Xns";
-      suffix = suffix_h;
-      break;
-    case "ld1rh_z_p_bi_u32"_h:
-    case "ld1rsh_z_p_bi_s32"_h:
-      form = "{'Zt.s}, 'Pgl/z, ['Xns";
-      suffix = suffix_h;
-      break;
-    case "ld1rh_z_p_bi_u64"_h:
-    case "ld1rsh_z_p_bi_s64"_h:
-      form = "{'Zt.d}, 'Pgl/z, ['Xns";
-      suffix = suffix_h;
-      break;
-    case "ld1rw_z_p_bi_u32"_h:
-      form = "{'Zt.s}, 'Pgl/z, ['Xns";
-      suffix = suffix_w;
-      break;
-    case "ld1rsw_z_p_bi_s64"_h:
-    case "ld1rw_z_p_bi_u64"_h:
-      form = "{'Zt.d}, 'Pgl/z, ['Xns";
-      suffix = suffix_w;
-      break;
-    case "ld1rd_z_p_bi_u64"_h:
+    case LD1RD_z_p_bi_u64:
+      mnemonic = "ld1rd";
       form = "{'Zt.d}, 'Pgl/z, ['Xns";
       suffix = suffix_d;
+      break;
+    case LD1RH_z_p_bi_u16:
+      mnemonic = "ld1rh";
+      form = "{'Zt.h}, 'Pgl/z, ['Xns";
+      suffix = suffix_h;
+      break;
+    case LD1RH_z_p_bi_u32:
+      mnemonic = "ld1rh";
+      form = "{'Zt.s}, 'Pgl/z, ['Xns";
+      suffix = suffix_h;
+      break;
+    case LD1RH_z_p_bi_u64:
+      mnemonic = "ld1rh";
+      form = "{'Zt.d}, 'Pgl/z, ['Xns";
+      suffix = suffix_h;
+      break;
+    case LD1RSB_z_p_bi_s16:
+      mnemonic = "ld1rsb";
+      form = "{'Zt.h}, 'Pgl/z, ['Xns";
+      suffix = suffix_b;
+      break;
+    case LD1RSB_z_p_bi_s32:
+      mnemonic = "ld1rsb";
+      form = "{'Zt.s}, 'Pgl/z, ['Xns";
+      suffix = suffix_b;
+      break;
+    case LD1RSB_z_p_bi_s64:
+      mnemonic = "ld1rsb";
+      form = "{'Zt.d}, 'Pgl/z, ['Xns";
+      suffix = suffix_b;
+      break;
+    case LD1RSH_z_p_bi_s32:
+      mnemonic = "ld1rsh";
+      form = "{'Zt.s}, 'Pgl/z, ['Xns";
+      suffix = suffix_h;
+      break;
+    case LD1RSH_z_p_bi_s64:
+      mnemonic = "ld1rsh";
+      form = "{'Zt.d}, 'Pgl/z, ['Xns";
+      suffix = suffix_h;
+      break;
+    case LD1RSW_z_p_bi_s64:
+      mnemonic = "ld1rsw";
+      form = "{'Zt.d}, 'Pgl/z, ['Xns";
+      suffix = suffix_w;
+      break;
+    case LD1RW_z_p_bi_u32:
+      mnemonic = "ld1rw";
+      form = "{'Zt.s}, 'Pgl/z, ['Xns";
+      suffix = suffix_w;
+      break;
+    case LD1RW_z_p_bi_u64:
+      mnemonic = "ld1rw";
+      form = "{'Zt.d}, 'Pgl/z, ['Xns";
+      suffix = suffix_w;
+      break;
+    default:
       break;
   }
 
@@ -4639,141 +6719,395 @@ void Disassembler::VisitSVELoadAndBroadcastElement(const Instruction *instr) {
     suffix = "]";
   }
 
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusImm(
     const Instruction *instr) {
+  const char *mnemonic = mnemonic_.c_str();
   const char *form = "{'Zt.'tmsz}, 'Pgl/z, ['Xns";
   const char *suffix = ", #'s1916*16]";
 
   switch (form_hash_) {
-    case "ld1rob_z_p_bi_u8"_h:
-    case "ld1rod_z_p_bi_u64"_h:
-    case "ld1roh_z_p_bi_u16"_h:
-    case "ld1row_z_p_bi_u32"_h:
+    case Hash("ld1rqb_z_p_bi_u8"):
+    case Hash("ld1rqd_z_p_bi_u64"):
+    case Hash("ld1rqh_z_p_bi_u16"):
+    case Hash("ld1rqw_z_p_bi_u32"):
+      // Nothing to do.
+      break;
+    case Hash("ld1rob_z_p_bi_u8"):
+    case Hash("ld1rod_z_p_bi_u64"):
+    case Hash("ld1roh_z_p_bi_u16"):
+    case Hash("ld1row_z_p_bi_u32"):
       suffix = ", #'s1916*32]";
+      break;
+    default:
+      VIXL_UNREACHABLE();
       break;
   }
   if (instr->ExtractBits(19, 16) == 0) suffix = "]";
 
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVELoadAndBroadcastQOWord_ScalarPlusScalar(
     const Instruction *instr) {
+  const char *mnemonic = mnemonic_.c_str();
   const char *form = "{'Zt.'tmsz}, 'Pgl/z, ['Xns, ";
   const char *suffix = "'Rm, lsl #'u2423]";
 
   switch (form_hash_) {
-    case "ld1rqb_z_p_br_contiguous"_h:
-    case "ld1rob_z_p_br_contiguous"_h:
+    case Hash("ld1rqb_z_p_br_contiguous"):
+    case Hash("ld1rob_z_p_br_contiguous"):
       suffix = "'Rm]";
       break;
+    case Hash("ld1rqd_z_p_br_contiguous"):
+    case Hash("ld1rod_z_p_br_contiguous"):
+    case Hash("ld1rqh_z_p_br_contiguous"):
+    case Hash("ld1roh_z_p_br_contiguous"):
+    case Hash("ld1rqw_z_p_br_contiguous"):
+    case Hash("ld1row_z_p_br_contiguous"):
+      // Nothing to do.
+      break;
+    default:
+      VIXL_UNREACHABLE();
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVELoadMultipleStructures_ScalarPlusImm(
     const Instruction *instr) {
-  const char *form = "{'Zt.'tmsz, 'Zt2.'tmsz}";
-  const char *form_3 = "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz}";
-  const char *form_4 = "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz, 'Zt4.'tmsz}";
-  const char *suffix = ", 'Pgl/z, ['Xns'ISveSvl]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVELoadMultipleStructures_ScalarPlusImm)";
 
-  switch (form_hash_) {
-    case "ld3b_z_p_bi_contiguous"_h:
-    case "ld3d_z_p_bi_contiguous"_h:
-    case "ld3h_z_p_bi_contiguous"_h:
-    case "ld3w_z_p_bi_contiguous"_h:
+  const char *form_2 = "{'Zt.'tmsz, 'Zt2.'tmsz}, 'Pgl/z, ['Xns'ISveSvl]";
+  const char *form_3 =
+      "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz}, 'Pgl/z, ['Xns'ISveSvl]";
+  const char *form_4 =
+      "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz, 'Zt4.'tmsz}, "
+      "'Pgl/z, ['Xns'ISveSvl]";
+
+  switch (instr->Mask(SVELoadMultipleStructures_ScalarPlusImmMask)) {
+    case LD2B_z_p_bi_contiguous:
+      mnemonic = "ld2b";
+      form = form_2;
+      break;
+    case LD2D_z_p_bi_contiguous:
+      mnemonic = "ld2d";
+      form = form_2;
+      break;
+    case LD2H_z_p_bi_contiguous:
+      mnemonic = "ld2h";
+      form = form_2;
+      break;
+    case LD2W_z_p_bi_contiguous:
+      mnemonic = "ld2w";
+      form = form_2;
+      break;
+    case LD3B_z_p_bi_contiguous:
+      mnemonic = "ld3b";
       form = form_3;
       break;
-    case "ld4b_z_p_bi_contiguous"_h:
-    case "ld4d_z_p_bi_contiguous"_h:
-    case "ld4h_z_p_bi_contiguous"_h:
-    case "ld4w_z_p_bi_contiguous"_h:
+    case LD3D_z_p_bi_contiguous:
+      mnemonic = "ld3d";
+      form = form_3;
+      break;
+    case LD3H_z_p_bi_contiguous:
+      mnemonic = "ld3h";
+      form = form_3;
+      break;
+    case LD3W_z_p_bi_contiguous:
+      mnemonic = "ld3w";
+      form = form_3;
+      break;
+    case LD4B_z_p_bi_contiguous:
+      mnemonic = "ld4b";
       form = form_4;
       break;
+    case LD4D_z_p_bi_contiguous:
+      mnemonic = "ld4d";
+      form = form_4;
+      break;
+    case LD4H_z_p_bi_contiguous:
+      mnemonic = "ld4h";
+      form = form_4;
+      break;
+    case LD4W_z_p_bi_contiguous:
+      mnemonic = "ld4w";
+      form = form_4;
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVELoadMultipleStructures_ScalarPlusScalar(
     const Instruction *instr) {
-  const char *form = "{'Zt.'tmsz, 'Zt2.'tmsz}";
-  const char *form_3 = "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz}";
-  const char *form_4 = "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz, 'Zt4.'tmsz}";
-  const char *suffix = ", 'Pgl/z, ['Xns, 'Xm'NSveS]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVELoadMultipleStructures_ScalarPlusScalar)";
 
-  switch (form_hash_) {
-    case "ld3b_z_p_br_contiguous"_h:
-    case "ld3d_z_p_br_contiguous"_h:
-    case "ld3h_z_p_br_contiguous"_h:
-    case "ld3w_z_p_br_contiguous"_h:
+  const char *form_2 = "{'Zt.'tmsz, 'Zt2.'tmsz}, 'Pgl/z, ['Xns, 'Xm'NSveS]";
+  const char *form_3 =
+      "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz}, 'Pgl/z, ['Xns, 'Xm'NSveS]";
+  const char *form_4 =
+      "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz, 'Zt4.'tmsz}, "
+      "'Pgl/z, ['Xns, 'Xm'NSveS]";
+
+  switch (instr->Mask(SVELoadMultipleStructures_ScalarPlusScalarMask)) {
+    case LD2B_z_p_br_contiguous:
+      mnemonic = "ld2b";
+      form = form_2;
+      break;
+    case LD2D_z_p_br_contiguous:
+      mnemonic = "ld2d";
+      form = form_2;
+      break;
+    case LD2H_z_p_br_contiguous:
+      mnemonic = "ld2h";
+      form = form_2;
+      break;
+    case LD2W_z_p_br_contiguous:
+      mnemonic = "ld2w";
+      form = form_2;
+      break;
+    case LD3B_z_p_br_contiguous:
+      mnemonic = "ld3b";
       form = form_3;
       break;
-    case "ld4b_z_p_br_contiguous"_h:
-    case "ld4d_z_p_br_contiguous"_h:
-    case "ld4h_z_p_br_contiguous"_h:
-    case "ld4w_z_p_br_contiguous"_h:
+    case LD3D_z_p_br_contiguous:
+      mnemonic = "ld3d";
+      form = form_3;
+      break;
+    case LD3H_z_p_br_contiguous:
+      mnemonic = "ld3h";
+      form = form_3;
+      break;
+    case LD3W_z_p_br_contiguous:
+      mnemonic = "ld3w";
+      form = form_3;
+      break;
+    case LD4B_z_p_br_contiguous:
+      mnemonic = "ld4b";
       form = form_4;
       break;
+    case LD4D_z_p_br_contiguous:
+      mnemonic = "ld4d";
+      form = form_4;
+      break;
+    case LD4H_z_p_br_contiguous:
+      mnemonic = "ld4h";
+      form = form_4;
+      break;
+    case LD4W_z_p_br_contiguous:
+      mnemonic = "ld4w";
+      form = form_4;
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVELoadPredicateRegister(const Instruction *instr) {
-  const char *form = "'Pd, ['Xns, #'s2116:1210, mul vl]";
-  if (instr->Mask(0x003f1c00) == 0) {
-    form = "'Pd, ['Xns]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVELoadPredicateRegister)";
+
+  switch (instr->Mask(SVELoadPredicateRegisterMask)) {
+    case LDR_p_bi:
+      mnemonic = "ldr";
+      if (instr->Mask(0x003f1c00) == 0) {
+        form = "'Pd, ['Xns]";
+      } else {
+        form = "'Pd, ['Xns, #'s2116:1210, mul vl]";
+      }
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVELoadVectorRegister(const Instruction *instr) {
-  const char *form = "'Zt, ['Xns, #'s2116:1210, mul vl]";
-  if (instr->Mask(0x003f1c00) == 0) {
-    form = "'Zd, ['Xns]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVELoadVectorRegister)";
+
+  switch (instr->Mask(SVELoadVectorRegisterMask)) {
+    case LDR_z_bi:
+      mnemonic = "ldr";
+      if (instr->Mask(0x003f1c00) == 0) {
+        form = "'Zd, ['Xns]";
+      } else {
+        form = "'Zt, ['Xns, #'s2116:1210, mul vl]";
+      }
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPartitionBreakCondition(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.b, p'u1310/'?04:mz, 'Pn.b");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.b, p'u1310/'?04:mz, 'Pn.b";
+
+  switch (instr->Mask(SVEPartitionBreakConditionMask)) {
+    case BRKAS_p_p_p_z:
+      mnemonic = "brkas";
+      break;
+    case BRKA_p_p_p:
+      mnemonic = "brka";
+      break;
+    case BRKBS_p_p_p_z:
+      mnemonic = "brkbs";
+      break;
+    case BRKB_p_p_p:
+      mnemonic = "brkb";
+      break;
+    default:
+      form = "(SVEPartitionBreakCondition)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPermutePredicateElements(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.'t, 'Pn.'t, 'Pm.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.'t, 'Pn.'t, 'Pm.'t";
+
+  switch (instr->Mask(SVEPermutePredicateElementsMask)) {
+    case TRN1_p_pp:
+      mnemonic = "trn1";
+      break;
+    case TRN2_p_pp:
+      mnemonic = "trn2";
+      break;
+    case UZP1_p_pp:
+      mnemonic = "uzp1";
+      break;
+    case UZP2_p_pp:
+      mnemonic = "uzp2";
+      break;
+    case ZIP1_p_pp:
+      mnemonic = "zip1";
+      break;
+    case ZIP2_p_pp:
+      mnemonic = "zip2";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPredicateFirstActive(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.b, 'Pn, 'Pd.b");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEPredicateFirstActive)";
+
+  switch (instr->Mask(SVEPredicateFirstActiveMask)) {
+    case PFIRST_p_p_p:
+      mnemonic = "pfirst";
+      form = "'Pd.b, 'Pn, 'Pd.b";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPredicateReadFromFFR_Unpredicated(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.b");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEPredicateReadFromFFR_Unpredicated)";
+
+  switch (instr->Mask(SVEPredicateReadFromFFR_UnpredicatedMask)) {
+    case RDFFR_p_f:
+      mnemonic = "rdffr";
+      form = "'Pd.b";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPredicateTest(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "p'u1310, 'Pn.b");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEPredicateTest)";
+
+  switch (instr->Mask(SVEPredicateTestMask)) {
+    case PTEST_p_p:
+      mnemonic = "ptest";
+      form = "p'u1310, 'Pn.b";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPredicateZero(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.b");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEPredicateZero)";
+
+  switch (instr->Mask(SVEPredicateZeroMask)) {
+    case PFALSE_p:
+      mnemonic = "pfalse";
+      form = "'Pd.b";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPropagateBreakToNextPartition(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.b, p'u1310/z, 'Pn.b, 'Pd.b");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.b, p'u1310/z, 'Pn.b, 'Pd.b";
+
+  switch (instr->Mask(SVEPropagateBreakToNextPartitionMask)) {
+    case BRKNS_p_p_pp:
+      mnemonic = "brkns";
+      break;
+    case BRKN_p_p_pp:
+      mnemonic = "brkn";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEReversePredicateElements(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.'t, 'Pn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEReversePredicateElements)";
+
+  switch (instr->Mask(SVEReversePredicateElementsMask)) {
+    case REV_p_p:
+      mnemonic = "rev";
+      form = "'Pd.'t, 'Pn.'t";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEReverseVectorElements(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEReverseVectorElements)";
+
+  switch (instr->Mask(SVEReverseVectorElementsMask)) {
+    case REV_z_z:
+      mnemonic = "rev";
+      form = "'Zd.'t, 'Zn.'t";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEReverseWithinElements(const Instruction *instr) {
@@ -4815,6 +7149,7 @@ void Disassembler::VisitSVEReverseWithinElements(const Instruction *instr) {
 
 void Disassembler::VisitSVESaturatingIncDecRegisterByElementCount(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = IncDecFormHelper(instr,
                                       "'R20d, 'Ipc, mul #'u1916+1",
                                       "'R20d, 'Ipc",
@@ -4824,113 +7159,399 @@ void Disassembler::VisitSVESaturatingIncDecRegisterByElementCount(
                                          "'Xd, 'Wd, 'Ipc",
                                          "'Xd, 'Wd");
 
-  switch (form_hash_) {
-    case "sqdecb_r_rs_sx"_h:
-    case "sqdecd_r_rs_sx"_h:
-    case "sqdech_r_rs_sx"_h:
-    case "sqdecw_r_rs_sx"_h:
-    case "sqincb_r_rs_sx"_h:
-    case "sqincd_r_rs_sx"_h:
-    case "sqinch_r_rs_sx"_h:
-    case "sqincw_r_rs_sx"_h:
+  switch (instr->Mask(SVESaturatingIncDecRegisterByElementCountMask)) {
+    case SQDECB_r_rs_sx:
+      mnemonic = "sqdecb";
       form = form_sx;
       break;
+    case SQDECD_r_rs_sx:
+      mnemonic = "sqdecd";
+      form = form_sx;
+      break;
+    case SQDECH_r_rs_sx:
+      mnemonic = "sqdech";
+      form = form_sx;
+      break;
+    case SQDECW_r_rs_sx:
+      mnemonic = "sqdecw";
+      form = form_sx;
+      break;
+    case SQINCB_r_rs_sx:
+      mnemonic = "sqincb";
+      form = form_sx;
+      break;
+    case SQINCD_r_rs_sx:
+      mnemonic = "sqincd";
+      form = form_sx;
+      break;
+    case SQINCH_r_rs_sx:
+      mnemonic = "sqinch";
+      form = form_sx;
+      break;
+    case SQINCW_r_rs_sx:
+      mnemonic = "sqincw";
+      form = form_sx;
+      break;
+    case SQDECB_r_rs_x:
+      mnemonic = "sqdecb";
+      break;
+    case SQDECD_r_rs_x:
+      mnemonic = "sqdecd";
+      break;
+    case SQDECH_r_rs_x:
+      mnemonic = "sqdech";
+      break;
+    case SQDECW_r_rs_x:
+      mnemonic = "sqdecw";
+      break;
+    case SQINCB_r_rs_x:
+      mnemonic = "sqincb";
+      break;
+    case SQINCD_r_rs_x:
+      mnemonic = "sqincd";
+      break;
+    case SQINCH_r_rs_x:
+      mnemonic = "sqinch";
+      break;
+    case SQINCW_r_rs_x:
+      mnemonic = "sqincw";
+      break;
+    case UQDECB_r_rs_uw:
+    case UQDECB_r_rs_x:
+      mnemonic = "uqdecb";
+      break;
+    case UQDECD_r_rs_uw:
+    case UQDECD_r_rs_x:
+      mnemonic = "uqdecd";
+      break;
+    case UQDECH_r_rs_uw:
+    case UQDECH_r_rs_x:
+      mnemonic = "uqdech";
+      break;
+    case UQDECW_r_rs_uw:
+    case UQDECW_r_rs_x:
+      mnemonic = "uqdecw";
+      break;
+    case UQINCB_r_rs_uw:
+    case UQINCB_r_rs_x:
+      mnemonic = "uqincb";
+      break;
+    case UQINCD_r_rs_uw:
+    case UQINCD_r_rs_x:
+      mnemonic = "uqincd";
+      break;
+    case UQINCH_r_rs_uw:
+    case UQINCH_r_rs_x:
+      mnemonic = "uqinch";
+      break;
+    case UQINCW_r_rs_uw:
+    case UQINCW_r_rs_x:
+      mnemonic = "uqincw";
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVESaturatingIncDecVectorByElementCount(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = IncDecFormHelper(instr,
                                       "'Zd.'t, 'Ipc, mul #'u1916+1",
                                       "'Zd.'t, 'Ipc",
                                       "'Zd.'t");
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVESaturatingIncDecVectorByElementCountMask)) {
+    case SQDECD_z_zs:
+      mnemonic = "sqdecd";
+      break;
+    case SQDECH_z_zs:
+      mnemonic = "sqdech";
+      break;
+    case SQDECW_z_zs:
+      mnemonic = "sqdecw";
+      break;
+    case SQINCD_z_zs:
+      mnemonic = "sqincd";
+      break;
+    case SQINCH_z_zs:
+      mnemonic = "sqinch";
+      break;
+    case SQINCW_z_zs:
+      mnemonic = "sqincw";
+      break;
+    case UQDECD_z_zs:
+      mnemonic = "uqdecd";
+      break;
+    case UQDECH_z_zs:
+      mnemonic = "uqdech";
+      break;
+    case UQDECW_z_zs:
+      mnemonic = "uqdecw";
+      break;
+    case UQINCD_z_zs:
+      mnemonic = "uqincd";
+      break;
+    case UQINCH_z_zs:
+      mnemonic = "uqinch";
+      break;
+    case UQINCW_z_zs:
+      mnemonic = "uqincw";
+      break;
+    default:
+      form = "(SVEElementCount)";
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEStoreMultipleStructures_ScalarPlusImm(
     const Instruction *instr) {
-  const char *form = "{'Zt.'tmsz, 'Zt2.'tmsz}";
-  const char *form_3 = "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz}";
-  const char *form_4 = "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz, 'Zt4.'tmsz}";
-  const char *suffix = ", 'Pgl, ['Xns'ISveSvl]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEStoreMultipleStructures_ScalarPlusImm)";
 
-  switch (form_hash_) {
-    case "st3b_z_p_bi_contiguous"_h:
-    case "st3h_z_p_bi_contiguous"_h:
-    case "st3w_z_p_bi_contiguous"_h:
-    case "st3d_z_p_bi_contiguous"_h:
+  const char *form_2 = "{'Zt.'tmsz, 'Zt2.'tmsz}, 'Pgl, ['Xns'ISveSvl]";
+  const char *form_3 =
+      "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz}, 'Pgl, ['Xns'ISveSvl]";
+  const char *form_4 =
+      "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz, 'Zt4.'tmsz}, "
+      "'Pgl, ['Xns'ISveSvl]";
+
+  switch (instr->Mask(SVEStoreMultipleStructures_ScalarPlusImmMask)) {
+    case ST2B_z_p_bi_contiguous:
+      mnemonic = "st2b";
+      form = form_2;
+      break;
+    case ST2H_z_p_bi_contiguous:
+      mnemonic = "st2h";
+      form = form_2;
+      break;
+    case ST2W_z_p_bi_contiguous:
+      mnemonic = "st2w";
+      form = form_2;
+      break;
+    case ST2D_z_p_bi_contiguous:
+      mnemonic = "st2d";
+      form = form_2;
+      break;
+    case ST3B_z_p_bi_contiguous:
+      mnemonic = "st3b";
       form = form_3;
       break;
-    case "st4b_z_p_bi_contiguous"_h:
-    case "st4h_z_p_bi_contiguous"_h:
-    case "st4w_z_p_bi_contiguous"_h:
-    case "st4d_z_p_bi_contiguous"_h:
+    case ST3H_z_p_bi_contiguous:
+      mnemonic = "st3h";
+      form = form_3;
+      break;
+    case ST3W_z_p_bi_contiguous:
+      mnemonic = "st3w";
+      form = form_3;
+      break;
+    case ST3D_z_p_bi_contiguous:
+      mnemonic = "st3d";
+      form = form_3;
+      break;
+    case ST4B_z_p_bi_contiguous:
+      mnemonic = "st4b";
       form = form_4;
       break;
+    case ST4H_z_p_bi_contiguous:
+      mnemonic = "st4h";
+      form = form_4;
+      break;
+    case ST4W_z_p_bi_contiguous:
+      mnemonic = "st4w";
+      form = form_4;
+      break;
+    case ST4D_z_p_bi_contiguous:
+      mnemonic = "st4d";
+      form = form_4;
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEStoreMultipleStructures_ScalarPlusScalar(
     const Instruction *instr) {
-  const char *form = "{'Zt.'tmsz, 'Zt2.'tmsz}";
-  const char *form_3 = "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz}";
-  const char *form_4 = "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz, 'Zt4.'tmsz}";
-  const char *suffix = ", 'Pgl, ['Xns, 'Xm'NSveS]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEStoreMultipleStructures_ScalarPlusScalar)";
 
-  switch (form_hash_) {
-    case "st3b_z_p_br_contiguous"_h:
-    case "st3d_z_p_br_contiguous"_h:
-    case "st3h_z_p_br_contiguous"_h:
-    case "st3w_z_p_br_contiguous"_h:
+  const char *form_2 = "{'Zt.'tmsz, 'Zt2.'tmsz}, 'Pgl, ['Xns, 'Xm'NSveS]";
+  const char *form_3 =
+      "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz}, 'Pgl, ['Xns, 'Xm'NSveS]";
+  const char *form_4 =
+      "{'Zt.'tmsz, 'Zt2.'tmsz, 'Zt3.'tmsz, 'Zt4.'tmsz}, "
+      "'Pgl, ['Xns, 'Xm'NSveS]";
+
+  switch (instr->Mask(SVEStoreMultipleStructures_ScalarPlusScalarMask)) {
+    case ST2B_z_p_br_contiguous:
+      mnemonic = "st2b";
+      form = form_2;
+      break;
+    case ST2D_z_p_br_contiguous:
+      mnemonic = "st2d";
+      form = form_2;
+      break;
+    case ST2H_z_p_br_contiguous:
+      mnemonic = "st2h";
+      form = form_2;
+      break;
+    case ST2W_z_p_br_contiguous:
+      mnemonic = "st2w";
+      form = form_2;
+      break;
+    case ST3B_z_p_br_contiguous:
+      mnemonic = "st3b";
       form = form_3;
       break;
-    case "st4b_z_p_br_contiguous"_h:
-    case "st4d_z_p_br_contiguous"_h:
-    case "st4h_z_p_br_contiguous"_h:
-    case "st4w_z_p_br_contiguous"_h:
+    case ST3D_z_p_br_contiguous:
+      mnemonic = "st3d";
+      form = form_3;
+      break;
+    case ST3H_z_p_br_contiguous:
+      mnemonic = "st3h";
+      form = form_3;
+      break;
+    case ST3W_z_p_br_contiguous:
+      mnemonic = "st3w";
+      form = form_3;
+      break;
+    case ST4B_z_p_br_contiguous:
+      mnemonic = "st4b";
       form = form_4;
       break;
+    case ST4D_z_p_br_contiguous:
+      mnemonic = "st4d";
+      form = form_4;
+      break;
+    case ST4H_z_p_br_contiguous:
+      mnemonic = "st4h";
+      form = form_4;
+      break;
+    case ST4W_z_p_br_contiguous:
+      mnemonic = "st4w";
+      form = form_4;
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEStorePredicateRegister(const Instruction *instr) {
-  const char *form = "'Pd, ['Xns, #'s2116:1210, mul vl]";
-  if (instr->Mask(0x003f1c00) == 0) {
-    form = "'Pd, ['Xns]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEStorePredicateRegister)";
+
+  switch (instr->Mask(SVEStorePredicateRegisterMask)) {
+    case STR_p_bi:
+      mnemonic = "str";
+      if (instr->Mask(0x003f1c00) == 0) {
+        form = "'Pd, ['Xns]";
+      } else {
+        form = "'Pd, ['Xns, #'s2116:1210, mul vl]";
+      }
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEStoreVectorRegister(const Instruction *instr) {
-  const char *form = "'Zt, ['Xns, #'s2116:1210, mul vl]";
-  if (instr->Mask(0x003f1c00) == 0) {
-    form = "'Zd, ['Xns]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEStoreVectorRegister)";
+
+  switch (instr->Mask(SVEStoreVectorRegisterMask)) {
+    case STR_z_bi:
+      mnemonic = "str";
+      if (instr->Mask(0x003f1c00) == 0) {
+        form = "'Zd, ['Xns]";
+      } else {
+        form = "'Zt, ['Xns, #'s2116:1210, mul vl]";
+      }
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVETableLookup(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, {'Zn.'t}, 'Zm.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVETableLookup)";
+
+  switch (instr->Mask(SVETableLookupMask)) {
+    case TBL_z_zz_1:
+      mnemonic = "tbl";
+      form = "'Zd.'t, {'Zn.'t}, 'Zm.'t";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEUnpackPredicateElements(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.h, 'Pn.b");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.h, 'Pn.b";
+
+  switch (instr->Mask(SVEUnpackPredicateElementsMask)) {
+    case PUNPKHI_p_p:
+      mnemonic = "punpkhi";
+      break;
+    case PUNPKLO_p_p:
+      mnemonic = "punpklo";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEUnpackVectorElements(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Zn.'th";
+
   if (instr->GetSVESize() == 0) {
     // The lowest lane size of the destination vector is H-sized lane.
-    VisitUnallocated(instr);
-  } else {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zn.'th");
+    Format(instr, "unallocated", "(SVEUnpackVectorElements)");
+    return;
   }
+
+  switch (instr->Mask(SVEUnpackVectorElementsMask)) {
+    case SUNPKHI_z_z:
+      mnemonic = "sunpkhi";
+      break;
+    case SUNPKLO_z_z:
+      mnemonic = "sunpklo";
+      break;
+    case UUNPKHI_z_z:
+      mnemonic = "uunpkhi";
+      break;
+    case UUNPKLO_z_z:
+      mnemonic = "uunpklo";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEVectorSplice(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl, 'Zd.'t, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEVectorSplice)";
+
+  switch (instr->Mask(SVEVectorSpliceMask)) {
+    case SPLICE_z_p_zz_des:
+      mnemonic = "splice";
+      form = "'Zd.'t, 'Pgl, 'Zd.'t, 'Zn.'t";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEAddressGeneration(const Instruction *instr) {
@@ -4999,13 +7620,13 @@ void Disassembler::VisitSVEBitwiseShiftUnpredicated(const Instruction *instr) {
   const char *form_i = "'Zd.'tszs, 'Zn.'tszs, ";
 
   switch (form_hash_) {
-    case "asr_z_zi"_h:
-    case "lsr_z_zi"_h:
-    case "sri_z_zzi"_h:
-    case "srsra_z_zi"_h:
-    case "ssra_z_zi"_h:
-    case "ursra_z_zi"_h:
-    case "usra_z_zi"_h:
+    case Hash("asr_z_zi"):
+    case Hash("lsr_z_zi"):
+    case Hash("sri_z_zzi"):
+    case Hash("srsra_z_zi"):
+    case Hash("ssra_z_zi"):
+    case Hash("ursra_z_zi"):
+    case Hash("usra_z_zi"):
       if (tsize != 0) {
         // The tsz field must not be zero.
         mnemonic = mnemonic_.c_str();
@@ -5013,8 +7634,8 @@ void Disassembler::VisitSVEBitwiseShiftUnpredicated(const Instruction *instr) {
         suffix = "'ITriSves";
       }
       break;
-    case "lsl_z_zi"_h:
-    case "sli_z_zzi"_h:
+    case Hash("lsl_z_zi"):
+    case Hash("sli_z_zzi"):
       if (tsize != 0) {
         // The tsz field must not be zero.
         mnemonic = mnemonic_.c_str();
@@ -5022,9 +7643,9 @@ void Disassembler::VisitSVEBitwiseShiftUnpredicated(const Instruction *instr) {
         suffix = "'ITriSver";
       }
       break;
-    case "asr_z_zw"_h:
-    case "lsl_z_zw"_h:
-    case "lsr_z_zw"_h:
+    case Hash("asr_z_zw"):
+    case Hash("lsl_z_zw"):
+    case Hash("lsr_z_zw"):
       if (lane_size <= kSRegSizeInBytesLog2) {
         mnemonic = mnemonic_.c_str();
         form = "'Zd.'t, 'Zn.'t, 'Zm.d";
@@ -5038,259 +7659,748 @@ void Disassembler::VisitSVEBitwiseShiftUnpredicated(const Instruction *instr) {
 }
 
 void Disassembler::VisitSVEElementCount(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form =
       IncDecFormHelper(instr, "'Xd, 'Ipc, mul #'u1916+1", "'Xd, 'Ipc", "'Xd");
-  FormatWithDecodedMnemonic(instr, form);
+
+  switch (instr->Mask(SVEElementCountMask)) {
+    case CNTB_r_s:
+      mnemonic = "cntb";
+      break;
+    case CNTD_r_s:
+      mnemonic = "cntd";
+      break;
+    case CNTH_r_s:
+      mnemonic = "cnth";
+      break;
+    case CNTW_r_s:
+      mnemonic = "cntw";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPAccumulatingReduction(const Instruction *instr) {
-  if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
-  } else {
-    FormatWithDecodedMnemonic(instr, "'t'u0400, 'Pgl, 't'u0400, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPAccumulatingReduction)";
+
+  if (instr->GetSVEVectorFormat() != kFormatVnB) {
+    switch (instr->Mask(SVEFPAccumulatingReductionMask)) {
+      case FADDA_v_p_z:
+        mnemonic = "fadda";
+        form = "'t'u0400, 'Pgl, 't'u0400, 'Zn.'t";
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPArithmeticUnpredicated(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Zn.'t, 'Zm.'t";
+
   if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
+    form = ("(SVEFPArithmeticUnpredicated)");
   } else {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zn.'t, 'Zm.'t");
+    switch (instr->Mask(SVEFPArithmeticUnpredicatedMask)) {
+      case FADD_z_zz:
+        mnemonic = "fadd";
+        break;
+      case FMUL_z_zz:
+        mnemonic = "fmul";
+        break;
+      case FRECPS_z_zz:
+        mnemonic = "frecps";
+        break;
+      case FRSQRTS_z_zz:
+        mnemonic = "frsqrts";
+        break;
+      case FSUB_z_zz:
+        mnemonic = "fsub";
+        break;
+      case FTSMUL_z_zz:
+        mnemonic = "ftsmul";
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPCompareVectors(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.'t";
+
   if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
+    form = "(SVEFPCompareVectors)";
   } else {
-    FormatWithDecodedMnemonic(instr, "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.'t");
+    switch (instr->Mask(SVEFPCompareVectorsMask)) {
+      case FACGE_p_p_zz:
+        mnemonic = "facge";
+        break;
+      case FACGT_p_p_zz:
+        mnemonic = "facgt";
+        break;
+      case FCMEQ_p_p_zz:
+        mnemonic = "fcmeq";
+        break;
+      case FCMGE_p_p_zz:
+        mnemonic = "fcmge";
+        break;
+      case FCMGT_p_p_zz:
+        mnemonic = "fcmgt";
+        break;
+      case FCMNE_p_p_zz:
+        mnemonic = "fcmne";
+        break;
+      case FCMUO_p_p_zz:
+        mnemonic = "fcmuo";
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPCompareWithZero(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.'t, 'Pgl/z, 'Zn.'t, #0.0";
+
   if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
+    form = "(SVEFPCompareWithZero)";
   } else {
-    FormatWithDecodedMnemonic(instr, "'Pd.'t, 'Pgl/z, 'Zn.'t, #0.0");
+    switch (instr->Mask(SVEFPCompareWithZeroMask)) {
+      case FCMEQ_p_p_z0:
+        mnemonic = "fcmeq";
+        break;
+      case FCMGE_p_p_z0:
+        mnemonic = "fcmge";
+        break;
+      case FCMGT_p_p_z0:
+        mnemonic = "fcmgt";
+        break;
+      case FCMLE_p_p_z0:
+        mnemonic = "fcmle";
+        break;
+      case FCMLT_p_p_z0:
+        mnemonic = "fcmlt";
+        break;
+      case FCMNE_p_p_z0:
+        mnemonic = "fcmne";
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPComplexAddition(const Instruction *instr) {
-  // Bit 15 is always set, so this gives 90 * 1 or 3.
-  const char *form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t, #'u1615*90";
-  if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
-  } else {
-    FormatWithDecodedMnemonic(instr, form);
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPComplexAddition)";
+
+  if (instr->GetSVEVectorFormat() != kFormatVnB) {
+    switch (instr->Mask(SVEFPComplexAdditionMask)) {
+      case FCADD_z_p_zz:
+        mnemonic = "fcadd";
+        if (instr->ExtractBit(16) == 0) {
+          form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t, #90";
+        } else {
+          form = "'Zd.'t, 'Pgl/m, 'Zd.'t, 'Zn.'t, #270";
+        }
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPComplexMulAdd(const Instruction *instr) {
-  const char *form = "'Zd.'t, 'Pgl/m, 'Zn.'t, 'Zm.'t, #'u1413*90";
-  if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
-  } else {
-    FormatWithDecodedMnemonic(instr, form);
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPComplexMulAdd)";
+  const char *suffix = NULL;
+
+  const char *fcmla_constants[] = {"0", "90", "180", "270"};
+
+  if (instr->GetSVEVectorFormat() != kFormatVnB) {
+    switch (instr->Mask(SVEFPComplexMulAddMask)) {
+      case FCMLA_z_p_zzz:
+        mnemonic = "fcmla";
+        form = "'Zd.'t, 'Pgl/m, 'Zn.'t, 'Zm.'t, #";
+        suffix = fcmla_constants[instr->ExtractBits(14, 13)];
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVEFPComplexMulAddIndex(const Instruction *instr) {
-  const char *form = "'Zd.h, 'Zn.h, z'u1816.h['u2019]";
-  const char *suffix = ", #'u1110*90";
-  switch (form_hash_) {
-    case "fcmla_z_zzzi_s"_h:
-      form = "'Zd.s, 'Zn.s, z'u1916.s['u2020]";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPComplexMulAddIndex)";
+
+  const char *fcmla_constants[] = {"0", "90", "180", "270"};
+  const char *suffix = fcmla_constants[instr->ExtractBits(11, 10)];
+
+  switch (instr->Mask(SVEFPComplexMulAddIndexMask)) {
+    case FCMLA_z_zzzi_h:
+      mnemonic = "fcmla";
+      form = "'Zd.h, 'Zn.h, z'u1816.h['u2019], #";
+      break;
+    case FCMLA_z_zzzi_s:
+      mnemonic = "fcmla";
+      form = "'Zd.s, 'Zn.s, z'u1916.s['u2020], #";
+      break;
+    default:
+      suffix = NULL;
       break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVEFPFastReduction(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'t'u0400, 'Pgl, 'Zn.'t";
+
   if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
+    form = "(SVEFPFastReduction)";
   } else {
-    FormatWithDecodedMnemonic(instr, "'t'u0400, 'Pgl, 'Zn.'t");
+    switch (instr->Mask(SVEFPFastReductionMask)) {
+      case FADDV_v_p_z:
+        mnemonic = "faddv";
+        break;
+      case FMAXNMV_v_p_z:
+        mnemonic = "fmaxnmv";
+        break;
+      case FMAXV_v_p_z:
+        mnemonic = "fmaxv";
+        break;
+      case FMINNMV_v_p_z:
+        mnemonic = "fminnmv";
+        break;
+      case FMINV_v_p_z:
+        mnemonic = "fminv";
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPMulIndex(const Instruction *instr) {
-  const char *form = "'Zd.h, 'Zn.h, z'u1816.h['u2222:2019]";
-  switch (form_hash_) {
-    case "fmul_z_zzi_d"_h:
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPMulIndex)";
+
+  switch (instr->Mask(SVEFPMulIndexMask)) {
+    case FMUL_z_zzi_d:
+      mnemonic = "fmul";
       form = "'Zd.d, 'Zn.d, z'u1916.d['u2020]";
       break;
-    case "fmul_z_zzi_s"_h:
+    case FMUL_z_zzi_h:
+    case FMUL_z_zzi_h_i3h:
+      mnemonic = "fmul";
+      form = "'Zd.h, 'Zn.h, z'u1816.h['u2222:2019]";
+      break;
+    case FMUL_z_zzi_s:
+      mnemonic = "fmul";
       form = "'Zd.s, 'Zn.s, z'u1816.s['u2019]";
       break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPMulAdd(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zn.'t, 'Zm.'t";
+
   if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
+    form = "(SVEFPMulAdd)";
   } else {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zn.'t, 'Zm.'t");
+    switch (instr->Mask(SVEFPMulAddMask)) {
+      case FMAD_z_p_zzz:
+        mnemonic = "fmad";
+        break;
+      case FMLA_z_p_zzz:
+        mnemonic = "fmla";
+        break;
+      case FMLS_z_p_zzz:
+        mnemonic = "fmls";
+        break;
+      case FMSB_z_p_zzz:
+        mnemonic = "fmsb";
+        break;
+      case FNMAD_z_p_zzz:
+        mnemonic = "fnmad";
+        break;
+      case FNMLA_z_p_zzz:
+        mnemonic = "fnmla";
+        break;
+      case FNMLS_z_p_zzz:
+        mnemonic = "fnmls";
+        break;
+      case FNMSB_z_p_zzz:
+        mnemonic = "fnmsb";
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPMulAddIndex(const Instruction *instr) {
-  const char *form = "'Zd.h, 'Zn.h, z'u1816.h['u2222:2019]";
-  switch (form_hash_) {
-    case "fmla_z_zzzi_s"_h:
-    case "fmls_z_zzzi_s"_h:
-      form = "'Zd.s, 'Zn.s, z'u1816.s['u2019]";
-      break;
-    case "fmla_z_zzzi_d"_h:
-    case "fmls_z_zzzi_d"_h:
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEFPMulAddIndex)";
+
+  switch (instr->Mask(SVEFPMulAddIndexMask)) {
+    case FMLA_z_zzzi_d:
+      mnemonic = "fmla";
       form = "'Zd.d, 'Zn.d, z'u1916.d['u2020]";
       break;
+    case FMLA_z_zzzi_s:
+      mnemonic = "fmla";
+      form = "'Zd.s, 'Zn.s, z'u1816.s['u2019]";
+      break;
+    case FMLS_z_zzzi_d:
+      mnemonic = "fmls";
+      form = "'Zd.d, 'Zn.d, z'u1916.d['u2020]";
+      break;
+    case FMLS_z_zzzi_s:
+      mnemonic = "fmls";
+      form = "'Zd.s, 'Zn.s, z'u1816.s['u2019]";
+      break;
+    case FMLA_z_zzzi_h:
+    case FMLA_z_zzzi_h_i3h:
+      mnemonic = "fmla";
+      form = "'Zd.h, 'Zn.h, z'u1816.h['u2222:2019]";
+      break;
+    case FMLS_z_zzzi_h:
+    case FMLS_z_zzzi_h_i3h:
+      mnemonic = "fmls";
+      form = "'Zd.h, 'Zn.h, z'u1816.h['u2222:2019]";
+      break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEFPUnaryOpUnpredicated(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Zn.'t";
+
   if (instr->GetSVEVectorFormat() == kFormatVnB) {
-    VisitUnallocated(instr);
+    form = "(SVEFPUnaryOpUnpredicated)";
   } else {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zn.'t");
+    switch (instr->Mask(SVEFPUnaryOpUnpredicatedMask)) {
+      case FRECPE_z_z:
+        mnemonic = "frecpe";
+        break;
+      case FRSQRTE_z_z:
+        mnemonic = "frsqrte";
+        break;
+      default:
+        break;
+    }
   }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIncDecByPredicateCount(const Instruction *instr) {
-  const char *form = "'Zd.'t, 'Pn";
-  switch (form_hash_) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEIncDecByPredicateCount)";
+
+  switch (instr->Mask(SVEIncDecByPredicateCountMask)) {
+    case DECP_r_p_r:
+    case DECP_z_p_z:
+      mnemonic = "decp";
+      break;
+    case INCP_r_p_r:
+    case INCP_z_p_z:
+      mnemonic = "incp";
+      break;
+    case SQDECP_r_p_r_sx:
+    case SQDECP_r_p_r_x:
+    case SQDECP_z_p_z:
+      mnemonic = "sqdecp";
+      break;
+    case SQINCP_r_p_r_sx:
+    case SQINCP_r_p_r_x:
+    case SQINCP_z_p_z:
+      mnemonic = "sqincp";
+      break;
+    case UQDECP_r_p_r_uw:
+    case UQDECP_r_p_r_x:
+    case UQDECP_z_p_z:
+      mnemonic = "uqdecp";
+      break;
+    case UQINCP_r_p_r_uw:
+    case UQINCP_r_p_r_x:
+    case UQINCP_z_p_z:
+      mnemonic = "uqincp";
+      break;
+    default:
+      break;
+  }
+
+  switch (instr->Mask(SVEIncDecByPredicateCountMask)) {
     // <Xdn>, <Pg>.<T>
-    case "decp_r_p_r"_h:
-    case "incp_r_p_r"_h:
+    case DECP_r_p_r:
+    case INCP_r_p_r:
       form = "'Xd, 'Pn.'t";
       break;
+    // <Zdn>.<T>, <Pg>
+    case DECP_z_p_z:
+    case INCP_z_p_z:
+    case SQDECP_z_p_z:
+    case SQINCP_z_p_z:
+    case UQDECP_z_p_z:
+    case UQINCP_z_p_z:
+      form = "'Zd.'t, 'Pn";
+      break;
     // <Xdn>, <Pg>.<T>, <Wdn>
-    case "sqdecp_r_p_r_sx"_h:
-    case "sqincp_r_p_r_sx"_h:
+    case SQDECP_r_p_r_sx:
+    case SQINCP_r_p_r_sx:
       form = "'Xd, 'Pn.'t, 'Wd";
       break;
     // <Xdn>, <Pg>.<T>
-    case "sqdecp_r_p_r_x"_h:
-    case "sqincp_r_p_r_x"_h:
-    case "uqdecp_r_p_r_x"_h:
-    case "uqincp_r_p_r_x"_h:
+    case SQDECP_r_p_r_x:
+    case SQINCP_r_p_r_x:
+    case UQDECP_r_p_r_x:
+    case UQINCP_r_p_r_x:
       form = "'Xd, 'Pn.'t";
       break;
     // <Wdn>, <Pg>.<T>
-    case "uqdecp_r_p_r_uw"_h:
-    case "uqincp_r_p_r_uw"_h:
+    case UQDECP_r_p_r_uw:
+    case UQINCP_r_p_r_uw:
       form = "'Wd, 'Pn.'t";
       break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIndexGeneration(const Instruction *instr) {
-  const char *form = "'Zd.'t, #'s0905, #'s2016";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEIndexGeneration)";
+
   bool w_inputs =
       static_cast<unsigned>(instr->GetSVESize()) <= kWRegSizeInBytesLog2;
 
-  switch (form_hash_) {
-    case "index_z_ir"_h:
+  switch (instr->Mask(SVEIndexGenerationMask)) {
+    case INDEX_z_ii:
+      mnemonic = "index";
+      form = "'Zd.'t, #'s0905, #'s2016";
+      break;
+    case INDEX_z_ir:
+      mnemonic = "index";
       form = w_inputs ? "'Zd.'t, #'s0905, 'Wm" : "'Zd.'t, #'s0905, 'Xm";
       break;
-    case "index_z_ri"_h:
+    case INDEX_z_ri:
+      mnemonic = "index";
       form = w_inputs ? "'Zd.'t, 'Wn, #'s2016" : "'Zd.'t, 'Xn, #'s2016";
       break;
-    case "index_z_rr"_h:
+    case INDEX_z_rr:
+      mnemonic = "index";
       form = w_inputs ? "'Zd.'t, 'Wn, 'Wm" : "'Zd.'t, 'Xn, 'Xm";
       break;
+    default:
+      break;
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntArithmeticUnpredicated(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zn.'t, 'Zm.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Zn.'t, 'Zm.'t";
+
+  switch (instr->Mask(SVEIntArithmeticUnpredicatedMask)) {
+    case ADD_z_zz:
+      mnemonic = "add";
+      break;
+    case SQADD_z_zz:
+      mnemonic = "sqadd";
+      break;
+    case SQSUB_z_zz:
+      mnemonic = "sqsub";
+      break;
+    case SUB_z_zz:
+      mnemonic = "sub";
+      break;
+    case UQADD_z_zz:
+      mnemonic = "uqadd";
+      break;
+    case UQSUB_z_zz:
+      mnemonic = "uqsub";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntCompareSignedImm(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.'t, 'Pgl/z, 'Zn.'t, #'s2016");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.'t, 'Pgl/z, 'Zn.'t, #'s2016";
+
+  switch (instr->Mask(SVEIntCompareSignedImmMask)) {
+    case CMPEQ_p_p_zi:
+      mnemonic = "cmpeq";
+      break;
+    case CMPGE_p_p_zi:
+      mnemonic = "cmpge";
+      break;
+    case CMPGT_p_p_zi:
+      mnemonic = "cmpgt";
+      break;
+    case CMPLE_p_p_zi:
+      mnemonic = "cmple";
+      break;
+    case CMPLT_p_p_zi:
+      mnemonic = "cmplt";
+      break;
+    case CMPNE_p_p_zi:
+      mnemonic = "cmpne";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntCompareUnsignedImm(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.'t, 'Pgl/z, 'Zn.'t, #'u2014");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.'t, 'Pgl/z, 'Zn.'t, #'u2014";
+
+  switch (instr->Mask(SVEIntCompareUnsignedImmMask)) {
+    case CMPHI_p_p_zi:
+      mnemonic = "cmphi";
+      break;
+    case CMPHS_p_p_zi:
+      mnemonic = "cmphs";
+      break;
+    case CMPLO_p_p_zi:
+      mnemonic = "cmplo";
+      break;
+    case CMPLS_p_p_zi:
+      mnemonic = "cmpls";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntCompareVectors(const Instruction *instr) {
-  const char *form = "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.";
-  const char *suffix = "d";
-  switch (form_hash_) {
-    case "cmpeq_p_p_zz"_h:
-    case "cmpge_p_p_zz"_h:
-    case "cmpgt_p_p_zz"_h:
-    case "cmphi_p_p_zz"_h:
-    case "cmphs_p_p_zz"_h:
-    case "cmpne_p_p_zz"_h:
-      suffix = "'t";
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.d";
+
+  switch (instr->Mask(SVEIntCompareVectorsMask)) {
+    case CMPEQ_p_p_zw:
+      mnemonic = "cmpeq";
+      break;
+    case CMPEQ_p_p_zz:
+      mnemonic = "cmpeq";
+      form = "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.'t";
+      break;
+    case CMPGE_p_p_zw:
+      mnemonic = "cmpge";
+      break;
+    case CMPGE_p_p_zz:
+      mnemonic = "cmpge";
+      form = "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.'t";
+      break;
+    case CMPGT_p_p_zw:
+      mnemonic = "cmpgt";
+      break;
+    case CMPGT_p_p_zz:
+      mnemonic = "cmpgt";
+      form = "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.'t";
+      break;
+    case CMPHI_p_p_zw:
+      mnemonic = "cmphi";
+      break;
+    case CMPHI_p_p_zz:
+      mnemonic = "cmphi";
+      form = "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.'t";
+      break;
+    case CMPHS_p_p_zw:
+      mnemonic = "cmphs";
+      break;
+    case CMPHS_p_p_zz:
+      mnemonic = "cmphs";
+      form = "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.'t";
+      break;
+    case CMPLE_p_p_zw:
+      mnemonic = "cmple";
+      break;
+    case CMPLO_p_p_zw:
+      mnemonic = "cmplo";
+      break;
+    case CMPLS_p_p_zw:
+      mnemonic = "cmpls";
+      break;
+    case CMPLT_p_p_zw:
+      mnemonic = "cmplt";
+      break;
+    case CMPNE_p_p_zw:
+      mnemonic = "cmpne";
+      break;
+    case CMPNE_p_p_zz:
+      mnemonic = "cmpne";
+      form = "'Pd.'t, 'Pgl/z, 'Zn.'t, 'Zm.'t";
+      break;
+    default:
       break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntMulAddPredicated(const Instruction *instr) {
-  const char *form = "'Zd.'t, 'Pgl/m, ";
-  const char *suffix = "'Zn.'t, 'Zm.'t";
-  switch (form_hash_) {
-    case "mad_z_p_zzz"_h:
-    case "msb_z_p_zzz"_h:
-      suffix = "'Zm.'t, 'Zn.'t";
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEIntMulAddPredicated)";
+
+  switch (instr->Mask(SVEIntMulAddPredicatedMask)) {
+    case MAD_z_p_zzz:
+      mnemonic = "mad";
+      form = "'Zd.'t, 'Pgl/m, 'Zm.'t, 'Zn.'t";
+      break;
+    case MLA_z_p_zzz:
+      mnemonic = "mla";
+      form = "'Zd.'t, 'Pgl/m, 'Zn.'t, 'Zm.'t";
+      break;
+    case MLS_z_p_zzz:
+      mnemonic = "mls";
+      form = "'Zd.'t, 'Pgl/m, 'Zn.'t, 'Zm.'t";
+      break;
+    case MSB_z_p_zzz:
+      mnemonic = "msb";
+      form = "'Zd.'t, 'Pgl/m, 'Zm.'t, 'Zn.'t";
+      break;
+    default:
       break;
   }
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntMulAddUnpredicated(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEIntMulAddUnpredicated)";
+
   if (static_cast<unsigned>(instr->GetSVESize()) >= kSRegSizeInBytesLog2) {
-    FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zn.'tq, 'Zm.'tq");
-  } else {
-    VisitUnallocated(instr);
+    form = "'Zd.'t, 'Zn.'tq, 'Zm.'tq";
+    switch (instr->Mask(SVEIntMulAddUnpredicatedMask)) {
+      case SDOT_z_zzz:
+        mnemonic = "sdot";
+        break;
+      case UDOT_z_zzz:
+        mnemonic = "udot";
+        break;
+      default:
+        break;
+    }
   }
+
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEMovprfx(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/'?16:mz, 'Zn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEMovprfx)";
+
+  if (instr->Mask(SVEMovprfxMask) == MOVPRFX_z_p_z) {
+    mnemonic = "movprfx";
+    form = "'Zd.'t, 'Pgl/'?16:mz, 'Zn.'t";
+  }
+
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntReduction(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "'Vdv, 'Pgl, 'Zn.'t";
-  switch (form_hash_) {
-    case "saddv_r_p_z"_h:
-    case "uaddv_r_p_z"_h:
-      form = "'Dd, 'Pgl, 'Zn.'t";
-      break;
+
+  if (instr->Mask(SVEIntReductionLogicalFMask) == SVEIntReductionLogicalFixed) {
+    switch (instr->Mask(SVEIntReductionLogicalMask)) {
+      case ANDV_r_p_z:
+        mnemonic = "andv";
+        break;
+      case EORV_r_p_z:
+        mnemonic = "eorv";
+        break;
+      case ORV_r_p_z:
+        mnemonic = "orv";
+        break;
+      default:
+        break;
+    }
+  } else {
+    switch (instr->Mask(SVEIntReductionMask)) {
+      case SADDV_r_p_z:
+        mnemonic = "saddv";
+        form = "'Dd, 'Pgl, 'Zn.'t";
+        break;
+      case SMAXV_r_p_z:
+        mnemonic = "smaxv";
+        break;
+      case SMINV_r_p_z:
+        mnemonic = "sminv";
+        break;
+      case UADDV_r_p_z:
+        mnemonic = "uaddv";
+        form = "'Dd, 'Pgl, 'Zn.'t";
+        break;
+      case UMAXV_r_p_z:
+        mnemonic = "umaxv";
+        break;
+      case UMINV_r_p_z:
+        mnemonic = "uminv";
+        break;
+      default:
+        break;
+    }
   }
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEIntUnaryArithmeticPredicated(
     const Instruction *instr) {
+  const char *mnemonic = mnemonic_.c_str();
+  const char *form = "'Zd.'t, 'Pgl/m, 'Zn.'t";
   VectorFormat vform = instr->GetSVEVectorFormat();
 
   switch (form_hash_) {
-    case "sxtw_z_p_z"_h:
-    case "uxtw_z_p_z"_h:
+    case Hash("sxtw_z_p_z"):
+    case Hash("uxtw_z_p_z"):
       if (vform == kFormatVnS) {
         VisitUnallocated(instr);
         return;
       }
       VIXL_FALLTHROUGH();
-    case "sxth_z_p_z"_h:
-    case "uxth_z_p_z"_h:
+    case Hash("sxth_z_p_z"):
+    case Hash("uxth_z_p_z"):
       if (vform == kFormatVnH) {
         VisitUnallocated(instr);
         return;
       }
       VIXL_FALLTHROUGH();
-    case "sxtb_z_p_z"_h:
-    case "uxtb_z_p_z"_h:
-    case "fabs_z_p_z"_h:
-    case "fneg_z_p_z"_h:
+    case Hash("sxtb_z_p_z"):
+    case Hash("uxtb_z_p_z"):
+    case Hash("fabs_z_p_z"):
+    case Hash("fneg_z_p_z"):
       if (vform == kFormatVnB) {
         VisitUnallocated(instr);
         return;
@@ -5298,36 +8408,91 @@ void Disassembler::VisitSVEIntUnaryArithmeticPredicated(
       break;
   }
 
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Pgl/m, 'Zn.'t");
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEMulIndex(const Instruction *instr) {
-  const char *form = "'Zd.s, 'Zn.b, z'u1816.b['u2019]";
+  const char *mnemonic = mnemonic_.c_str();
+  const char *form = "(SVEMulIndex)";
 
   switch (form_hash_) {
-    case "sdot_z_zzzi_d"_h:
-    case "udot_z_zzzi_d"_h:
+    case Hash("sdot_z_zzzi_d"):
+    case Hash("udot_z_zzzi_d"):
       form = "'Zd.d, 'Zn.h, z'u1916.h['u2020]";
       break;
+    case Hash("sdot_z_zzzi_s"):
+    case Hash("sudot_z_zzzi_s"):
+    case Hash("udot_z_zzzi_s"):
+    case Hash("usdot_z_zzzi_s"):
+      form = "'Zd.s, 'Zn.b, z'u1816.b['u2019]";
+      break;
+    default:
+      break;
   }
-
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPermuteVectorExtract(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.b, 'Zd.b, 'Zn.b, #'u2016:1210");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEPermuteVectorExtract)";
+
+  switch (instr->Mask(SVEPermuteVectorExtractMask)) {
+    case EXT_z_zi_des:
+      mnemonic = "ext";
+      form = "'Zd.b, 'Zd.b, 'Zn.b, #'u2016:1210";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPermuteVectorInterleaving(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Zd.'t, 'Zn.'t, 'Zm.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Zd.'t, 'Zn.'t, 'Zm.'t";
+
+  switch (instr->Mask(SVEPermuteVectorInterleavingMask)) {
+    case TRN1_z_zz:
+      mnemonic = "trn1";
+      break;
+    case TRN2_z_zz:
+      mnemonic = "trn2";
+      break;
+    case UZP1_z_zz:
+      mnemonic = "uzp1";
+      break;
+    case UZP2_z_zz:
+      mnemonic = "uzp2";
+      break;
+    case ZIP1_z_zz:
+      mnemonic = "zip1";
+      break;
+    case ZIP2_z_zz:
+      mnemonic = "zip2";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPredicateCount(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Xd, p'u1310, 'Pn.'t");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEPredicateCount)";
+
+  switch (instr->Mask(SVEPredicateCountMask)) {
+    case CNTP_r_p_p:
+      mnemonic = "cntp";
+      form = "'Xd, p'u1310, 'Pn.'t";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPredicateLogical(const Instruction *instr) {
-  const char *mnemonic = mnemonic_.c_str();
+  const char *mnemonic = "unimplemented";
   const char *form = "'Pd.b, p'u1310/z, 'Pn.b, 'Pm.b";
 
   int pd = instr->GetPd();
@@ -5335,127 +8500,304 @@ void Disassembler::VisitSVEPredicateLogical(const Instruction *instr) {
   int pm = instr->GetPm();
   int pg = instr->ExtractBits(13, 10);
 
-  switch (form_hash_) {
-    case "ands_p_p_pp_z"_h:
+  switch (instr->Mask(SVEPredicateLogicalMask)) {
+    case ANDS_p_p_pp_z:
+      mnemonic = "ands";
       if (pn == pm) {
         mnemonic = "movs";
         form = "'Pd.b, p'u1310/z, 'Pn.b";
       }
       break;
-    case "and_p_p_pp_z"_h:
+    case AND_p_p_pp_z:
+      mnemonic = "and";
       if (pn == pm) {
         mnemonic = "mov";
         form = "'Pd.b, p'u1310/z, 'Pn.b";
       }
       break;
-    case "eors_p_p_pp_z"_h:
+    case BICS_p_p_pp_z:
+      mnemonic = "bics";
+      break;
+    case BIC_p_p_pp_z:
+      mnemonic = "bic";
+      break;
+    case EORS_p_p_pp_z:
+      mnemonic = "eors";
       if (pm == pg) {
         mnemonic = "nots";
         form = "'Pd.b, 'Pm/z, 'Pn.b";
       }
       break;
-    case "eor_p_p_pp_z"_h:
+    case EOR_p_p_pp_z:
+      mnemonic = "eor";
       if (pm == pg) {
         mnemonic = "not";
         form = "'Pd.b, 'Pm/z, 'Pn.b";
       }
       break;
-    case "orrs_p_p_pp_z"_h:
+    case NANDS_p_p_pp_z:
+      mnemonic = "nands";
+      break;
+    case NAND_p_p_pp_z:
+      mnemonic = "nand";
+      break;
+    case NORS_p_p_pp_z:
+      mnemonic = "nors";
+      break;
+    case NOR_p_p_pp_z:
+      mnemonic = "nor";
+      break;
+    case ORNS_p_p_pp_z:
+      mnemonic = "orns";
+      break;
+    case ORN_p_p_pp_z:
+      mnemonic = "orn";
+      break;
+    case ORRS_p_p_pp_z:
+      mnemonic = "orrs";
       if ((pn == pm) && (pn == pg)) {
         mnemonic = "movs";
         form = "'Pd.b, 'Pn.b";
       }
       break;
-    case "orr_p_p_pp_z"_h:
+    case ORR_p_p_pp_z:
+      mnemonic = "orr";
       if ((pn == pm) && (pn == pg)) {
         mnemonic = "mov";
         form = "'Pd.b, 'Pn.b";
       }
       break;
-    case "sel_p_p_pp"_h:
+    case SEL_p_p_pp:
       if (pd == pm) {
         mnemonic = "mov";
         form = "'Pd.b, p'u1310/m, 'Pn.b";
       } else {
+        mnemonic = "sel";
         form = "'Pd.b, p'u1310, 'Pn.b, 'Pm.b";
       }
+      break;
+    default:
+      form = "(SVEPredicateLogical)";
       break;
   }
   Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPredicateInitialize(const Instruction *instr) {
+  // This group only contains PTRUE{S}, and there are no unallocated encodings.
+  VIXL_STATIC_ASSERT(
+      SVEPredicateInitializeMask ==
+      (SVEPredicateInitializeFMask | SVEPredicateInitializeSetFlagsBit));
+  VIXL_ASSERT((instr->Mask(SVEPredicateInitializeMask) == PTRUE_p_s) ||
+              (instr->Mask(SVEPredicateInitializeMask) == PTRUES_p_s));
+
+  const char *mnemonic = instr->ExtractBit(16) ? "ptrues" : "ptrue";
   const char *form = "'Pd.'t, 'Ipc";
   // Omit the pattern if it is the default ('ALL').
   if (instr->ExtractBits(9, 5) == SVE_ALL) form = "'Pd.'t";
-  FormatWithDecodedMnemonic(instr, form);
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPredicateNextActive(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.'t, 'Pn, 'Pd.'t");
+  // This group only contains PNEXT, and there are no unallocated encodings.
+  VIXL_STATIC_ASSERT(SVEPredicateNextActiveFMask == SVEPredicateNextActiveMask);
+  VIXL_ASSERT(instr->Mask(SVEPredicateNextActiveMask) == PNEXT_p_p_p);
+
+  Format(instr, "pnext", "'Pd.'t, 'Pn, 'Pd.'t");
 }
 
 void Disassembler::VisitSVEPredicateReadFromFFR_Predicated(
     const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.b, 'Pn/z");
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEPredicateReadFromFFR_Predicated)";
+  switch (instr->Mask(SVEPredicateReadFromFFR_PredicatedMask)) {
+    case RDFFR_p_p_f:
+    case RDFFRS_p_p_f:
+      mnemonic = instr->ExtractBit(22) ? "rdffrs" : "rdffr";
+      form = "'Pd.b, 'Pn/z";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEPropagateBreak(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Pd.b, p'u1310/z, 'Pn.b, 'Pm.b");
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Pd.b, p'u1310/z, 'Pn.b, 'Pm.b";
+
+  switch (instr->Mask(SVEPropagateBreakMask)) {
+    case BRKPAS_p_p_pp:
+      mnemonic = "brkpas";
+      break;
+    case BRKPA_p_p_pp:
+      mnemonic = "brkpa";
+      break;
+    case BRKPBS_p_p_pp:
+      mnemonic = "brkpbs";
+      break;
+    case BRKPB_p_p_pp:
+      mnemonic = "brkpb";
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
 }
 
 void Disassembler::VisitSVEStackFrameAdjustment(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Xds, 'Xms, #'s1005");
-}
+  const char *mnemonic = "unimplemented";
+  const char *form = "'Xds, 'Xms, #'s1005";
 
-void Disassembler::VisitSVEStackFrameSize(const Instruction *instr) {
-  FormatWithDecodedMnemonic(instr, "'Xd, #'s1005");
-}
-
-void Disassembler::VisitSVEVectorSelect(const Instruction *instr) {
-  const char *mnemonic = mnemonic_.c_str();
-  const char *form = "'Zd.'t, p'u1310, 'Zn.'t, 'Zm.'t";
-
-  if (instr->GetRd() == instr->GetRm()) {
-    mnemonic = "mov";
-    form = "'Zd.'t, p'u1310/m, 'Zn.'t";
+  switch (instr->Mask(SVEStackFrameAdjustmentMask)) {
+    case ADDPL_r_ri:
+      mnemonic = "addpl";
+      break;
+    case ADDVL_r_ri:
+      mnemonic = "addvl";
+      break;
+    default:
+      form = "(SVEStackFrameAdjustment)";
+      break;
   }
 
   Format(instr, mnemonic, form);
 }
 
+void Disassembler::VisitSVEStackFrameSize(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEStackFrameSize)";
+
+  switch (instr->Mask(SVEStackFrameSizeMask)) {
+    case RDVL_r_i:
+      mnemonic = "rdvl";
+      form = "'Xd, #'s1005";
+      break;
+    default:
+      break;
+  }
+
+  Format(instr, mnemonic, form);
+}
+
+void Disassembler::VisitSVEVectorSelect(const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
+  const char *form = "(SVEVectorSelect)";
+
+  switch (instr->Mask(SVEVectorSelectMask)) {
+    case SEL_z_p_zz:
+      if (instr->GetRd() == instr->GetRm()) {
+        mnemonic = "mov";
+        form = "'Zd.'t, p'u1310/m, 'Zn.'t";
+      } else {
+        mnemonic = "sel";
+        form = "'Zd.'t, p'u1310, 'Zn.'t, 'Zm.'t";
+      }
+      break;
+    default:
+      break;
+  }
+  Format(instr, mnemonic, form);
+}
+
 void Disassembler::VisitSVEContiguousLoad_ScalarPlusImm(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "{'Zt.'tlss}, 'Pgl/z, ['Xns";
   const char *suffix =
       (instr->ExtractBits(19, 16) == 0) ? "]" : ", #'s1916, mul vl]";
-  FormatWithDecodedMnemonic(instr, form, suffix);
+
+  switch (instr->Mask(SVEContiguousLoad_ScalarPlusImmMask)) {
+    case LD1B_z_p_bi_u16:
+    case LD1B_z_p_bi_u32:
+    case LD1B_z_p_bi_u64:
+    case LD1B_z_p_bi_u8:
+      mnemonic = "ld1b";
+      break;
+    case LD1D_z_p_bi_u64:
+      mnemonic = "ld1d";
+      break;
+    case LD1H_z_p_bi_u16:
+    case LD1H_z_p_bi_u32:
+    case LD1H_z_p_bi_u64:
+      mnemonic = "ld1h";
+      break;
+    case LD1SB_z_p_bi_s16:
+    case LD1SB_z_p_bi_s32:
+    case LD1SB_z_p_bi_s64:
+      mnemonic = "ld1sb";
+      break;
+    case LD1SH_z_p_bi_s32:
+    case LD1SH_z_p_bi_s64:
+      mnemonic = "ld1sh";
+      break;
+    case LD1SW_z_p_bi_s64:
+      mnemonic = "ld1sw";
+      break;
+    case LD1W_z_p_bi_u32:
+    case LD1W_z_p_bi_u64:
+      mnemonic = "ld1w";
+      break;
+    default:
+      form = "(SVEContiguousLoad_ScalarPlusImm)";
+      suffix = NULL;
+      break;
+  }
+
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitSVEContiguousLoad_ScalarPlusScalar(
     const Instruction *instr) {
+  const char *mnemonic = "unimplemented";
   const char *form = "{'Zt.'tlss}, 'Pgl/z, ['Xns, 'Xm";
-  const char *suffix = "]";
+  const char *suffix = NULL;
 
-  switch (form_hash_) {
-    case "ld1h_z_p_br_u16"_h:
-    case "ld1h_z_p_br_u32"_h:
-    case "ld1h_z_p_br_u64"_h:
-    case "ld1w_z_p_br_u32"_h:
-    case "ld1w_z_p_br_u64"_h:
-    case "ld1d_z_p_br_u64"_h:
+  switch (instr->Mask(SVEContiguousLoad_ScalarPlusScalarMask)) {
+    case LD1B_z_p_br_u16:
+    case LD1B_z_p_br_u32:
+    case LD1B_z_p_br_u64:
+    case LD1B_z_p_br_u8:
+      mnemonic = "ld1b";
+      suffix = "]";
+      break;
+    case LD1D_z_p_br_u64:
+      mnemonic = "ld1d";
       suffix = ", lsl #'u2423]";
       break;
-    case "ld1sh_z_p_br_s32"_h:
-    case "ld1sh_z_p_br_s64"_h:
+    case LD1H_z_p_br_u16:
+    case LD1H_z_p_br_u32:
+    case LD1H_z_p_br_u64:
+      mnemonic = "ld1h";
+      suffix = ", lsl #'u2423]";
+      break;
+    case LD1SB_z_p_br_s16:
+    case LD1SB_z_p_br_s32:
+    case LD1SB_z_p_br_s64:
+      mnemonic = "ld1sb";
+      suffix = "]";
+      break;
+    case LD1SH_z_p_br_s32:
+    case LD1SH_z_p_br_s64:
+      mnemonic = "ld1sh";
       suffix = ", lsl #1]";
       break;
-    case "ld1sw_z_p_br_s64"_h:
+    case LD1SW_z_p_br_s64:
+      mnemonic = "ld1sw";
       suffix = ", lsl #2]";
+      break;
+    case LD1W_z_p_br_u32:
+    case LD1W_z_p_br_u64:
+      mnemonic = "ld1w";
+      suffix = ", lsl #'u2423]";
+      break;
+    default:
+      form = "(SVEContiguousLoad_ScalarPlusScalar)";
+      suffix = NULL;
       break;
   }
 
-  FormatWithDecodedMnemonic(instr, form, suffix);
+  Format(instr, mnemonic, form, suffix);
 }
 
 void Disassembler::VisitReserved(const Instruction *instr) {
@@ -5476,14 +8818,13 @@ void Disassembler::VisitUnallocated(const Instruction *instr) {
 void Disassembler::Visit(Metadata *metadata, const Instruction *instr) {
   VIXL_ASSERT(metadata->count("form") > 0);
   const std::string &form = (*metadata)["form"];
-  form_hash_ = Hash(form.c_str());
   const FormToVisitorFnMap *fv = Disassembler::GetFormToVisitorFnMap();
-  FormToVisitorFnMap::const_iterator it = fv->find(form_hash_);
-  if (it == fv->end()) {
-    VisitUnimplemented(instr);
-  } else {
+  if ((fv->count(form) > 0) && fv->at(form)) {
+    form_hash_ = Hash(form.c_str());
     SetMnemonicFromForm(form);
-    (it->second)(this, instr);
+    fv->at(form)(this, instr);
+  } else {
+    VisitUnimplemented(instr);
   }
 }
 
@@ -6008,11 +9349,6 @@ void Disassembler::Format(const Instruction *instr,
   }
 }
 
-void Disassembler::FormatWithDecodedMnemonic(const Instruction *instr,
-                                             const char *format0,
-                                             const char *format1) {
-  Format(instr, mnemonic_.c_str(), format0, format1);
-}
 
 void Disassembler::Substitute(const Instruction *instr, const char *string) {
   char chr = *string++;
