@@ -620,10 +620,10 @@ class DecodeNode {
   }
 
   // Get the bits sampled from the instruction by this node.
-  const Vector<uint8_t>& GetSampledBits() const { return sampled_bits_; };
+  const Vector<uint8_t>& GetSampledBits() const { return sampled_bits_; }
 
   // Get the number of bits sampled from the instruction by this node.
-  size_t GetSampledBitsCount() const;
+  size_t GetSampledBitsCount() const { return sampled_bits_.size(); }
 
   // A leaf node is a DecodeNode that wraps the visitor function for the
   // identified instruction class.
