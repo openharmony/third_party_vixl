@@ -71,6 +71,7 @@ ohos_static_library("libvixl") {
     "-Wno-gnu-statement-expression",
     "-Wno-unused-parameter",
     "-Wno-unused-result",
+    "-Wno-deprecated-declarations",
   ]
   if (is_debug) {
     cflags_cc += [
