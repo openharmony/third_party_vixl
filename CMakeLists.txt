@@ -99,7 +99,7 @@ add_library(vixl STATIC ${VIXL_SOURCES})
 target_link_libraries(vixl arkbase)
 
 target_compile_options(vixl PUBLIC ${VIXL_FLAGS})
-target_compile_options(vixl PRIVATE -Wno-shadow)
+target_compile_options(vixl PRIVATE -Wno-shadow -Wno-deprecated_declarations)
 
 target_compile_definitions(vixl PUBLIC "VIXL_USE_PANDA_ALLOC")
 
