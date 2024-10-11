@@ -24,22 +24,21 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <sys/mman.h>
-
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <sys/mman.h>
 
 #include "test-runner.h"
 #include "test-utils.h"
-#include "aarch64/test-utils-aarch64.h"
 
 #include "aarch64/cpu-aarch64.h"
 #include "aarch64/disasm-aarch64.h"
 #include "aarch64/macro-assembler-aarch64.h"
 #include "aarch64/simulator-aarch64.h"
+#include "aarch64/test-utils-aarch64.h"
 #include "test-assembler-aarch64.h"
 
 namespace vixl {
@@ -5974,6 +5973,44 @@ TEST(neon_2regmisc_sqxtun) {
     ASSERT_EQUAL_128(0x0000000000000000, 0x0000000000000000, q19);
     ASSERT_EQUAL_128(0x0000000000000000, 0x000000000000ffff, q20);
     ASSERT_EQUAL_128(0x0000000000000000, 0x0000000000000000, q21);
+  }
+}
+
+TEST(neon_2regmisc_xtn_regression_test) {
+  SETUP_WITH_FEATURES(CPUFeatures::kNEON);
+
+  START();
+
+  __ Movi(v0.V2D(), 0x5555555555555555, 0x5555555555555555);
+  __ Movi(v1.V2D(), 0xaaaaaaaaaaaaaaaa, 0xaaaaaaaaaaaaaaaa);
+  __ Movi(v2.V2D(), 0x5555555555555555, 0x5555555555555555);
+  __ Movi(v3.V2D(), 0xaaaaaaaaaaaaaaaa, 0xaaaaaaaaaaaaaaaa);
+  __ Movi(v4.V2D(), 0x5555555555555555, 0x5555555555555555);
+  __ Movi(v5.V2D(), 0xaaaaaaaaaaaaaaaa, 0xaaaaaaaaaaaaaaaa);
+  __ Movi(v6.V2D(), 0x5555555555555555, 0x5555555555555555);
+  __ Movi(v7.V2D(), 0xaaaaaaaaaaaaaaaa, 0xaaaaaaaaaaaaaaaa);
+
+  __ Xtn(v0.V2S(), v0.V2D());
+  __ Xtn2(v1.V4S(), v1.V2D());
+  __ Sqxtn(v2.V2S(), v2.V2D());
+  __ Sqxtn2(v3.V4S(), v3.V2D());
+  __ Uqxtn(v4.V2S(), v4.V2D());
+  __ Uqxtn2(v5.V4S(), v5.V2D());
+  __ Sqxtun(v6.V2S(), v6.V2D());
+  __ Sqxtun2(v7.V4S(), v7.V2D());
+
+  END();
+
+  if (CAN_RUN()) {
+    RUN();
+    ASSERT_EQUAL_128(0x0000000000000000, 0x5555555555555555, q0);
+    ASSERT_EQUAL_128(0xaaaaaaaaaaaaaaaa, 0xaaaaaaaaaaaaaaaa, q1);
+    ASSERT_EQUAL_128(0x0000000000000000, 0x7fffffff7fffffff, q2);
+    ASSERT_EQUAL_128(0x8000000080000000, 0xaaaaaaaaaaaaaaaa, q3);
+    ASSERT_EQUAL_128(0x0000000000000000, 0xffffffffffffffff, q4);
+    ASSERT_EQUAL_128(0xffffffffffffffff, 0xaaaaaaaaaaaaaaaa, q5);
+    ASSERT_EQUAL_128(0x0000000000000000, 0xffffffffffffffff, q6);
+    ASSERT_EQUAL_128(0x0000000000000000, 0xaaaaaaaaaaaaaaaa, q7);
   }
 }
 

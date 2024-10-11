@@ -412,7 +412,7 @@ class Decoder {
     List<DecoderVisitor*>::iterator old_end_;
   };
 
-  void VisitNamedInstruction(const Instruction* instr, const std::string& name);
+  void VisitNamedInstruction(const Instruction* instr, const std::string_view name);
 
 #ifndef PANDA_BUILD
   std::list<DecoderVisitor*>* visitors() { return &visitors_; }
@@ -508,7 +508,7 @@ class CompiledDecodeNode {
 
   // Constructor for wrappers around visitor functions. These require no
   // decoding, so no bit extraction function or decode table is assigned.
-  explicit CompiledDecodeNode(std::string iname, Decoder* decoder)
+  explicit CompiledDecodeNode(const std::string_view iname, Decoder* decoder)
       : bit_extract_fn_(NULL),
         instruction_name_(iname),
         decode_table_(NULL),
@@ -559,7 +559,7 @@ class CompiledDecodeNode {
 
   // Visitor function that handles the instruction identified. Set only for
   // leaf nodes, where no extra decoding is required, otherwise NULL.
-  std::string instruction_name_;
+  std::string_view instruction_name_;
 
   // Mapping table from instruction bits to next decode stage.
   CompiledDecodeNode** decode_table_;
@@ -574,15 +574,15 @@ class DecodeNode {
  public:
   // Constructor for DecodeNode wrappers around visitor functions. These are
   // marked as "compiled", as there is no decoding left to do.
-  explicit DecodeNode(const std::string& iname, Decoder* decoder)
+  explicit DecodeNode(const std::string_view iname, Decoder* decoder)
       :
 #ifdef PANDA_BUILD
         allocator_(decoder->GetAllocator()),
 #endif
         name_(iname, allocator_.Adapter()),
-        sampled_bits_(allocator_.Adapter()),
+        sampled_bits_(kEmptySampledBits),
         instruction_name_(iname),
-        pattern_table_(allocator_.Adapter()),
+        pattern_table_(kEmptyPatternTable),
         decoder_(decoder),
         compiled_node_(NULL) {}
 
@@ -593,9 +593,9 @@ class DecodeNode {
         allocator_(decoder->GetAllocator()),
 #endif
         name_(map.name, allocator_.Adapter()),
-        sampled_bits_(allocator_.Adapter()),
+        sampled_bits_(map.sampled_bits),
         instruction_name_("node"),
-        pattern_table_(allocator_.Adapter()),
+        pattern_table_(map.mapping),
         decoder_(decoder),
         compiled_node_(NULL) {
     // With the current two bits per symbol encoding scheme, the maximum pattern
@@ -620,7 +620,7 @@ class DecodeNode {
   }
 
   // Get the bits sampled from the instruction by this node.
-  const Vector<uint8_t>& GetSampledBits() const { return sampled_bits_; }
+  const std::vector<uint8_t>& GetSampledBits() const { return sampled_bits_; }
 
   // Get the number of bits sampled from the instruction by this node.
   size_t GetSampledBitsCount() const { return sampled_bits_.size(); }
@@ -752,15 +752,15 @@ class DecodeNode {
 
   // Vector of bits sampled from an instruction to determine which node to look
   // up next in the decode process.
-  Vector<uint8_t> sampled_bits_;
+  const std::vector<uint8_t>& sampled_bits_;
   static const std::vector<uint8_t> kEmptySampledBits;
 
   // For leaf nodes, this is the name of the instruction form that the node
   // represents. For other nodes, this is always set to "node".
-  std::string instruction_name_;
+  std::string_view instruction_name_;
 
   // Source mapping from bit pattern to name of next decode stage.
-  Vector<DecodePattern> pattern_table_;
+  const std::vector<DecodePattern>& pattern_table_;
   static const std::vector<DecodePattern> kEmptyPatternTable;
 
   // Pointer to the decoder containing this node, used to call its visitor

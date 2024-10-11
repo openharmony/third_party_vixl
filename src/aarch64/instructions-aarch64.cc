@@ -25,6 +25,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "instructions-aarch64.h"
+
 #include "assembler-aarch64.h"
 
 namespace vixl {
@@ -198,6 +199,7 @@ bool Instruction::CanTakeSVEMovprfx(uint32_t form_hash,
     case "decd_z_zs"_h:
     case "dech_z_zs"_h:
     case "decw_z_zs"_h:
+    case "ext_z_zi_des"_h:
     case "faddp_z_p_zz"_h:
     case "fmaxnmp_z_p_zz"_h:
     case "fmaxp_z_p_zz"_h:
@@ -210,7 +212,6 @@ bool Instruction::CanTakeSVEMovprfx(uint32_t form_hash,
     case "insr_z_v"_h:
     case "smaxp_z_p_zz"_h:
     case "sminp_z_p_zz"_h:
-    case "splice_z_p_zz_con"_h:
     case "splice_z_p_zz_des"_h:
     case "sqcadd_z_zz"_h:
     case "sqdecd_z_zs"_h:

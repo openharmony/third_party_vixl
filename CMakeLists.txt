@@ -70,6 +70,7 @@ if (NOT PANDA_MINIMAL_VIXL)
         src/aarch64/pointer-auth-aarch64.cc
         src/aarch64/cpu-features-auditor-aarch64.cc
         #src/aarch64/macro-assembler-sve-aarch64.cc
+        src/aarch64/debugger-aarch64.cc
         src/aarch64/simulator-aarch64.cc )
 endif()
 
