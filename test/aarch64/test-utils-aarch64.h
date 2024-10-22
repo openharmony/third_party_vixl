@@ -501,7 +501,7 @@ RegList PopulateVRegisterArray(VRegister* s,
                                int reg_count,
                                RegList allowed);
 
-// Ovewrite the contents of the specified registers. This enables tests to
+// Overwrite the contents of the specified registers. This enables tests to
 // check that register contents are written in cases where it's likely that the
 // correct outcome could already be stored in the register.
 //
@@ -604,18 +604,20 @@ void ComputeMachineStateHash(MacroAssembler* masm, uint32_t* dst);
 // vector length.
 #ifdef VIXL_INCLUDE_SIMULATOR_AARCH64
 
-#define TEST_SVE_INNER(type, name)                            \
-  void Test##name(Test* config);                              \
-  Test* test_##name##_list[] =                                \
-      {Test::MakeSVETest(128,                                 \
-                         "AARCH64_" type "_" #name "_vl128",  \
-                         &Test##name),                        \
-       Test::MakeSVETest(384,                                 \
-                         "AARCH64_" type "_" #name "_vl384",  \
-                         &Test##name),                        \
-       Test::MakeSVETest(2048,                                \
-                         "AARCH64_" type "_" #name "_vl2048", \
-                         &Test##name)};                       \
+#define TEST_SVE_INNER(type, name)                                          \
+  void Test##name(Test* config);                                            \
+  Test* test_##name##_list[] = {Test::MakeSVETest(128,                      \
+                                                  "AARCH64_" type "_" #name \
+                                                  "_vl128",                 \
+                                                  &Test##name),             \
+                                Test::MakeSVETest(384,                      \
+                                                  "AARCH64_" type "_" #name \
+                                                  "_vl384",                 \
+                                                  &Test##name),             \
+                                Test::MakeSVETest(2048,                     \
+                                                  "AARCH64_" type "_" #name \
+                                                  "_vl2048",                \
+                                                  &Test##name)};            \
   void Test##name(Test* config)
 
 #define SVE_SETUP_WITH_FEATURES(...) \

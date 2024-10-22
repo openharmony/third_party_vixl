@@ -24,12 +24,13 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "cpu-features-auditor-aarch64.h"
+
 #include "cpu-features.h"
 #include "globals-vixl.h"
 #include "utils-vixl.h"
-#include "decoder-aarch64.h"
 
-#include "cpu-features-auditor-aarch64.h"
+#include "decoder-aarch64.h"
 
 namespace vixl {
 namespace aarch64 {
@@ -505,8 +506,6 @@ void CPUFeaturesAuditor::VisitFPImmediate(const Instruction* instr) {
 
 void CPUFeaturesAuditor::VisitFPIntegerConvert(const Instruction* instr) {
   RecordInstructionFeaturesScope scope(this);
-  // All of these instructions require FP.
-  scope.Record(CPUFeatures::kFP);
   switch (instr->Mask(FPIntegerConvertMask)) {
     case FCVTAS_wh:
     case FCVTAS_xh:
@@ -536,17 +535,23 @@ void CPUFeaturesAuditor::VisitFPIntegerConvert(const Instruction* instr) {
     case SCVTF_hx:
     case UCVTF_hw:
     case UCVTF_hx:
+      scope.Record(CPUFeatures::kFP);
       scope.Record(CPUFeatures::kFPHalf);
+      return;
+    case FMOV_dx:
+      scope.RecordOneOrBothOf(CPUFeatures::kFP, CPUFeatures::kNEON);
       return;
     case FMOV_d1_x:
     case FMOV_x_d1:
+      scope.Record(CPUFeatures::kFP);
       scope.Record(CPUFeatures::kNEON);
       return;
     case FJCVTZS:
+      scope.Record(CPUFeatures::kFP);
       scope.Record(CPUFeatures::kJSCVT);
       return;
     default:
-      // No special CPU features.
+      scope.Record(CPUFeatures::kFP);
       return;
   }
 }
@@ -1305,6 +1310,16 @@ void CPUFeaturesAuditor::VisitSystem(const Instruction* instr) {
   } else if (instr->Mask(SystemSysMask) == SYS) {
     switch (instr->GetSysOp()) {
       // DC instruction variants.
+      case CGVAC:
+      case CGDVAC:
+      case CGVAP:
+      case CGDVAP:
+      case CIGVAC:
+      case CIGDVAC:
+      case GVA:
+      case GZVA:
+        scope.Record(CPUFeatures::kMTE);
+        break;
       case CVAP:
         scope.Record(CPUFeatures::kDCPoP);
         break;
@@ -1315,6 +1330,7 @@ void CPUFeaturesAuditor::VisitSystem(const Instruction* instr) {
       case CVAC:
       case CVAU:
       case CIVAC:
+      case ZVA:
         // No special CPU features.
         break;
     }
@@ -1723,6 +1739,92 @@ void CPUFeaturesAuditor::Visit(Metadata* metadata, const Instruction* instr) {
          CPUFeatures(CPUFeatures::kSVE, CPUFeatures::kSVEI8MM)},
         {"sudot_z_zzzi_s"_h,
          CPUFeatures(CPUFeatures::kSVE, CPUFeatures::kSVEI8MM)},
+        {"addg_64_addsub_immtags"_h, CPUFeatures::kMTE},
+        {"gmi_64g_dp_2src"_h, CPUFeatures::kMTE},
+        {"irg_64i_dp_2src"_h, CPUFeatures::kMTE},
+        {"ldg_64loffset_ldsttags"_h, CPUFeatures::kMTE},
+        {"st2g_64soffset_ldsttags"_h, CPUFeatures::kMTE},
+        {"st2g_64spost_ldsttags"_h, CPUFeatures::kMTE},
+        {"st2g_64spre_ldsttags"_h, CPUFeatures::kMTE},
+        {"stgp_64_ldstpair_off"_h, CPUFeatures::kMTE},
+        {"stgp_64_ldstpair_post"_h, CPUFeatures::kMTE},
+        {"stgp_64_ldstpair_pre"_h, CPUFeatures::kMTE},
+        {"stg_64soffset_ldsttags"_h, CPUFeatures::kMTE},
+        {"stg_64spost_ldsttags"_h, CPUFeatures::kMTE},
+        {"stg_64spre_ldsttags"_h, CPUFeatures::kMTE},
+        {"stz2g_64soffset_ldsttags"_h, CPUFeatures::kMTE},
+        {"stz2g_64spost_ldsttags"_h, CPUFeatures::kMTE},
+        {"stz2g_64spre_ldsttags"_h, CPUFeatures::kMTE},
+        {"stzg_64soffset_ldsttags"_h, CPUFeatures::kMTE},
+        {"stzg_64spost_ldsttags"_h, CPUFeatures::kMTE},
+        {"stzg_64spre_ldsttags"_h, CPUFeatures::kMTE},
+        {"subg_64_addsub_immtags"_h, CPUFeatures::kMTE},
+        {"subps_64s_dp_2src"_h, CPUFeatures::kMTE},
+        {"subp_64s_dp_2src"_h, CPUFeatures::kMTE},
+        {"cpyen_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyern_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyewn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpye_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfen_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfern_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfewn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfe_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfmn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfmrn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfmwn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfm_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfpn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfprn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfpwn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyfp_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpymn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpymrn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpymwn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpym_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpypn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyprn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpypwn_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"cpyp_cpy_memcms"_h, CPUFeatures::kMOPS},
+        {"seten_set_memcms"_h, CPUFeatures::kMOPS},
+        {"sete_set_memcms"_h, CPUFeatures::kMOPS},
+        {"setgen_set_memcms"_h,
+         CPUFeatures(CPUFeatures::kMOPS, CPUFeatures::kMTE)},
+        {"setge_set_memcms"_h,
+         CPUFeatures(CPUFeatures::kMOPS, CPUFeatures::kMTE)},
+        {"setgmn_set_memcms"_h,
+         CPUFeatures(CPUFeatures::kMOPS, CPUFeatures::kMTE)},
+        {"setgm_set_memcms"_h,
+         CPUFeatures(CPUFeatures::kMOPS, CPUFeatures::kMTE)},
+        {"setgpn_set_memcms"_h,
+         CPUFeatures(CPUFeatures::kMOPS, CPUFeatures::kMTE)},
+        {"setgp_set_memcms"_h,
+         CPUFeatures(CPUFeatures::kMOPS, CPUFeatures::kMTE)},
+        {"setmn_set_memcms"_h, CPUFeatures::kMOPS},
+        {"setm_set_memcms"_h, CPUFeatures::kMOPS},
+        {"setpn_set_memcms"_h, CPUFeatures::kMOPS},
+        {"setp_set_memcms"_h, CPUFeatures::kMOPS},
+        {"abs_32_dp_1src"_h, CPUFeatures::kCSSC},
+        {"abs_64_dp_1src"_h, CPUFeatures::kCSSC},
+        {"cnt_32_dp_1src"_h, CPUFeatures::kCSSC},
+        {"cnt_64_dp_1src"_h, CPUFeatures::kCSSC},
+        {"ctz_32_dp_1src"_h, CPUFeatures::kCSSC},
+        {"ctz_64_dp_1src"_h, CPUFeatures::kCSSC},
+        {"smax_32_dp_2src"_h, CPUFeatures::kCSSC},
+        {"smax_64_dp_2src"_h, CPUFeatures::kCSSC},
+        {"smin_32_dp_2src"_h, CPUFeatures::kCSSC},
+        {"smin_64_dp_2src"_h, CPUFeatures::kCSSC},
+        {"umax_32_dp_2src"_h, CPUFeatures::kCSSC},
+        {"umax_64_dp_2src"_h, CPUFeatures::kCSSC},
+        {"umin_32_dp_2src"_h, CPUFeatures::kCSSC},
+        {"umin_64_dp_2src"_h, CPUFeatures::kCSSC},
+        {"smax_32_minmax_imm"_h, CPUFeatures::kCSSC},
+        {"smax_64_minmax_imm"_h, CPUFeatures::kCSSC},
+        {"smin_32_minmax_imm"_h, CPUFeatures::kCSSC},
+        {"smin_64_minmax_imm"_h, CPUFeatures::kCSSC},
+        {"umax_32u_minmax_imm"_h, CPUFeatures::kCSSC},
+        {"umax_64u_minmax_imm"_h, CPUFeatures::kCSSC},
+        {"umin_32u_minmax_imm"_h, CPUFeatures::kCSSC},
+        {"umin_64u_minmax_imm"_h, CPUFeatures::kCSSC},
     };
 
     if (features.count(form_hash) > 0) {

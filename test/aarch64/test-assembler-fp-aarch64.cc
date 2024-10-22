@@ -24,22 +24,21 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <sys/mman.h>
-
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <sys/mman.h>
 
 #include "test-runner.h"
 #include "test-utils.h"
-#include "aarch64/test-utils-aarch64.h"
 
 #include "aarch64/cpu-aarch64.h"
 #include "aarch64/disasm-aarch64.h"
 #include "aarch64/macro-assembler-aarch64.h"
 #include "aarch64/simulator-aarch64.h"
+#include "aarch64/test-utils-aarch64.h"
 #include "test-assembler-aarch64.h"
 
 namespace vixl {
@@ -4692,7 +4691,7 @@ static void TestUScvtfHelper(uint64_t in,
 
 TEST(scvtf_ucvtf_double) {
   // Simple conversions of positive numbers which require no rounding; the
-  // results should not depened on the rounding mode, and ucvtf and scvtf should
+  // results should not depend on the rounding mode, and ucvtf and scvtf should
   // produce the same result.
   TestUScvtfHelper(0x0000000000000000, 0x0000000000000000, 0x0000000000000000);
   TestUScvtfHelper(0x0000000000000001, 0x3ff0000000000000, 0x3ff0000000000000);
@@ -4847,7 +4846,7 @@ static void TestUScvtf32Helper(uint64_t in,
 
 TEST(scvtf_ucvtf_float) {
   // Simple conversions of positive numbers which require no rounding; the
-  // results should not depened on the rounding mode, and ucvtf and scvtf should
+  // results should not depend on the rounding mode, and ucvtf and scvtf should
   // produce the same result.
   TestUScvtf32Helper(0x0000000000000000, 0x00000000, 0x00000000);
   TestUScvtf32Helper(0x0000000000000001, 0x3f800000, 0x3f800000);

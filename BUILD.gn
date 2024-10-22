@@ -104,6 +104,7 @@ ohos_static_library("libvixl") {
       "src/aarch64/assembler-sve-aarch64.cc",
       "src/aarch64/cpu-aarch64.cc",
       "src/aarch64/cpu-features-auditor-aarch64.cc",
+      "src/aarch64/debugger-aarch64.cc",
       "src/aarch64/decoder-aarch64.cc",
       "src/aarch64/disasm-aarch64.cc",
       "src/aarch64/instructions-aarch64.cc",

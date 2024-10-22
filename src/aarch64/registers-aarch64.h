@@ -67,7 +67,8 @@ class PRegisterZ;
 // specialised register types can avoid run-time checks, and should therefore be
 // preferred where run-time polymorphism isn't required.
 //
-// Type-specific modifers are typically implemented only on the derived classes.
+// Type-specific modifiers are typically implemented only on the derived
+// classes.
 //
 // The encoding is such that CPURegister objects are cheap to pass by value.
 class CPURegister {
@@ -859,7 +860,7 @@ AARCH64_REGISTER_CODE_LIST(VIXL_DEFINE_REGISTERS)
 AARCH64_P_REGISTER_CODE_LIST(VIXL_DEFINE_P_REGISTERS)
 #undef VIXL_DEFINE_P_REGISTERS
 
-// Most coersions simply invoke the necessary constructor.
+// Most coercions simply invoke the necessary constructor.
 #define VIXL_CPUREG_COERCION_LIST(U) \
   U(Register, W, R)                  \
   U(Register, X, R)                  \
@@ -880,7 +881,7 @@ VIXL_CPUREG_COERCION_LIST(VIXL_DEFINE_CPUREG_COERCION)
 #undef VIXL_CPUREG_COERCION_LIST
 #undef VIXL_DEFINE_CPUREG_COERCION
 
-// NEON lane-format coersions always return VRegisters.
+// NEON lane-format coercions always return VRegisters.
 #define VIXL_CPUREG_NEON_COERCION_LIST(V) \
   V(8, B)                                 \
   V(16, B)                                \
@@ -900,6 +901,8 @@ VIXL_CPUREG_NEON_COERCION_LIST(VIXL_DEFINE_CPUREG_NEON_COERCION)
 #undef VIXL_CPUREG_NEON_COERCION_LIST
 #undef VIXL_DEFINE_CPUREG_NEON_COERCION
 
+// Semantic type coercion for sdot and udot.
+// TODO: Use the qualifiers_ field to distinguish this from ::S().
 VRegister VRegister::S4B() const {
   VIXL_ASSERT(IsVRegister());
   return SRegister(GetCode());
@@ -1138,8 +1141,7 @@ bool AreSameLaneSize(const CPURegister& reg1,
       !reg4.IsValid() || (reg4.GetLaneSizeInBits() == reg1.GetLaneSizeInBits());
   return match;
 }
-
-}
-}  // namespace vixl::aarch64
+}  // namespace aarch64
+}  // namespace vixl
 
 #endif  // VIXL_AARCH64_REGISTERS_AARCH64_H_

@@ -24,11 +24,12 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "test-utils-aarch64.h"
+
 #include <cmath>
 #include <queue>
 
 #include "test-runner.h"
-#include "test-utils-aarch64.h"
 
 #include "../test/aarch64/test-simulator-inputs-aarch64.h"
 #include "aarch64/cpu-aarch64.h"
@@ -780,7 +781,7 @@ bool CanRun(const CPUFeatures& required, bool* queried_can_run) {
 }
 
 // Note that the function assumes p0, p1, p2 and p3 are set to all true in b-,
-// h-, s- and d-lane sizes respectively, and p4, p5 are clobberred as a temp
+// h-, s- and d-lane sizes respectively, and p4, p5 are clobbered as a temp
 // predicate.
 template <typename T, size_t N>
 void SetFpData(MacroAssembler* masm,
