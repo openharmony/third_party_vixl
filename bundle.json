@@ -1,7 +1,7 @@
 {
     "name": "@ohos/vixl",
     "description": "vixl",
-    "version": "6.3.0",
+    "version": "7.0.0",
     "license": "BSD 3-clause",
     "publishAs": "code-segment",
     "segment": {
