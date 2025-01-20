@@ -2,7 +2,7 @@
     "name": "@ohos/vixl",
     "description": "vixl",
     "version": "7.0.0",
-    "license": "BSD 3-clause",
+    "license": "BSD-3-Clause",
     "publishAs": "code-segment",
     "segment": {
         "destPath": "third_party/vixl"
