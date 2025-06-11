@@ -125,8 +125,6 @@ class CPUFeaturesAuditor : public DecoderVisitor {
 
   using FormToVisitorFnMap = FormToVisitorFnMapT<CPUFeaturesAuditor>;
 
-  static const FormToVisitorFnMap FORM_TO_VISITOR;
-
   static const FormToVisitorFnMap* GetFormToVisitorFnMap();
 };
 
