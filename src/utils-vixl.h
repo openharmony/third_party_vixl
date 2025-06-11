@@ -42,9 +42,9 @@
 #endif
 
 #ifdef VIXL_USE_PANDA_ALLOC
-#include "mem/arena_allocator_stl_adapter.h"
-#include "mem/arena_allocator.h"
-#include "utils/arena_containers.h"
+#include "libarkbase/mem/arena_allocator_stl_adapter.h"
+#include "libarkbase/mem/arena_allocator.h"
+#include "libarkbase/utils/arena_containers.h"
 #else
 #include <list>
 #include <map>
