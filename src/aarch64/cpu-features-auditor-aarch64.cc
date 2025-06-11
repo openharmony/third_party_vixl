@@ -35,7 +35,9 @@
 namespace vixl {
 namespace aarch64 {
 
-const CPUFeaturesAuditor::FormToVisitorFnMap CPUFeaturesAuditor::FORM_TO_VISITOR = {
+const CPUFeaturesAuditor::FormToVisitorFnMap*
+CPUFeaturesAuditor::GetFormToVisitorFnMap() {
+  static const FormToVisitorFnMap FORM_TO_VISITOR  = {
     DEFAULT_FORM_TO_VISITOR_MAP(CPUFeaturesAuditor),
     SIM_AUD_VISITOR_MAP(CPUFeaturesAuditor),
     {"fcmla_asimdelem_c_h"_h, &CPUFeaturesAuditor::VisitNEONByIndexedElement},
@@ -63,10 +65,7 @@ const CPUFeaturesAuditor::FormToVisitorFnMap CPUFeaturesAuditor::FORM_TO_VISITOR
     {"umlal_asimdelem_l"_h, &CPUFeaturesAuditor::VisitNEONByIndexedElement},
     {"umlsl_asimdelem_l"_h, &CPUFeaturesAuditor::VisitNEONByIndexedElement},
     {"umull_asimdelem_l"_h, &CPUFeaturesAuditor::VisitNEONByIndexedElement},
-};
-
-const CPUFeaturesAuditor::FormToVisitorFnMap*
-CPUFeaturesAuditor::GetFormToVisitorFnMap() {
+  };
   return &FORM_TO_VISITOR;
 }
 
