@@ -37,10 +37,7 @@ config("vixl_public_config") {
     cflags_cc = [ "-Wno-bitwise-instead-of-logical" ]
   }
 
-  include_dirs = [
-    ".",
-    "src",
-  ]
+  include_dirs = [ "src" ]
   if (target_cpu == "arm") {
     include_dirs += [ "src/aarch32" ]
   } else if (target_cpu == "arm64" || target_cpu == "amd64" ||
