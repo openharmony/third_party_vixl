@@ -69,7 +69,11 @@ class CodeBuffer {
 #endif
 
   bool IsValid() const {
+#ifdef VIXL_CODE_BUFFER_MMAP
     return (buffer_ != MAP_FAILED);
+#else
+    return (buffer_ != nullptr);
+#endif
   }
 
   ptrdiff_t GetOffsetFrom(ptrdiff_t offset) const {
