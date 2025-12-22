@@ -31,7 +31,10 @@ config("vixl_public_config") {
     defines += [ "VIXL_DEBUG" ]
   }
 
-  defines += [ "PANDA_BUILD" ]
+  defines += [
+    "PANDA_BUILD",
+    "VIXL_CODE_BUFFER_MMAP"
+  ]
 
   if (defined(ark_standalone_build) && ark_standalone_build) {
     cflags_cc = [ "-Wno-bitwise-instead-of-logical" ]
@@ -128,11 +131,8 @@ ohos_static_library("libvixl") {
       "-mfpu=vfp",
     ]
   }
-
   if (is_mac) {
-    cflags_cc += [ "-DVIXL_CODE_BUFFER_MALLOC" ]
-  } else {
-    cflags_cc += [ "-DVIXL_CODE_BUFFER_MMAP" ]
+    defines += [ "PANDA_TARGET_MACOS" ]
   }
 
   public_configs = [ ":vixl_public_config" ]
