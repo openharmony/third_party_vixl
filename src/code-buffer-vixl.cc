@@ -53,9 +53,9 @@ CodeBuffer::CodeBuffer(size_t capacity)
   VIXL_CHECK(buffer_ != NULL);
   // Aarch64 instructions must be word aligned, we assert the default allocator
   // always returns word align memory.
-  if (buffer_ != MAP_FAILED) {
-      VIXL_ASSERT(IsWordAligned(buffer_));
-      cursor_ = buffer_;
+  if (IsValid()) {
+    VIXL_ASSERT(IsWordAligned(buffer_));
+    cursor_ = buffer_;
   }
 }
 
@@ -93,28 +93,20 @@ CodeBuffer::~CodeBuffer() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION {
 }
 
 
-void CodeBuffer::SetExecutable() {
 #ifdef VIXL_CODE_BUFFER_MMAP
+void CodeBuffer::SetExecutable() {
   int ret = mprotect(buffer_, capacity_, PROT_READ | PROT_EXEC);
   VIXL_CHECK(ret == 0);
-#else
-  // This requires page-aligned memory blocks, which we can only guarantee with
-  // mmap.
-  VIXL_UNIMPLEMENTED();
-#endif
 }
+#endif
 
 
-void CodeBuffer::SetWritable() {
 #ifdef VIXL_CODE_BUFFER_MMAP
+void CodeBuffer::SetWritable() {
   int ret = mprotect(buffer_, capacity_, PROT_READ | PROT_WRITE);
   VIXL_CHECK(ret == 0);
-#else
-  // This requires page-aligned memory blocks, which we can only guarantee with
-  // mmap.
-  VIXL_UNIMPLEMENTED();
-#endif
 }
+#endif
 
 // For some reason OHOS toolchain doesn't have this function
 #ifdef PANDA_TARGET_MOBILE
@@ -186,14 +178,29 @@ void CodeBuffer::Grow(size_t new_capacity) {
   buffer_ = static_cast<byte*>(realloc(buffer_, new_capacity));
   VIXL_CHECK(buffer_ != NULL);
 #elif defined(VIXL_CODE_BUFFER_MMAP)
-  buffer_ = static_cast<byte*>(
-      mremap(buffer_, capacity_, new_capacity, MREMAP_MAYMOVE));
-  VIXL_CHECK(buffer_ != MAP_FAILED);
-  if ((mmap_max_ != 0) && (new_capacity > mmap_max_)) {
-    // Force crash - allocated too much
-    printf(" Allocated too much memory.\n");
-    VIXL_UNREACHABLE();
-  }
+#ifdef PANDA_TARGET_MACOS
+    auto new_buffer = reinterpret_cast<byte*>(mmap(buffer_,
+                                                   new_capacity,
+                                                   PROT_READ | PROT_WRITE,
+                                                   MAP_PRIVATE | MAP_ANONYMOUS,
+                                                   -1,
+                                                   0));
+    VIXL_CHECK(new_buffer != MAP_FAILED);
+    if (buffer_ != new_buffer) {
+      memcpy(new_buffer, buffer_, capacity_);
+      munmap(buffer_, capacity_);
+      buffer_ = new_buffer;
+    }
+#else
+    buffer_ = static_cast<byte*>(
+        mremap(buffer_, capacity_, new_capacity, MREMAP_MAYMOVE));
+    VIXL_CHECK(buffer_ != MAP_FAILED);
+#endif
+    if ((mmap_max_ != 0) && (new_capacity > mmap_max_)) {
+      // Force crash - allocated too much
+      printf(" Allocated too much memory.\n");
+      VIXL_UNREACHABLE();
+    }
 #else
 #error Unknown code buffer allocator.
 #endif

@@ -37,11 +37,7 @@ set(VIXL_DIR
     .
     src/ )
 
-if (PANDA_TARGET_MACOS)
-set(VIXL_FLAGS -DVIXL_CODE_BUFFER_MALLOC -DPANDA_BUILD)
-else()
 set(VIXL_FLAGS -DVIXL_CODE_BUFFER_MMAP -DPANDA_BUILD)
-endif()
 
 set(VIXL_AARCH32_SOURCES
     src/aarch32/assembler-aarch32.cc
