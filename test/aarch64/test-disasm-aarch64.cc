@@ -2611,6 +2611,7 @@ TEST(system_mrs) {
   COMPARE(mrs(x15, FPCR), "mrs x15, fpcr");
   COMPARE(mrs(x20, RNDR), "mrs x20, rndr");
   COMPARE(mrs(x5, RNDRRS), "mrs x5, rndrrs");
+  COMPARE(mrs(x9, DCZID_EL0), "mrs x9, dczid_el0");
 
   // Test mrs that use system registers we haven't named.
   COMPARE(dci(MRS | (0x5555 << 5)), "mrs x0, S3_2_c10_c10_5");
@@ -3359,6 +3360,20 @@ TEST(cssc) {
   CLEANUP();
 }
 
+TEST(gcs) {
+  SETUP();
+
+  COMPARE_MACRO(Chkfeat(x16), "chkfeat x16");
+  COMPARE_MACRO(Gcspopm(x0), "gcspopm x0");
+  COMPARE_MACRO(Gcspopm(), "gcspopm");
+  COMPARE_MACRO(Gcspopm(xzr), "gcspopm");
+  COMPARE_MACRO(Gcsss1(x4), "gcsss1 x4");
+  COMPARE_MACRO(Gcsss2(x2), "gcsss2 x2");
+  COMPARE_MACRO(Gcspushm(x1), "gcspushm x1");
+
+  CLEANUP();
+}
+
 TEST(architecture_features) {
   SETUP();
 
@@ -3543,19 +3558,19 @@ TEST(architecture_features) {
   COMPARE_PREFIX(dci(0xf8e08000), "swpal");      // SWPAL_64_memop
 
   // ARMv8.1 - RDM
-  COMPARE_PREFIX(dci(0x2e008400), "sqrdmlah");  // SQRDMLAH_asimdsame2_only
-  COMPARE_PREFIX(dci(0x2e008c00), "sqrdmlsh");  // SQRDMLSH_asimdsame2_only
+  COMPARE_PREFIX(dci(0x2e808400), "sqrdmlah");  // SQRDMLAH_asimdsame2_only
+  COMPARE_PREFIX(dci(0x2e808c00), "sqrdmlsh");  // SQRDMLSH_asimdsame2_only
   COMPARE_PREFIX(dci(0x2f40d000), "sqrdmlah");  // SQRDMLAH_asimdelem_R
   COMPARE_PREFIX(dci(0x2f40f000), "sqrdmlsh");  // SQRDMLSH_asimdelem_R
-  COMPARE_PREFIX(dci(0x7e008400), "sqrdmlah");  // SQRDMLAH_asisdsame2_only
-  COMPARE_PREFIX(dci(0x7e008c00), "sqrdmlsh");  // SQRDMLSH_asisdsame2_only
+  COMPARE_PREFIX(dci(0x7e408400), "sqrdmlah");  // SQRDMLAH_asisdsame2_only
+  COMPARE_PREFIX(dci(0x7e408c00), "sqrdmlsh");  // SQRDMLSH_asisdsame2_only
   COMPARE_PREFIX(dci(0x7f40d000), "sqrdmlah");  // SQRDMLAH_asisdelem_R
   COMPARE_PREFIX(dci(0x7f40f000), "sqrdmlsh");  // SQRDMLSH_asisdelem_R
 
   // ARMv8.2 - DotProd
-  COMPARE_PREFIX(dci(0x0e009400), "sdot");  // SDOT_asimdsame2_D
+  COMPARE_PREFIX(dci(0x0e809400), "sdot");  // SDOT_asimdsame2_D
   COMPARE_PREFIX(dci(0x0f00e000), "sdot");  // SDOT_asimdelem_D
-  COMPARE_PREFIX(dci(0x2e009400), "udot");  // UDOT_asimdsame2_D
+  COMPARE_PREFIX(dci(0x2e809400), "udot");  // UDOT_asimdsame2_D
   COMPARE_PREFIX(dci(0x2f00e000), "udot");  // UDOT_asimdelem_D
 
   // ARMv8.2 - FHM
@@ -3775,42 +3790,39 @@ TEST(architecture_features) {
   COMPARE_PREFIX(dci(0xd503221f), "esb");  // ESB_HI_hints
 
   // ARMv8.2 - SHA3
-  // COMPARE_PREFIX(dci(0xce000000), "eor3");   // EOR3_VVV16_crypto4
-  // COMPARE_PREFIX(dci(0xce200000), "bcax");   // BCAX_VVV16_crypto4
-  // COMPARE_PREFIX(dci(0xce608c00), "rax1");   // RAX1_VVV2_cryptosha512_3
-  // COMPARE_PREFIX(dci(0xce800000), "xar");   // XAR_VVV2_crypto3_imm6
+  COMPARE_PREFIX(dci(0xce000000), "eor3");  // EOR3_VVV16_crypto4
+  COMPARE_PREFIX(dci(0xce200000), "bcax");  // BCAX_VVV16_crypto4
+  COMPARE_PREFIX(dci(0xce608c00), "rax1");  // RAX1_VVV2_cryptosha512_3
+  COMPARE_PREFIX(dci(0xce800000), "xar");   // XAR_VVV2_crypto3_imm6
 
   // ARMv8.2 - SHA512
-  // COMPARE_PREFIX(dci(0xce608000), "sha512h");   // SHA512H_QQV_cryptosha512_3
-  // COMPARE_PREFIX(dci(0xce608400), "sha512h2");   //
-  // SHA512H2_QQV_cryptosha512_3
-  // COMPARE_PREFIX(dci(0xce608800), "sha512su1");   //
-  // SHA512SU1_VVV2_cryptosha512_3
-  // COMPARE_PREFIX(dci(0xcec08000), "sha512su0");   //
-  // SHA512SU0_VV2_cryptosha512_2
+  COMPARE_PREFIX(dci(0xce608000), "sha512h");   // SHA512H_QQV_cryptosha512_3
+  COMPARE_PREFIX(dci(0xce608400), "sha512h2");  // SHA512H2_QQV_cryptosha512_3
+  COMPARE_PREFIX(dci(0xce608800),
+                 "sha512su1");  // SHA512SU1_VVV2_cryptosha512_3
+  COMPARE_PREFIX(dci(0xcec08000), "sha512su0");  // SHA512SU0_VV2_cryptosha512_2
 
   // ARMv8.2 - SM3
-  // COMPARE_PREFIX(dci(0xce400000), "sm3ss1");   // SM3SS1_VVV4_crypto4
-  // COMPARE_PREFIX(dci(0xce408000), "sm3tt1a");   // SM3TT1A_VVV4_crypto3_imm2
-  // COMPARE_PREFIX(dci(0xce408400), "sm3tt1b");   // SM3TT1B_VVV4_crypto3_imm2
-  // COMPARE_PREFIX(dci(0xce408800), "sm3tt2a");   // SM3TT2A_VVV4_crypto3_imm2
-  // COMPARE_PREFIX(dci(0xce408c00), "sm3tt2b");   // SM3TT2B_VVV_crypto3_imm2
-  // COMPARE_PREFIX(dci(0xce60c000), "sm3partw1");   //
-  // SM3PARTW1_VVV4_cryptosha512_3
-  // COMPARE_PREFIX(dci(0xce60c400), "sm3partw2");   //
-  // SM3PARTW2_VVV4_cryptosha512_3
+  COMPARE_PREFIX(dci(0xce400000), "sm3ss1");   // SM3SS1_VVV4_crypto4
+  COMPARE_PREFIX(dci(0xce408000), "sm3tt1a");  // SM3TT1A_VVV4_crypto3_imm2
+  COMPARE_PREFIX(dci(0xce408400), "sm3tt1b");  // SM3TT1B_VVV4_crypto3_imm2
+  COMPARE_PREFIX(dci(0xce408800), "sm3tt2a");  // SM3TT2A_VVV4_crypto3_imm2
+  COMPARE_PREFIX(dci(0xce408c00), "sm3tt2b");  // SM3TT2B_VVV_crypto3_imm2
+  COMPARE_PREFIX(dci(0xce60c000),
+                 "sm3partw1");  // SM3PARTW1_VVV4_cryptosha512_3
+  COMPARE_PREFIX(dci(0xce60c400),
+                 "sm3partw2");  // SM3PARTW2_VVV4_cryptosha512_3
 
   // ARMv8.2 - SM4
-  // COMPARE_PREFIX(dci(0xce60c800), "sm4ekey");   //
-  // SM4EKEY_VVV4_cryptosha512_3
-  // COMPARE_PREFIX(dci(0xcec08400), "sm4e");   // SM4E_VV4_cryptosha512_2
+  COMPARE_PREFIX(dci(0xce60c800), "sm4ekey");  // SM4EKEY_VVV4_cryptosha512_3
+  COMPARE_PREFIX(dci(0xcec08400), "sm4e");     // SM4E_VV4_cryptosha512_2
 
   // ARMv8.2 - SPE
   // COMPARE_PREFIX(dci(0xd503223f), "psb");   // PSB_HC_hints
 
   // ARMv8.3 - FCMA
   COMPARE_PREFIX(dci(0x2e40c400), "fcmla");  // FCMLA_asimdsame2_C
-  COMPARE_PREFIX(dci(0x2e00e400), "fcadd");  // FCADD_asimdsame2_C
+  COMPARE_PREFIX(dci(0x2e40e400), "fcadd");  // FCADD_asimdsame2_C
   COMPARE_PREFIX(dci(0x2f401000), "fcmla");  // FCMLA_asimdelem_C_H
   COMPARE_PREFIX(dci(0x6f801000), "fcmla");  // FCMLA_asimdelem_C_S
 
