@@ -2844,6 +2844,27 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
     subps(xd, xn, xm);
   }
   void Cmpp(const Register& xn, const Register& xm) { Subps(xzr, xn, xm); }
+  void Chkfeat(const Register& xdn);
+  void Gcspushm(const Register& rt) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    gcspushm(rt);
+  }
+  void Gcspopm(const Register& rt = xzr) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    gcspopm(rt);
+  }
+  void Gcsss1(const Register& rt) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    gcsss1(rt);
+  }
+  void Gcsss2(const Register& rt) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    gcsss2(rt);
+  }
 
 // NEON 3 vector register instructions.
 #define NEON_3VREG_MACRO_LIST(V) \
@@ -2893,6 +2914,7 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
   V(pmull2, Pmull2)              \
   V(raddhn, Raddhn)              \
   V(raddhn2, Raddhn2)            \
+  V(rax1, Rax1)                  \
   V(rsubhn, Rsubhn)              \
   V(rsubhn2, Rsubhn2)            \
   V(saba, Saba)                  \
@@ -2905,8 +2927,21 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
   V(saddl2, Saddl2)              \
   V(saddw, Saddw)                \
   V(saddw2, Saddw2)              \
+  V(sha1c, Sha1c)                \
+  V(sha1m, Sha1m)                \
+  V(sha1p, Sha1p)                \
+  V(sha1su0, Sha1su0)            \
+  V(sha256h, Sha256h)            \
+  V(sha256h2, Sha256h2)          \
+  V(sha256su1, Sha256su1)        \
+  V(sha512h, Sha512h)            \
+  V(sha512h2, Sha512h2)          \
+  V(sha512su1, Sha512su1)        \
   V(shadd, Shadd)                \
   V(shsub, Shsub)                \
+  V(sm3partw1, Sm3partw1)        \
+  V(sm3partw2, Sm3partw2)        \
+  V(sm4ekey, Sm4ekey)            \
   V(smax, Smax)                  \
   V(smaxp, Smaxp)                \
   V(smin, Smin)                  \
@@ -3001,6 +3036,10 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
   V(abs, Abs)                    \
   V(addp, Addp)                  \
   V(addv, Addv)                  \
+  V(aesd, Aesd)                  \
+  V(aese, Aese)                  \
+  V(aesimc, Aesimc)              \
+  V(aesmc, Aesmc)                \
   V(cls, Cls)                    \
   V(clz, Clz)                    \
   V(cnt, Cnt)                    \
@@ -3049,6 +3088,11 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
   V(sadalp, Sadalp)              \
   V(saddlp, Saddlp)              \
   V(saddlv, Saddlv)              \
+  V(sha1h, Sha1h)                \
+  V(sha1su1, Sha1su1)            \
+  V(sha256su0, Sha256su0)        \
+  V(sha512su0, Sha512su0)        \
+  V(sm4e, Sm4e)                  \
   V(smaxv, Smaxv)                \
   V(sminv, Sminv)                \
   V(sqabs, Sqabs)                \
@@ -3139,7 +3183,11 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
   V(umlsl, Umlsl)                    \
   V(umlsl2, Umlsl2)                  \
   V(sudot, Sudot)                    \
-  V(usdot, Usdot)
+  V(usdot, Usdot)                    \
+  V(sm3tt1a, Sm3tt1a)                \
+  V(sm3tt1b, Sm3tt1b)                \
+  V(sm3tt2a, Sm3tt2a)                \
+  V(sm3tt2b, Sm3tt2b)
 
 
 #define DEFINE_MACRO_ASM_FUNC(ASM, MASM)    \
@@ -3258,6 +3306,14 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
   SVE_3VREG_COMMUTATIVE_MACRO_LIST(DEFINE_MACRO_ASM_FUNC)
 #undef DEFINE_MACRO_ASM_FUNC
 
+  void Bcax(const VRegister& vd,
+            const VRegister& vn,
+            const VRegister& vm,
+            const VRegister& va) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    bcax(vd, vn, vm, va);
+  }
   void Bic(const VRegister& vd, const int imm8, const int left_shift = 0) {
     VIXL_ASSERT(allow_macro_instructions_);
     SingleEmissionCheckScope guard(this);
@@ -3297,6 +3353,14 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
     VIXL_ASSERT(allow_macro_instructions_);
     SingleEmissionCheckScope guard(this);
     dup(vd, rn);
+  }
+  void Eor3(const VRegister& vd,
+            const VRegister& vn,
+            const VRegister& vm,
+            const VRegister& va) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    eor3(vd, vn, vm, va);
   }
   void Ext(const VRegister& vd,
            const VRegister& vn,
@@ -3594,6 +3658,14 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
     SingleEmissionCheckScope guard(this);
     st4(vt, vt2, vt3, vt4, lane, dst);
   }
+  void Sm3ss1(const VRegister& vd,
+              const VRegister& vn,
+              const VRegister& vm,
+              const VRegister& va) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    sm3ss1(vd, vn, vm, va);
+  }
   void Smov(const Register& rd, const VRegister& vn, int vn_index) {
     VIXL_ASSERT(allow_macro_instructions_);
     SingleEmissionCheckScope guard(this);
@@ -3603,6 +3675,14 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
     VIXL_ASSERT(allow_macro_instructions_);
     SingleEmissionCheckScope guard(this);
     umov(rd, vn, vn_index);
+  }
+  void Xar(const VRegister& vd,
+           const VRegister& vn,
+           const VRegister& vm,
+           int rotate) {
+    VIXL_ASSERT(allow_macro_instructions_);
+    SingleEmissionCheckScope guard(this);
+    xar(vd, vn, vm, rotate);
   }
   void Crc32b(const Register& rd, const Register& rn, const Register& rm) {
     VIXL_ASSERT(allow_macro_instructions_);
@@ -8311,9 +8391,10 @@ MacroAssembler(PandaAllocator* allocator, byte* buffer,
       UseScratchRegisterScope* scratch_scope);
 
   bool LabelIsOutOfRange(Label* label, ImmBranchType branch_type) {
+    int64_t offset = label->GetLocation() - GetCursorOffset();
+    VIXL_ASSERT(IsMultiple(offset, kInstructionSize));
     return !Instruction::IsValidImmPCOffset(branch_type,
-                                            label->GetLocation() -
-                                                GetCursorOffset());
+                                            offset / kInstructionSize);
   }
 
   void ConfigureSimulatorCPUFeaturesHelper(const CPUFeatures& features,
@@ -8725,6 +8806,16 @@ class UseScratchRegisterScope {
   PRegister AcquireGoverningP() {
     CPURegList* available = masm_->GetScratchPRegisterList();
     return AcquireFrom(available, kGoverningPRegisterMask).P();
+  }
+
+  // TODO: extend to other scratch register lists.
+  bool TryAcquire(const Register& required_reg) {
+    CPURegList* list = masm_->GetScratchRegisterList();
+    if (list->IncludesAliasOf(required_reg)) {
+      list->Remove(required_reg);
+      return true;
+    }
+    return false;
   }
 
   Register AcquireRegisterOfSize(int size_in_bits);

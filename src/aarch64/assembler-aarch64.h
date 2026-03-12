@@ -2183,6 +2183,9 @@ class Assembler : public vixl::internal::AssemblerBase {
   // System instruction with pre-encoded op (op1:crn:crm:op2).
   void sys(int op, const Register& xt = xzr);
 
+  // System instruction with result.
+  void sysl(int op, const Register& xt = xzr);
+
   // System data cache operation.
   void dc(DataCacheOp op, const Register& rt);
 
@@ -3642,6 +3645,123 @@ class Assembler : public vixl::internal::AssemblerBase {
 
   // Unsigned 8-bit integer matrix multiply-accumulate (vector).
   void ummla(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // Bit Clear and exclusive-OR.
+  void bcax(const VRegister& vd,
+            const VRegister& vn,
+            const VRegister& vm,
+            const VRegister& va);
+
+  // Three-way Exclusive-OR.
+  void eor3(const VRegister& vd,
+            const VRegister& vn,
+            const VRegister& vm,
+            const VRegister& va);
+
+  // Exclusive-OR and Rotate.
+  void xar(const VRegister& vd,
+           const VRegister& vn,
+           const VRegister& vm,
+           int rotate);
+
+  // Rotate and Exclusive-OR
+  void rax1(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA1 hash update (choose).
+  void sha1c(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA1 fixed rotate.
+  void sha1h(const VRegister& sd, const VRegister& sn);
+
+  // SHA1 hash update (majority).
+  void sha1m(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA1 hash update (parity).
+  void sha1p(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA1 schedule update 0.
+  void sha1su0(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA1 schedule update 1.
+  void sha1su1(const VRegister& vd, const VRegister& vn);
+
+  // SHA256 hash update (part 1).
+  void sha256h(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA256 hash update (part 2).
+  void sha256h2(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA256 schedule update 0.
+  void sha256su0(const VRegister& vd, const VRegister& vn);
+
+  // SHA256 schedule update 1.
+  void sha256su1(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA512 hash update part 1.
+  void sha512h(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA512 hash update part 2.
+  void sha512h2(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SHA512 schedule Update 0.
+  void sha512su0(const VRegister& vd, const VRegister& vn);
+
+  // SHA512 schedule Update 1.
+  void sha512su1(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // AES single round decryption.
+  void aesd(const VRegister& vd, const VRegister& vn);
+
+  // AES single round encryption.
+  void aese(const VRegister& vd, const VRegister& vn);
+
+  // AES inverse mix columns.
+  void aesimc(const VRegister& vd, const VRegister& vn);
+
+  // AES mix columns.
+  void aesmc(const VRegister& vd, const VRegister& vn);
+
+  // SM3PARTW1.
+  void sm3partw1(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SM3PARTW2.
+  void sm3partw2(const VRegister& vd, const VRegister& vn, const VRegister& vm);
+
+  // SM3SS1.
+  void sm3ss1(const VRegister& vd,
+              const VRegister& vn,
+              const VRegister& vm,
+              const VRegister& va);
+
+  // SM3TT1A.
+  void sm3tt1a(const VRegister& vd,
+               const VRegister& vn,
+               const VRegister& vm,
+               int index);
+
+  // SM3TT1B.
+  void sm3tt1b(const VRegister& vd,
+               const VRegister& vn,
+               const VRegister& vm,
+               int index);
+
+  // SM3TT2A.
+  void sm3tt2a(const VRegister& vd,
+               const VRegister& vn,
+               const VRegister& vm,
+               int index);
+
+  // SM3TT2B.
+  void sm3tt2b(const VRegister& vd,
+               const VRegister& vn,
+               const VRegister& vm,
+               int index);
+
+  // SM4 Encode.
+  void sm4e(const VRegister& vd, const VRegister& vn);
+
+  // SM4 Key.
+  void sm4ekey(const VRegister& vd, const VRegister& vn, const VRegister& vm);
 
   // Scalable Vector Extensions.
 
@@ -7097,6 +7217,21 @@ class Assembler : public vixl::internal::AssemblerBase {
   // Unsigned Minimum.
   void umin(const Register& rd, const Register& rn, const Operand& op);
 
+  // Check feature status.
+  void chkfeat(const Register& rd);
+
+  // Guarded Control Stack Push.
+  void gcspushm(const Register& rt);
+
+  // Guarded Control Stack Pop.
+  void gcspopm(const Register& rt);
+
+  // Guarded Control Stack Switch Stack 1.
+  void gcsss1(const Register& rt);
+
+  // Guarded Control Stack Switch Stack 2.
+  void gcsss2(const Register& rt);
+
   // Emit generic instructions.
 
   // Emit raw instructions into the instruction stream.
@@ -7565,6 +7700,8 @@ class Assembler : public vixl::internal::AssemblerBase {
   static Instr VFormat(VRegister vd) {
     if (vd.Is64Bits()) {
       switch (vd.GetLanes()) {
+        case 1:
+          return NEON_1D;
         case 2:
           return NEON_2S;
         case 4:

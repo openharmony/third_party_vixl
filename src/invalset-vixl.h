@@ -1,4 +1,3 @@
-// Copyright 2015, VIXL authors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -95,7 +94,7 @@ class InvalSet {
 #else
   InvalSet() = delete;
   InvalSet(AllocatorWrapper alocator);
-  InvalSet(InvalSet&&) = default;
+  InvalSet(InvalSet&&) = default;  // movable
 #endif
   ~InvalSet() VIXL_NEGATIVE_TESTING_ALLOW_EXCEPTION;
 
