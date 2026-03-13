@@ -603,6 +603,28 @@ std::pair<int, int> Instruction::GetSVEMulLongZmAndIndex() const {
   return std::make_pair(reg_code, index);
 }
 
+// Get the register and index for NEON indexed multiplies.
+std::pair<int, int> Instruction::GetNEONMulRmAndIndex() const {
+  int reg_code = GetRm();
+  int index = (GetNEONH() << 2) | (GetNEONL() << 1) | GetNEONM();
+  switch (GetNEONSize()) {
+    case 0:  // FP H-sized elements.
+    case 1:  // Integer H-sized elements.
+      // 4-bit Rm, 3-bit index.
+      reg_code &= 0xf;
+      break;
+    case 2:  // S-sized elements.
+      // 5-bit Rm, 2-bit index.
+      index >>= 1;
+      break;
+    case 3:  // FP D-sized elements.
+      // 5-bit Rm, 1-bit index.
+      index >>= 2;
+      break;
+  }
+  return std::make_pair(reg_code, index);
+}
+
 // Logical immediates can't encode zero, so a return value of zero is used to
 // indicate a failure case. Specifically, where the constraints on imm_s are
 // not met.
@@ -1011,6 +1033,8 @@ VectorFormat VectorFormatHalfWidth(VectorFormat vform) {
       return kFormat4H;
     case kFormat2D:
       return kFormat2S;
+    case kFormat1Q:
+      return kFormat1D;
     case kFormatH:
       return kFormatB;
     case kFormatS:
@@ -1023,6 +1047,8 @@ VectorFormat VectorFormatHalfWidth(VectorFormat vform) {
       return kFormatVnH;
     case kFormatVnD:
       return kFormatVnS;
+    case kFormatVnQ:
+      return kFormatVnD;
     default:
       VIXL_UNREACHABLE();
       return kFormatUndefined;
@@ -1095,6 +1121,8 @@ VectorFormat VectorFormatHalfWidthDoubleLanes(VectorFormat vform) {
       return kFormat2S;
     case kFormat2D:
       return kFormat4S;
+    case kFormat1Q:
+      return kFormat2D;
     case kFormatVnH:
       return kFormatVnB;
     case kFormatVnS:
@@ -1246,6 +1274,7 @@ unsigned RegisterSizeInBitsFromFormat(VectorFormat vform) {
     case kFormat8H:
     case kFormat4S:
     case kFormat2D:
+    case kFormat1Q:
       return kQRegSize;
     default:
       VIXL_UNREACHABLE();
@@ -1283,6 +1312,7 @@ unsigned LaneSizeInBitsFromFormat(VectorFormat vform) {
     case kFormat2D:
     case kFormatVnD:
       return 64;
+    case kFormat1Q:
     case kFormatVnQ:
       return 128;
     case kFormatVnO:
@@ -1348,6 +1378,7 @@ int LaneCountFromFormat(VectorFormat vform) {
     case kFormat2D:
       return 2;
     case kFormat1D:
+    case kFormat1Q:
     case kFormatB:
     case kFormatH:
     case kFormatS:

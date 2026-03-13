@@ -80,6 +80,8 @@ class Location : public LocationBase<int32_t> {
 #endif
   }
 
+  Location(Location&&) = default; // movable
+
   bool IsReferenced() const { return referenced_; }
 
  private:
