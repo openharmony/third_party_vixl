@@ -33,7 +33,7 @@ VIXL的一些常用接口说明：
 使用OpenHarmony中编译部件的方式进行编译即可：
 1. 主干代码下载
    ```
-   repo init -u https://gitee.com/openharmony/manifest.git -b master --no-repo-verify
+   repo init -u https://gitcode.com/openharmony/manifest.git -b master --no-repo-verify
    repo sync -c
    repo forall -c 'git lfs pull'
    ```
@@ -43,9 +43,9 @@ VIXL的一些常用接口说明：
    ```
 3. 编译
    ```
-   ./build.sh --product-name rk3568 --build-target libvixl_frontend_static
+   ./build.sh --product-name rk3568 --build-target libvixl
    ```
-   编译生成物对应路径：`out/rk3568/obj/third_party/vixl/libvixl_frontend_static.a`。
+   编译生成物对应路径：`out/rk3568/obj/third_party/vixl/libvixl.a`。
 
 ## 许可证
 
