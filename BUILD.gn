@@ -50,6 +50,8 @@ config("vixl_public_config") {
 }
 
 ohos_static_library("libvixl") {
+  branch_protector_ret = "pac_ret"
+
   sources = [
     "src/code-buffer-vixl.cc",
     "src/compiler-intrinsics-vixl.cc",
